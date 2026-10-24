@@ -404,7 +404,8 @@ html.tv .cu-flag{font-size:var(--t-xs);top:var(--safe-y);left:var(--safe-x);padd
 .tvnav-groups{width:calc(var(--vh)*62);display:flex;flex-direction:column;min-height:0;padding-top:var(--safe-y)}
 .tvnav-groups h2{margin:0;padding:0 calc(var(--vh)*3.4) calc(var(--vh)*1.6);font:600 var(--t-xl) var(--font-display)}
 .tvnav-groups .list{padding:0 calc(var(--vh)*2) var(--safe-y)}
-.tvnav-hint{margin-top:auto;font-size:var(--t-xs);color:var(--fg-3);line-height:1.4}
+.tvnav-exit{margin-top:auto}
+.tvnav-hint{margin-top:calc(var(--vh)*1.4);font-size:var(--t-xs);color:var(--fg-3);line-height:1.4}
 /* larger drawers, dialogs and sign-in */
 html.tv .item{min-height:calc(var(--vh)*7.8);padding:calc(var(--vh)*1.2) calc(var(--vh)*2.2);gap:calc(var(--vh)*2);border-radius:calc(var(--vh)*1)}
 html.tv .item .lbl>span:first-child{font-size:var(--t-m)}
@@ -575,7 +576,8 @@ html.tv .login-actions{gap:calc(var(--vh)*2)}
     <button class="tvnav-item" data-tv="recent"><svg class="i"><use href="#i-replay"/></svg>Recently watched</button>
     <button class="tvnav-item" data-tv="playlists"><svg class="i"><use href="#i-playlist"/></svg>Playlists</button>
     <button class="tvnav-item" data-tv="settings"><svg class="i"><use href="#i-settings"/></svg>Settings</button>
-    <p class="tvnav-hint">Right: back to groups · Back: close</p>
+    <button class="tvnav-item tvnav-exit" data-tv="exit"><svg class="i"><use href="#i-close"/></svg>Exit Tuner</button>
+    <p class="tvnav-hint">Right: groups · Back: close menu</p>
   </div>
   <div class="tvnav-groups"><h2>Groups</h2><div class="list" id="tvGroups"></div></div>
 </aside>
@@ -1052,18 +1054,21 @@ function moveRow(d) {
   if (focus.follow) focus.t = Date.now();
   focusChanged();
 }
-function moveProg(d) {
+function openSideMenu() { if (TV_MODE) openTvNav(true); else openGroups(); }
+function moveProg(d, allowPast) {
   const ch = S.list[focus.i]; if (!ch) return;
   const p = focusedProg(), now = Date.now();
-  if (!p) { if (d < 0) openGroups(); return; }
+  if (!p) { if (d < 0) openSideMenu(); return; }
   const n = neighbor(ch, p, d);
   if (d > 0) {
     if (!n || n.start >= rangeEnd) return;
     focus.t = isNowProg(n, now) ? now : n.start; focus.follow = isNowProg(n, now);
   } else {
-    if (n && n.end > rangeStart && (n.end > now || canCatchup(ch, n, now))) {
+    const intoPast = n && n.end <= now;
+    if (n && n.end > rangeStart && (!intoPast || ((allowPast || !TV_MODE) && canCatchup(ch, n, now)))) {
       focus.t = isNowProg(n, now) ? now : Math.max(n.start, rangeStart); focus.follow = isNowProg(n, now);
-    } else { openGroups(); return; }
+    } else if (allowPast) { if (n && !canCatchup(ch, n, now)) toast(ch.archive ? 'Catch-up only goes back ' + (ch.archiveDays || 3) + ' days on this channel' : 'This channel has no catch-up'); return; }
+    else { openSideMenu(); return; }
   }
   focusChanged();
 }
@@ -1899,6 +1904,7 @@ el('tvNav').addEventListener('click', e => {
   else if (a === 'search') openSearch();
   else if (a === 'playlists') openPlaylists();
   else if (a === 'settings') openSettings();
+  else if (a === 'exit') { if (window.TunerNative && window.TunerNative.exit) window.TunerNative.exit(); else toast('On your Fire TV this closes Tuner'); }
 });
 
 /* Channel list over full-screen video: OK or Left opens it, Up/Down browse, OK switches. */
@@ -2078,7 +2084,14 @@ function openSettings() {
     <div class="setting"><span>Stream format</span>${seg('fmt', [['m3u8', 'HLS (.m3u8)'], ['ts', 'MPEG-TS (.ts)']], prefs.format, demo)}<p class="hint">If a channel won't start, try the other format.</p></div>
   </section>
   <section><h3>Remote and keyboard</h3>
-    <div class="keys">
+    <div class="keys">${TV_MODE ? `
+      <span><kbd>↑</kbd> <kbd>↓</kbd></span><span>Move between channels</span>
+      <span><kbd>→</kbd></span><span>Later programs</span>
+      <span><kbd>←</kbd> <kbd>Back</kbd></span><span>Open the menu (from what's on now)</span>
+      <span><kbd>◀◀</kbd> <kbd>▶▶</kbd></span><span>Earlier programs and catch-up, later programs</span>
+      <span><kbd>OK</kbd></span><span>Watch; in full screen, show the channel list</span>
+      <span><kbd>☰</kbd></span><span>Program details and favorites</span>
+    </div>` : `
       <span><kbd>↑</kbd> <kbd>↓</kbd></span><span>Move between channels</span>
       <span><kbd>←</kbd> <kbd>→</kbd></span><span>Move through programs and catch-up</span>
       <span><kbd>OK</kbd></span><span>Watch, or open program details</span>
@@ -2087,7 +2100,7 @@ function openSettings() {
       <span><kbd>F</kbd></span><span>Add or remove favorite</span>
       <span><kbd>G</kbd> <kbd>/</kbd></span><span>Groups, search</span>
       <span><kbd>Ch+</kbd> <kbd>Ch−</kbd></span><span>Page through the guide</span>
-    </div>
+    </div>`}
   </section>`;
   openLayer(el('settingsDrawer'), 'button:not([data-close])');
 }
@@ -2201,6 +2214,8 @@ function keyName(e) {
   if (k === 'Backspace') return 'backspace';
   if (k === 'PageUp' || k === 'ChannelUp' || kc === 427) return 'pgup';
   if (k === 'PageDown' || k === 'ChannelDown' || kc === 428) return 'pgdn';
+  if (k === 'MediaRewind' || kc === 412) return 'rew';
+  if (k === 'MediaFastForward' || kc === 417) return 'ff';
   if (/^[0-9]$/.test(k)) return 'digit';
   if (k === 'f' || k === 'F') return 'fav';
   if (k === '/') return 'search';
@@ -2273,6 +2288,7 @@ function handleBack() {
   if (app.classList.contains('is-full')) { exitFull(); return true; }
   const a = document.activeElement;
   if (a && a.closest && a.closest('#rail')) return false;
+  if (TV_MODE) { openTvNav(true); return true; }
   const p = focusedProg();
   if (p && !isNowProg(p)) { jumpToNow(false); guideScroll.focus({ preventScroll: true }); return true; }
   const b = document.querySelector('.rail-btn.active') || document.querySelector('.rail-btn');
@@ -2303,7 +2319,7 @@ document.addEventListener('keydown', e => {
       return;
     }
     if (TV_MODE && (k === 'ok' || k === 'left')) { e.preventDefault(); openTvChans(); return; }
-    const map = { up: () => stepChannel(-1), down: () => stepChannel(1), pgup: () => stepChannel(-1), pgdn: () => stepChannel(1), left: showOsd, right: showOsd, ok: () => osd.classList.contains('hide') ? showOsd() : osd.classList.add('hide'), info: showOsd, fav: () => { toggleFav(S.byId.get(S.playingId)); showOsd(); }, mute: () => { toggleMute(); showOsd(); } };
+    const map = { up: () => stepChannel(-1), down: () => stepChannel(1), pgup: () => stepChannel(-1), pgdn: () => stepChannel(1), left: showOsd, right: showOsd, rew: showOsd, ff: showOsd, ok: () => osd.classList.contains('hide') ? showOsd() : osd.classList.add('hide'), info: showOsd, fav: () => { toggleFav(S.byId.get(S.playingId)); showOsd(); }, mute: () => { toggleMute(); showOsd(); } };
     if (k === 'digit') { e.preventDefault(); numKey(e.key); return; }
     if (map[k]) { e.preventDefault(); map[k](); }
     return;
@@ -2329,6 +2345,8 @@ document.addEventListener('keydown', e => {
     case 'pgdn': e.preventDefault(); moveRow(visRows); break;
     case 'left': e.preventDefault(); moveProg(-1); break;
     case 'right': e.preventDefault(); moveProg(1); break;
+    case 'rew': e.preventDefault(); moveProg(-1, true); break;
+    case 'ff': e.preventDefault(); moveProg(1); break;
     case 'ok': {
       if (a && a.tagName === 'BUTTON') return;
       e.preventDefault();

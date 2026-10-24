@@ -32,6 +32,9 @@ To build again without changing anything: **Actions** tab → pick the workflow 
 
 New builds install over the old one and keep your playlists and favorites.
 
+On the remote: **Back** or **Left** (from what's on now) opens the menu, **◀◀ / ▶▶** step through earlier and later programs, **OK** watches, and in full screen **OK** shows the channel list. **Exit Tuner** is at the bottom of the menu.
+
+
 ## What's inside
 
 - `ios/` – SwiftUI app (iOS 16+). Open `Tuner.xcodeproj` in Xcode 16+ if you have a Mac.

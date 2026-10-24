@@ -89,14 +89,18 @@ public class MainActivity extends Activity {
                 key = "i";
                 break;
             case KeyEvent.KEYCODE_CHANNEL_UP:
-            case KeyEvent.KEYCODE_MEDIA_REWIND:
             case KeyEvent.KEYCODE_PAGE_UP:
                 key = "PageUp";
                 break;
             case KeyEvent.KEYCODE_CHANNEL_DOWN:
-            case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
             case KeyEvent.KEYCODE_PAGE_DOWN:
                 key = "PageDown";
+                break;
+            case KeyEvent.KEYCODE_MEDIA_REWIND:
+                key = "MediaRewind";
+                break;
+            case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
+                key = "MediaFastForward";
                 break;
             case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
             case KeyEvent.KEYCODE_MEDIA_PLAY:
