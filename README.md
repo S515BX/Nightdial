@@ -40,7 +40,8 @@
 - **Movies & Series**: shows up when your subscription includes them. Browse by category, search, see details, seasons and episodes, and pick up where you left off.
 - **Pause and rewind live TV**: channels whose stream keeps a buffer rewind instantly; channels with catch-up can go back further, 5 minutes at a time. **Back to live** jumps to now.
 - **Your channels, your way**: favorites in your own order, hide channels or whole groups, and sort by provider order, number or A–Z.
-- **Themes**: everyday themes plus holiday themes that can switch on by themselves in season, with highlight and menu colors, six fonts, interface size, and holiday decorations.
+- **Themes**: everyday themes plus holiday themes that can switch on by themselves in season. Each one has its own scenery (a moonlit graveyard for Halloween, snowy pines and string lights for Christmas, fireworks over the skyline for New Year and the 4th of July...) and particles with depth: snow, bats, falling leaves, petals, fireworks. Highlight and menu colors, six fonts and interface size are yours to pick.
+- **Smooth on every screen**: menus and highlights respond instantly on Fire TV, decorations pause while a menu is open, and animations run at the screen's full refresh rate (120 Hz ProMotion on iPhone and iPad).
 - **Fire TV**: built for the remote. Video plays in Android's own player, so Dolby audio, H.265 and MPEG-TS streams work.
 - **iPhone and iPad**: AirPlay, Picture in Picture and 120 Hz ProMotion.
 - **Private and secure**: passwords and playlist links are stored encrypted on your device (Keychain on iPhone, Android Keystore on Fire TV) and only ever sent to your provider. Fire TV backups are off, the app page blocks injected scripts, and it can't be steered to other websites.
@@ -94,7 +95,7 @@ New builds install over the old one and keep your playlists and favorites.
 
 ## Look and channels
 
-- **Themes & look** (menu → Themes): everyday themes plus holiday themes (New Year, Valentine's, St. Patrick's, Easter, 4th of July, Halloween, Thanksgiving, Christmas) that can switch on by themselves in season, highlight and menu colors, six fonts, interface size, and holiday decorations.
+- **Themes & look** (menu → Themes): everyday themes (Midnight, Aurora, Ocean, Sunset, Forest, Rosé, OLED black, Classic) and holiday themes (New Year, Valentine's, St. Patrick's, Easter, 4th of July, Halloween, Thanksgiving, Christmas) that can switch on by themselves in season, each with its own scenery. Pick highlight and menu colors, one of six fonts and the interface size; turn off decorations or background scenery in the same menu.
 - **Edit channels** (menu → Edit channels): put favorites in your own order, hide channels or whole groups, and sort channels by provider order, number or A–Z.
 
 ## What's inside
@@ -103,6 +104,7 @@ New builds install over the old one and keep your playlists and favorites.
 - `firetv/`: Android TV app for Fire TV (Fire OS 5+). Opens in Android Studio.
 - `web/`: browser version with a small Node.js relay for your provider.
 - `brand/`: the Nightdial logo (`icon.svg`) and the scripts that render the app icons, the Fire TV banner and this page's banner.
+- `ios/scenes/`: theme scenery and particle shapes for the iPhone/iPad app (the same art the web and Fire TV versions use).
 - `docs/`: images for this page.
 
 Nightdial doesn't include any channels. Use it with a service you subscribe to.

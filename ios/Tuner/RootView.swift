@@ -13,6 +13,9 @@ struct RootView: View {
                 .id(look.revision)   // rebuild with the new colors, font and size when the look changes
                 .blur(radius: model.showLogin ? 8 : 0)
                 .allowsHitTesting(!model.showLogin)
+            if look.decorations, look.glow, let scene = SceneData.scenes[look.theme.id] {
+                SceneFrame(scene: scene, themeId: look.theme.id).id("frame-" + look.theme.id)
+            }
             if look.decorations, let kind = look.theme.deco {
                 DecorationLayer(kind: kind).id("deco-" + kind)
             }
@@ -62,12 +65,97 @@ struct RoomBackground: View {
     var body: some View {
         ZStack {
             Theme.bg
-            if look.glow {
+            if look.glow, SceneData.scenes[look.theme.id] != nil {
+                // The theme's scenery (moonlit sky, skyline, snowy hills...), as an overlay so it never changes the layout.
+                Color.clear.overlay(Image("scene-\(look.theme.id)-back").resizable().scaledToFill()).clipped()
+            } else if look.glow {
                 RadialGradient(colors: [Theme.glowA, .clear], center: .topLeading, startRadius: 0, endRadius: 560)
                 RadialGradient(colors: [Theme.glowB, .clear], center: .bottomTrailing, startRadius: 0, endRadius: 600)
             }
         }
         .ignoresSafeArea()
+    }
+}
+
+/// True when the theme's scenery should show through the program info card.
+enum SceneStyle {
+    static var heroClear: Bool {
+        let look = Look.shared
+        return look.glow && (SceneData.scenes[look.theme.id]?.heroClear ?? false)
+    }
+}
+
+/// Frame pieces over the app's edges (cobwebs, branches, garlands, fog) and the vignette. Kept clear of the guide's text.
+struct SceneFrame: View {
+    let scene: SceneDef
+    let themeId: String
+
+    var body: some View {
+        GeometryReader { geo in
+            let base = min(geo.size.width, geo.size.height)
+            ZStack {
+                if let v = scene.vignette {
+                    RadialGradient(colors: [.clear, Color(uiColor: UIColor(hex: v.0)).opacity(v.1)], center: .center,
+                                   startRadius: base * 0.45, endRadius: max(geo.size.width, geo.size.height) * 0.75)
+                }
+                ForEach(scene.pieces, id: \.id) { p in piece(p, geo.size, base) }
+            }
+        }
+        .allowsHitTesting(false)
+        .ignoresSafeArea()
+        .accessibilityHidden(true)
+    }
+
+    private func piece(_ p: ScenePiece, _ size: CGSize, _ base: CGFloat) -> some View {
+        let band = p.at == "top" || p.at == "bottom"
+        let w = band ? size.width * (p.anim == "drift" ? 1.1 : 1) : base * p.w / 100
+        let h = band ? base * p.h / 100 : w / max(0.01, p.aspect)
+        let alignment: Alignment
+        switch p.at {
+        case "tr": alignment = .topTrailing
+        case "bl": alignment = .bottomLeading
+        case "br": alignment = .bottomTrailing
+        case "top": alignment = .top
+        case "bottom": alignment = .bottom
+        default: alignment = .topLeading
+        }
+        return ScenePieceView(name: "scene-\(themeId)-\(p.id)", anim: p.anim, width: w, height: h)
+            .opacity(p.opacity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignment)
+    }
+}
+
+private struct ScenePieceView: View {
+    let name: String
+    let anim: String
+    let width: CGFloat
+    let height: CGFloat
+
+    var body: some View {
+        if anim.isEmpty {
+            Image(name).resizable().frame(width: width, height: height)
+        } else {
+            TimelineView(.animation(minimumInterval: anim == "blink" ? 0.05 : 1.0 / 30)) { timeline in
+                let t = timeline.date.timeIntervalSinceReferenceDate
+                Image(name).resizable().frame(width: width, height: height)
+                    .offset(x: anim == "drift" ? CGFloat(sin(t / 38 * .pi) * 0.04) * width : 0)
+                    .opacity(anim == "blink" ? Self.blink(t) : 1)
+            }
+        }
+    }
+
+    /// Eyes in the dark: appear, stare, blink, and fade away again (9-second cycle).
+    static func blink(_ t: Double) -> Double {
+        let p = (t / 9).truncatingRemainder(dividingBy: 1) * 100
+        switch p {
+        case ..<30: return 0
+        case ..<34: return (p - 30) / 4
+        case ..<62: return 1
+        case ..<64.5: return 0
+        case ..<78: return 1
+        case ..<82: return 1 - (p - 78) / 4
+        default: return 0
+        }
     }
 }
 
@@ -331,7 +419,16 @@ struct InfoPanel: View {
         .padding(.horizontal, compact ? 14 : 22)
         .padding(.vertical, compact ? 12 : 18)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .background(RoundedRectangle(cornerRadius: compact ? 18 : 22, style: .continuous).fill(Theme.panel))
+        .background(card)
+    }
+
+    @ViewBuilder private var card: some View {
+        let shape = RoundedRectangle(cornerRadius: compact ? 18 : 22, style: .continuous)
+        if SceneStyle.heroClear {
+            shape.fill(LinearGradient(colors: [Theme.bg.opacity(0.84), Theme.bg.opacity(0.42), Theme.bg.opacity(0.08)], startPoint: .leading, endPoint: .trailing))
+        } else {
+            shape.fill(Theme.panel)
+        }
     }
 }
 
@@ -530,99 +627,93 @@ struct ToastView: View {
     }
 }
 
-/// Holiday decorations drifting over the guide: snow, bats, leaves, hearts, clovers, petals, fireworks.
+/// Theme particles over the app: snow, bats, leaves, petals, hearts, fireworks... Each particle has a depth
+/// (far = small, dim and slow; near = big, bright and quick). Runs at the screen's full rate (120 Hz on ProMotion).
 struct DecorationLayer: View {
     let kind: String
 
-    private struct Spec {
-        let glyph: String
-        let colors: [UInt32]
-        let count: Int
-        let size: ClosedRange<Double>
-        let duration: ClosedRange<Double>
-        let opacity: ClosedRange<Double>
-        let mode: Int        // 0 fall, 1 rise, 2 fly, 3 twinkle
-        var spin = false
-    }
-
     private struct Particle {
-        let x, y, size, duration, offset, opacity, spin: Double
+        let x, y, size, duration, offset, opacity, spin, sway, tilt: Double
         let color: Color
     }
 
-    private var spec: Spec {
-        switch kind {
-        case "bats": return Spec(glyph: "deco-bat", colors: [0xB98CFF, 0xFF9A4D, 0x8A6BD1], count: 6, size: 24...42, duration: 15...26, opacity: 0.28...0.5, mode: 2)
-        case "leaves": return Spec(glyph: "deco-leaf", colors: [0xF29E4C, 0xE0605E, 0xF2C94C, 0xC2410C], count: 10, size: 14...24, duration: 12...20, opacity: 0.35...0.6, mode: 0, spin: true)
-        case "hearts": return Spec(glyph: "deco-heart", colors: [0xFF4D8D, 0xFF9EB5, 0xFF2E63], count: 10, size: 10...20, duration: 12...20, opacity: 0.25...0.5, mode: 1)
-        case "clover": return Spec(glyph: "deco-clover", colors: [0x3DDC84, 0x2FBF6C, 0x8BE15B], count: 10, size: 12...20, duration: 12...20, opacity: 0.3...0.55, mode: 0, spin: true)
-        case "petals": return Spec(glyph: "deco-flower", colors: [0xFFB3D1, 0xB8A1FF, 0x7EE8C8, 0xFFF1A8], count: 10, size: 12...20, duration: 12...20, opacity: 0.3...0.55, mode: 0, spin: true)
-        case "fireworks": return Spec(glyph: "deco-spark", colors: [0xFF4D5E, 0xFFFFFF, 0x5B8CFF], count: 9, size: 16...34, duration: 3.5...6, opacity: 0.5...0.85, mode: 3)
-        case "sparkle": return Spec(glyph: "deco-spark", colors: [0xF5D06F, 0xFFFFFF, 0xE2E4FF], count: 10, size: 10...26, duration: 3...6, opacity: 0.45...0.85, mode: 3)
-        default: return Spec(glyph: "deco-snow", colors: [0xFFFFFF, 0xDCEFFF], count: 14, size: 10...22, duration: 11...20, opacity: 0.35...0.8, mode: 0)
-        }
-    }
+    private var spec: DecoSpec? { SceneData.deco[kind] }
 
     private var particles: [Particle] {
-        var seed: UInt64 = 0x9E3779B97F4A7C15 &+ UInt64(kind.count)
+        guard let s = spec else { return [] }
+        var seed: UInt64 = 0x9E3779B97F4A7C15 &+ UInt64(fnv1a(kind))
         func rnd() -> Double {
             seed = seed &* 6364136223846793005 &+ 1442695040888963407
             return Double(seed >> 11) / Double(1 << 53)
         }
-        let s = spec
-        return (0..<s.count).map { k in
-            let sz = s.size.lowerBound + rnd() * (s.size.upperBound - s.size.lowerBound)
-            let d = s.duration.lowerBound + rnd() * (s.duration.upperBound - s.duration.lowerBound)
-            return Particle(x: (Double(k) + rnd() * 0.9) / Double(s.count), y: 0.04 + rnd() * 0.56, size: sz, duration: d, offset: rnd(),
-                            opacity: (s.opacity.lowerBound + rnd() * (s.opacity.upperBound - s.opacity.lowerBound)) * 0.8,
-                            spin: s.spin ? rnd() * 540 - 270 : 0,
+        let n = max(4, Int((Double(s.n) * 0.75).rounded()))
+        return (0..<n).map { k in
+            let depth = rnd()
+            let size = (s.size.lowerBound + depth * (s.size.upperBound - s.size.lowerBound)) * (0.85 + rnd() * 0.3)
+            let dur = (s.dur.upperBound - depth * (s.dur.upperBound - s.dur.lowerBound)) * (0.9 + rnd() * 0.2)
+            let op = s.op.lowerBound + depth * (s.op.upperBound - s.op.lowerBound)
+            let y: Double = s.mode == "burst" ? 0.02 + rnd() * 0.22 : s.mode == "fly" ? 0.03 + rnd() * 0.3 : 0.03 + rnd() * 0.4
+            return Particle(x: (Double(k) + rnd() * 0.9) / Double(n), y: y, size: size, duration: dur, offset: rnd(), opacity: op,
+                            spin: rnd() * 540 - 270, sway: 8 + rnd() * 22 * (0.55 + depth * 0.75), tilt: 1 + rnd() * 2,
                             color: Color(uiColor: UIColor(hex: s.colors[k % s.colors.count])))
         }
     }
 
     var body: some View {
-        let s = spec
-        let ps = particles
-        TimelineView(.animation(minimumInterval: 1.0 / 30)) { timeline in
-            Canvas { ctx, size in
-                let t = timeline.date.timeIntervalSinceReferenceDate
-                let W = Double(size.width), H = Double(size.height)
-                var image = ctx.resolve(Image(s.glyph).renderingMode(.template))
-                for (k, p) in ps.enumerated() {
-                    let phase = (t / p.duration + p.offset).truncatingRemainder(dividingBy: 1)
-                    var x = p.x * W, y = 0.0, opacity = p.opacity, scale = 1.0, angle = 0.0
-                    switch s.mode {
-                    case 1:
-                        y = H * 1.1 - phase * H * 1.25
-                        x += sin(t * 1.1 + Double(k)) * 14
-                    case 2:
-                        x = -0.12 * W + phase * W * 1.25
-                        y = p.y * H - phase * H * 0.08 + sin(t * 2 + Double(k)) * 6
-                    case 3:
-                        y = p.y * H * 0.7
-                        if phase < 0.35 { scale = 0.2 + 0.8 * phase / 0.35; opacity = p.opacity * phase / 0.35 }
-                        else if phase < 0.7 { scale = 1 + 0.15 * (phase - 0.35) / 0.35; opacity = p.opacity * (1 - (phase - 0.35) / 0.35) }
-                        else { opacity = 0 }
-                    default:
-                        y = -0.1 * H + phase * H * 1.25
-                        x += sin(t * 1.3 + Double(k)) * 14
-                        angle = sin(t * 1.3 + Double(k)) * 14 + p.spin * phase
+        if let s = spec {
+            let ps = particles
+            TimelineView(.animation) { timeline in
+                Canvas { ctx, size in
+                    let t = timeline.date.timeIntervalSinceReferenceDate
+                    let W = Double(size.width), H = Double(size.height)
+                    var image = ctx.resolve(Image("deco-" + s.glyph).renderingMode(.template))
+                    for (k, p) in ps.enumerated() {
+                        let phase = (t / p.duration + p.offset).truncatingRemainder(dividingBy: 1)
+                        let swing = sin(t * 2 * Double.pi / (p.duration / 3) + Double(k))
+                        var x = p.x * W, y = 0.0, opacity = p.opacity, sx = 1.0, sy = 1.0, angle = 0.0
+                        switch s.mode {
+                        case "rise":
+                            y = H * 1.1 - phase * H * 1.25
+                            x += swing * p.sway
+                        case "fly":
+                            x = -0.14 * W + phase * W * 1.32
+                            y = p.y * H + sin(phase * Double.pi * 4 + Double(k)) * H * 0.03
+                            sy = 0.32 + 0.68 * abs(cos(t * Double.pi / 0.3 + Double(k)))
+                        case "burst":
+                            y = p.y * H
+                            if phase < 0.06 { sx = 0.05 + phase * 2.4; opacity = p.opacity * phase / 0.06 }
+                            else if phase < 0.4 { sx = 0.05 + 0.95 * phase / 0.4; opacity = p.opacity * (1 - 0.15 * (phase - 0.06) / 0.34) }
+                            else if phase < 0.7 { sx = 1 + 0.08 * (phase - 0.4) / 0.3; opacity = p.opacity * 0.85 * (1 - (phase - 0.4) / 0.3); y += (phase - 0.4) / 0.3 * p.size * 0.05 }
+                            else { opacity = 0 }
+                            sy = sx
+                        case "tumble":
+                            y = -0.1 * H + phase * H * 1.25
+                            x += swing * p.sway
+                            let a = t / (p.duration / 2.4) * 2 * Double.pi + Double(k)
+                            sx = cos(a * p.tilt * 0.5)             // turning edge-on and back, as if spinning in 3D
+                            sy = 0.6 + 0.4 * abs(cos(a * 0.7))
+                            angle = p.spin * phase + swing * 12
+                        default:
+                            y = -0.1 * H + phase * H * 1.25
+                            x += swing * p.sway
+                            angle = swing * 12
+                        }
+                        guard opacity > 0.01 else { continue }
+                        image.shading = .color(p.color)
+                        var c = ctx
+                        c.opacity = opacity
+                        c.translateBy(x: CGFloat(x), y: CGFloat(y))
+                        c.rotate(by: .degrees(angle))
+                        c.scaleBy(x: CGFloat(abs(sx) < 0.02 ? 0.02 : sx), y: CGFloat(sy))
+                        let sz = CGFloat(p.size)
+                        c.draw(image, in: CGRect(x: -sz / 2, y: -sz / 2, width: sz, height: sz))
                     }
-                    guard opacity > 0.01 else { continue }
-                    image.shading = .color(p.color)
-                    var c = ctx
-                    c.opacity = opacity
-                    c.translateBy(x: CGFloat(x), y: CGFloat(y))
-                    c.rotate(by: .degrees(angle))
-                    let flap = s.mode == 2 ? 0.7 + 0.3 * abs(sin(t * 9 + Double(k))) : 1
-                    c.scaleBy(x: CGFloat(scale), y: CGFloat(scale * flap))
-                    c.draw(image, in: CGRect(x: CGFloat(-p.size / 2), y: CGFloat(-p.size / 2), width: CGFloat(p.size), height: CGFloat(p.size)))
                 }
             }
+            .allowsHitTesting(false)
+            .ignoresSafeArea()
+            .accessibilityHidden(true)
         }
-        .allowsHitTesting(false)
-        .ignoresSafeArea()
-        .accessibilityHidden(true)
     }
 }
 

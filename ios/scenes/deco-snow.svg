@@ -1,0 +1,1 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" color="#000"><defs><radialGradient id="dsnow"><stop offset="0" stop-color="#000"/><stop offset=".4" stop-color="#000" stop-opacity=".9"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient></defs><circle cx="12" cy="12" r="11.5" fill="url(#dsnow)"/></svg>

@@ -144,14 +144,22 @@ public class MainActivity extends Activity {
             }
             return true;
         }
+        // The page must hold Android's focus, or arrows and OK go nowhere.
+        if (!web.hasFocus()) web.requestFocus();
         String key = null;
         switch (code) {
             case KeyEvent.KEYCODE_DPAD_CENTER:
             case KeyEvent.KEYCODE_ENTER:
             case KeyEvent.KEYCODE_NUMPAD_ENTER:
-            case KeyEvent.KEYCODE_BUTTON_A:
-                key = "Enter";
-                break;
+            case KeyEvent.KEYCODE_BUTTON_A: {
+                // OK is handed to the page as a real Enter key, so every button, switch and option responds
+                // exactly as it does with a keyboard (a script-made key press can't click anything).
+                KeyEvent enter = new KeyEvent(event.getDownTime(), event.getEventTime(), event.getAction(), KeyEvent.KEYCODE_ENTER,
+                        event.getRepeatCount(), event.getMetaState(), event.getDeviceId(), event.getScanCode(),
+                        event.getFlags(), event.getSource());
+                web.dispatchKeyEvent(enter);
+                return true;
+            }
             case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
             case KeyEvent.KEYCODE_MEDIA_PLAY:
             case KeyEvent.KEYCODE_MEDIA_PAUSE:
@@ -180,7 +188,7 @@ public class MainActivity extends Activity {
         }
         if (key != null) {
             if (event.getAction() == KeyEvent.ACTION_DOWN) {
-                web.evaluateJavascript("document.dispatchEvent(new KeyboardEvent('keydown',{key:'" + key + "',bubbles:true}))", null);
+                web.evaluateJavascript("(window.tunerKey ? window.tunerKey('" + key + "') : document.dispatchEvent(new KeyboardEvent('keydown',{key:'" + key + "',bubbles:true})))", null);
             }
             return true;
         }

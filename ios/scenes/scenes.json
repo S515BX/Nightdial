@@ -1,0 +1,368 @@
+{
+ "scenes": {
+  "halloween": {
+   "heroClear": true,
+   "vignette": "rgba(0,0,0,.7)",
+   "pieces": [
+    {
+     "id": "web",
+     "at": "tl",
+     "w": 26,
+     "h": 0,
+     "op": 0.3,
+     "anim": "",
+     "aspect": 1
+    },
+    {
+     "id": "branch",
+     "at": "bl",
+     "w": 22,
+     "h": 0,
+     "op": 0.95,
+     "anim": "",
+     "aspect": 0.38461538461538464
+    },
+    {
+     "id": "eyes",
+     "at": "bl",
+     "w": 22,
+     "h": 0,
+     "op": 1,
+     "anim": "blink",
+     "aspect": 0.38461538461538464
+    },
+    {
+     "id": "fog",
+     "at": "bottom",
+     "w": 0,
+     "h": 20,
+     "op": 0.22,
+     "anim": "drift",
+     "aspect": 6.153846153846154
+    }
+   ]
+  },
+  "christmas": {
+   "heroClear": true,
+   "vignette": "rgba(210,230,245,.10)",
+   "pieces": [
+    {
+     "id": "garland",
+     "at": "top",
+     "w": 0,
+     "h": 6,
+     "op": 1,
+     "anim": "",
+     "aspect": 29.62962962962963
+    }
+   ]
+  },
+  "thanksgiving": {
+   "heroClear": true,
+   "vignette": "rgba(20,8,0,.55)",
+   "pieces": [
+    {
+     "id": "leaves-bl",
+     "at": "bl",
+     "w": 20,
+     "h": 0,
+     "op": 0.9,
+     "anim": "",
+     "aspect": 1.6470588235294117
+    }
+   ]
+  },
+  "newyear": {
+   "heroClear": true,
+   "vignette": "rgba(0,0,0,.45)",
+   "pieces": []
+  },
+  "july4": {
+   "heroClear": true,
+   "vignette": "rgba(0,0,0,.45)",
+   "pieces": []
+  },
+  "valentine": {
+   "heroClear": true,
+   "vignette": "rgba(30,0,10,.5)",
+   "pieces": []
+  },
+  "stpatricks": {
+   "heroClear": true,
+   "vignette": "rgba(0,10,4,.45)",
+   "pieces": []
+  },
+  "easter": {
+   "heroClear": true,
+   "vignette": "rgba(20,10,30,.35)",
+   "pieces": [
+    {
+     "id": "blossom",
+     "at": "tr",
+     "w": 22,
+     "h": 0,
+     "op": 0.95,
+     "anim": "",
+     "aspect": 1.7
+    }
+   ]
+  },
+  "midnight": {
+   "heroClear": true,
+   "vignette": "",
+   "pieces": []
+  },
+  "aurora": {
+   "heroClear": true,
+   "vignette": "",
+   "pieces": []
+  },
+  "ocean": {
+   "heroClear": true,
+   "vignette": "",
+   "pieces": []
+  },
+  "sunset": {
+   "heroClear": true,
+   "vignette": "",
+   "pieces": []
+  },
+  "forest": {
+   "heroClear": true,
+   "vignette": "",
+   "pieces": []
+  },
+  "rose": {
+   "heroClear": true,
+   "vignette": "",
+   "pieces": []
+  }
+ },
+ "deco": {
+  "snow": {
+   "glyph": "snow",
+   "mode": "fall",
+   "colors": [
+    "#ffffff",
+    "#e8f4ff",
+    "#f4f8ff"
+   ],
+   "n": 22,
+   "size": [
+    5,
+    16
+   ],
+   "dur": [
+    10,
+    22
+   ],
+   "op": [
+    0.45,
+    0.95
+   ]
+  },
+  "bats": {
+   "glyph": "bat",
+   "mode": "fly",
+   "colors": [
+    "#2a1e2e",
+    "#1d1421",
+    "#3a2a3e"
+   ],
+   "n": 7,
+   "size": [
+    22,
+    54
+   ],
+   "dur": [
+    9,
+    18
+   ],
+   "op": [
+    0.75,
+    0.95
+   ]
+  },
+  "leaves": {
+   "glyph": "leaf",
+   "mode": "tumble",
+   "colors": [
+    "#c2410c",
+    "#d9741f",
+    "#a8321b",
+    "#e0a030",
+    "#8c2f14"
+   ],
+   "n": 12,
+   "size": [
+    14,
+    30
+   ],
+   "dur": [
+    11,
+    19
+   ],
+   "op": [
+    0.7,
+    0.95
+   ]
+  },
+  "hearts": {
+   "glyph": "heart",
+   "mode": "rise",
+   "colors": [
+    "#ff4d7d",
+    "#ff8fab",
+    "#d81b4f"
+   ],
+   "n": 9,
+   "size": [
+    10,
+    22
+   ],
+   "dur": [
+    13,
+    22
+   ],
+   "op": [
+    0.25,
+    0.55
+   ]
+  },
+  "petals": {
+   "glyph": "petal",
+   "mode": "tumble",
+   "colors": [
+    "#ffd1dc",
+    "#ffb7c8",
+    "#fff0f4",
+    "#f7a8bd"
+   ],
+   "n": 14,
+   "size": [
+    9,
+    18
+   ],
+   "dur": [
+    11,
+    18
+   ],
+   "op": [
+    0.6,
+    0.95
+   ]
+  },
+  "roses": {
+   "glyph": "petal",
+   "mode": "tumble",
+   "colors": [
+    "#b3123c",
+    "#d81b4f",
+    "#8c0f2e"
+   ],
+   "n": 12,
+   "size": [
+    10,
+    18
+   ],
+   "dur": [
+    12,
+    19
+   ],
+   "op": [
+    0.6,
+    0.9
+   ]
+  },
+  "clover": {
+   "glyph": "clover",
+   "mode": "tumble",
+   "colors": [
+    "#2fbf6c",
+    "#3ddc84",
+    "#1f9e57"
+   ],
+   "n": 10,
+   "size": [
+    12,
+    22
+   ],
+   "dur": [
+    12,
+    20
+   ],
+   "op": [
+    0.55,
+    0.85
+   ]
+  },
+  "fireworks": {
+   "glyph": "burst",
+   "mode": "burst",
+   "colors": [
+    "#ff4d5e",
+    "#ffffff",
+    "#5b8cff",
+    "#ffd27a"
+   ],
+   "n": 8,
+   "size": [
+    70,
+    170
+   ],
+   "dur": [
+    3.6,
+    6.4
+   ],
+   "op": [
+    0.55,
+    0.9
+   ]
+  },
+  "goldfw": {
+   "glyph": "burst",
+   "mode": "burst",
+   "colors": [
+    "#f5d06f",
+    "#fff3c4",
+    "#e2b54a",
+    "#ffffff"
+   ],
+   "n": 8,
+   "size": [
+    70,
+    160
+   ],
+   "dur": [
+    3.8,
+    6.6
+   ],
+   "op": [
+    0.55,
+    0.9
+   ]
+  },
+  "sparkle": {
+   "glyph": "spark",
+   "mode": "burst",
+   "colors": [
+    "#f5d06f",
+    "#ffffff",
+    "#ffe6a8"
+   ],
+   "n": 10,
+   "size": [
+    8,
+    22
+   ],
+   "dur": [
+    2.6,
+    5
+   ],
+   "op": [
+    0.5,
+    0.9
+   ]
+  }
+ }
+}

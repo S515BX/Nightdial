@@ -361,7 +361,7 @@ final class GuideGridView: UIView, UICollectionViewDataSource, UICollectionViewD
     private func configureTime(_ v: TimeHeaderView, item: Int) {
         guard let s = snap else { return }
         let t = s.rangeStart.addingTimeInterval(Double(item) * 1800)
-        v.configure(t, clock24: s.clock24, now: s.now)
+        v.configure(t, clock24: s.clock24, now: s.now, nowX: CGFloat(s.now.timeIntervalSince(t) / 60) * layout.ppm)
     }
 
     // MARK: Delegate
@@ -817,6 +817,8 @@ final class TimeHeaderView: UICollectionReusableView {
     private let label = UILabel()
     private let tick = UIView()
     private let bottomLine = UIView()
+    /// Where the now pill sits, relative to this label (points); the label steps aside when the pill covers it.
+    private var nowX: CGFloat = -10_000
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -837,9 +839,14 @@ final class TimeHeaderView: UICollectionReusableView {
         tick.frame = CGRect(x: 0, y: (h - 12) / 2, width: 1, height: 12)
         label.frame = CGRect(x: 9, y: (h - 16) / 2, width: max(0, w - 10), height: 16)
         bottomLine.frame = CGRect(x: 0, y: h - 1, width: w, height: 1)
+        let textW = min(w - 10, label.intrinsicContentSize.width)
+        let pillHalf: CGFloat = 36
+        label.isHidden = nowX > 9 - pillHalf - 4 && nowX < 9 + textW + pillHalf + 4
     }
 
-    func configure(_ t: Date, clock24: Bool, now: Date) {
+    func configure(_ t: Date, clock24: Bool, now: Date, nowX: CGFloat = -10_000) {
+        self.nowX = nowX
+        setNeedsLayout()
         let c = Calendar.current.dateComponents([.hour, .minute], from: t)
         let midnight = c.hour == 0 && c.minute == 0
         label.text = midnight ? "\(Fmt.day(t, now: now).uppercased()) · \(Fmt.time(t, clock24))" : Fmt.time(t, clock24)

@@ -62,7 +62,8 @@ struct ThemeDef: Identifiable, Hashable {
     var glowB: UInt32? = nil
     var hl: UInt32? = nil
     var paper: UInt32? = nil
-    var deco: String? = nil      // snow, bats, leaves, hearts, clover, petals, fireworks, sparkle
+    var menu: UInt32? = nil
+    var deco: String? = nil      // a particle style from SceneData.deco
     var glyph: String? = nil     // small badge on the logo, e.g. "deco-tree"
     var glyphColor: UInt32? = nil
 }
@@ -77,12 +78,12 @@ enum Themes {
         ThemeDef(id: "forest", name: "Forest", bg: 0x0F1613, panel: 0x18221D, accent: 0x8BE15B, accent2: 0x3DDC97, glowA: 0x3DDC97, glowB: 0xC7E15B),
         ThemeDef(id: "rose", name: "Rosé", bg: 0x1A1216, panel: 0x271C22, accent: 0xFF8FAB, accent2: 0xFFC29E, glowA: 0xFF6B8B, glowB: 0xFFB38A, hl: 0xFFF1F4),
         ThemeDef(id: "classic", name: "Classic", bg: 0x0A0F15, panel: 0x0F1720, accent: 0xF5A83C, accent2: 0xF7C46C, hl: 0xF5A83C),
-        ThemeDef(id: "newyear", name: "New Year", season: true, bg: 0x0C0C14, panel: 0x18182A, accent: 0xF5D06F, accent2: 0xE2E4FF, glowA: 0xF5D06F, glowB: 0x8B8CFF, deco: "sparkle", glyph: "deco-spark", glyphColor: 0xF5D06F),
-        ThemeDef(id: "valentine", name: "Valentine's", season: true, bg: 0x1A0F17, panel: 0x281723, accent: 0xFF4D8D, accent2: 0xFF9EB5, glowA: 0xFF4D8D, glowB: 0xFF2E63, hl: 0xFFE3EC, deco: "hearts", glyph: "deco-heart", glyphColor: 0xFF4D8D),
+        ThemeDef(id: "newyear", name: "New Year", season: true, bg: 0x0A0A14, panel: 0x161628, accent: 0xF5D06F, accent2: 0xE2E4FF, glowA: 0xF5D06F, glowB: 0x8B8CFF, deco: "goldfw", glyph: "deco-spark", glyphColor: 0xF5D06F),
+        ThemeDef(id: "valentine", name: "Valentine's", season: true, bg: 0x16070E, panel: 0x251019, accent: 0xFF4D7D, accent2: 0xFF9EB5, glowA: 0xFF4D7D, glowB: 0xB3123C, hl: 0xFFE3EC, deco: "roses", glyph: "deco-heart", glyphColor: 0xFF4D7D),
         ThemeDef(id: "stpatricks", name: "St. Patrick's", season: true, bg: 0x0C1711, panel: 0x13241A, accent: 0x3DDC84, accent2: 0xF2C94C, glowA: 0x3DDC84, glowB: 0xF2C94C, deco: "clover", glyph: "deco-clover", glyphColor: 0x3DDC84),
         ThemeDef(id: "easter", name: "Easter", season: true, bg: 0x171625, panel: 0x222035, accent: 0xB8A1FF, accent2: 0x7EE8C8, glowA: 0xB8A1FF, glowB: 0xFFB3D1, deco: "petals", glyph: "deco-flower", glyphColor: 0xFFB3D1),
         ThemeDef(id: "july4", name: "4th of July", season: true, bg: 0x0D1222, panel: 0x161D34, accent: 0xFF4D5E, accent2: 0x5B8CFF, glowA: 0xFF4D5E, glowB: 0x3D6BFF, deco: "fireworks", glyph: "deco-star", glyphColor: 0xFF4D5E),
-        ThemeDef(id: "halloween", name: "Halloween", season: true, bg: 0x130E16, panel: 0x1F1623, accent: 0xFF7A1A, accent2: 0xB45CFF, glowA: 0xFF7A1A, glowB: 0x8F3DFF, hl: 0xFF8A2A, deco: "bats", glyph: "deco-pumpkin", glyphColor: 0xFF7A1A),
+        ThemeDef(id: "halloween", name: "Halloween", season: true, bg: 0x070508, panel: 0x130E14, accent: 0xE2231A, accent2: 0xFF6A1A, glowA: 0x7A0C18, glowB: 0x3B0F4F, hl: 0xEBE0C8, menu: 0x0D090E, deco: "bats", glyph: "deco-pumpkin", glyphColor: 0xFF6A1A),
         ThemeDef(id: "thanksgiving", name: "Thanksgiving", season: true, bg: 0x18120D, panel: 0x251B13, accent: 0xF29E4C, accent2: 0xE0605E, glowA: 0xF29E4C, glowB: 0xC2410C, hl: 0xFDF1DF, deco: "leaves", glyph: "deco-leaf", glyphColor: 0xF29E4C),
         ThemeDef(id: "christmas", name: "Christmas", season: true, bg: 0x0D1813, panel: 0x15261E, accent: 0xEF4B4B, accent2: 0xF3C75F, glowA: 0xE63946, glowB: 0x2ECC71, hl: 0xFBF7EE, paper: 0xFBF7EE, deco: "snow", glyph: "deco-tree", glyphColor: 0x3CCF7A)
     ]
@@ -273,7 +274,7 @@ final class Look: ObservableObject {
 
     static func makeColors(_ t: ThemeDef, hl hlPick: String, menu menuPick: String) -> ThemeColors {
         let hl = Hex.parse(hlPick) ?? t.hl ?? 0xFFFFFF
-        let menuColor = Hex.parse(menuPick) ?? Hex.mix(t.panel, t.bg, 0.3)
+        let menuColor = Hex.parse(menuPick) ?? t.menu ?? Hex.mix(t.panel, t.bg, 0.3)
         let tinted = Hex.parse(menuPick) != nil
         return ThemeColors(
             bg: t.bg, panel: t.panel, menu: menuColor, railBack: tinted ? menuColor : t.bg,

@@ -1,5 +1,6 @@
 package app.tuner.tv;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -15,6 +16,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
 
 /**
  * Fetches from the IPTV provider on behalf of the app's web page, the same job server.js does on a computer.
@@ -82,6 +84,18 @@ public final class Relay {
         if (range != null) headers.put("Content-Range", range);
         String acceptRanges = c.getHeaderField("Accept-Ranges");
         if (acceptRanges != null) headers.put("Accept-Ranges", acceptRanges);
+        // TV guide files are often shared compressed (.xml.gz); unpack them here so any Fire TV can read them.
+        if (range == null && code < 400) {
+            BufferedInputStream peek = new BufferedInputStream(in);
+            peek.mark(4);
+            int b0 = peek.read(), b1 = peek.read();
+            peek.reset();
+            in = peek;
+            if (b0 == 0x1f && b1 == 0x8b) {
+                in = new GZIPInputStream(peek, 64 * 1024);
+                if (mime.contains("gzip") || mime.equals("application/octet-stream")) mime = "text/xml";
+            }
+        }
         return new Result(code, mime, encoding, headers, in);
     }
 

@@ -132,6 +132,8 @@ jobs:
             shoot "$UDID" "$tag-09-themes" 9 $D -tuner.debug.sheet themes
             shoot "$UDID" "$tag-10-channels" 9 $D -tuner.debug.sheet channels
             shoot "$UDID" "$tag-11-christmas" 9 $D -tuner.look.theme christmas
+            shoot "$UDID" "$tag-13-halloween" 9 $D -tuner.look.theme halloween
+            shoot "$UDID" "$tag-14-halloween-movies" 9 $D -tuner.look.theme halloween -tuner.debug.sheet ondemand
             shoot "$UDID" "$tag-12-custom" 9 $D -tuner.look.theme aurora -tuner.look.hl "#5EE6C4" -tuner.look.font outfit
             xcrun simctl shutdown "$UDID" || true
           done
