@@ -2,6 +2,9 @@ plugins {
     id 'com.android.application'
 }
 
+// GitHub's build number becomes the version, so each new APK installs as an update.
+def ciBuild = System.getenv('GITHUB_RUN_NUMBER')
+
 android {
     namespace 'app.tuner.tv'
     compileSdk 34
@@ -10,8 +13,8 @@ android {
         applicationId 'app.tuner.tv'
         minSdk 22        // Fire OS 5 and newer
         targetSdk 34
-        versionCode 1
-        versionName '1.0'
+        versionCode ciBuild ? ciBuild.toInteger() + 1 : 1
+        versionName ciBuild ? "1.1.${ciBuild}" : '1.1'
     }
 
     // One fixed key for every build, so a new APK installs over the old one and keeps your playlists.

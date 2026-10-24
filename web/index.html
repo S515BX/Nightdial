@@ -136,7 +136,7 @@ input{font:inherit;color:inherit}
 .prog{position:absolute;top:3px;bottom:3px;margin-left:2px;border-radius:7px;background:var(--cell);padding:0 10px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:3px;cursor:pointer;user-select:none}
 .prog:hover{background:var(--cell-hover)}
 .prog.now{background:var(--cell-now)}
-.prog .pt,.prog .ps{position:sticky;left:calc(var(--chanW) + 10px);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prog .pt,.prog .ps{margin-left:var(--shift,0px);max-width:calc(100% - var(--shift,0px));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .prog .pt{font:500 15px/1.15 var(--font-display);color:var(--fg)}
 .prog .ps{font-size:12px;line-height:1;color:var(--fg-3);font-variant-numeric:tabular-nums}
 .prog.past .pt{color:var(--fg-2)}
@@ -250,6 +250,7 @@ kbd{display:inline-block;min-width:24px;padding:3px 6px;border-radius:5px;backgr
 
 /* ---------- sign-in ---------- */
 .login{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;overflow:auto;padding-block:max(24px,env(safe-area-inset-top,0px)) max(24px,env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:rgba(6,9,14,.62);-webkit-backdrop-filter:blur(9px) saturate(.85);backdrop-filter:blur(9px) saturate(.85)}
+.login-intro,.login-fields{display:flex;flex-direction:column;gap:16px;min-width:0}
 .login-card{margin:auto;width:min(480px,100%);display:flex;flex-direction:column;gap:16px;padding:28px;border-radius:18px;background:var(--panel);border:1px solid var(--line);box-shadow:0 40px 100px rgba(0,0,0,.55)}
 .login-brand{display:flex;align-items:center;gap:12px}
 .wordmark{font:700 26px/1 var(--font-display);letter-spacing:-.01em}
@@ -279,32 +280,189 @@ kbd{display:inline-block;min-width:24px;padding:3px 6px;border-radius:5px;backgr
 
 /* ---------- phone ---------- */
 @media (max-width:760px){
-  :root{--railW:0px;--chanW:112px;--rowH:58px;--headH:38px}
-  :root.rows-compact{--rowH:48px}
-  .app{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;gap:8px;padding-block:10px 0}
-  .rail{order:2;flex-direction:row;justify-content:space-between;gap:0;padding:2px 0 6px}
-  .brand,.rail .spacer{display:none}
-  .rail-btn{flex:1;padding:8px 0 6px;font-size:9.5px;letter-spacing:.03em}
-  .main{gap:10px}
-  .hero{grid-template-columns:minmax(0,1fr);height:auto;gap:10px}
-  .stage{width:100%;height:auto;max-width:none}
-  .info{gap:6px}
-  .info-desc,.info-next,.info-head .clock{display:none}
-  .info-title{font-size:22px;-webkit-line-clamp:1}
-  .info-meta{font-size:13px}
-  .chan{flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;padding:0 8px}
-  .chan .logo{display:none}
-  .cnum{width:auto;text-align:left;font-size:12px}
-  .cname{flex:none;width:100%;font-size:13px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-  .chan .star,.chan .eq{position:absolute;right:6px;top:7px}
-  .corner{padding:0 8px}
-  .corner .g{font-size:13px}
-  .tick{font-size:13px}
-  .prog .pt{font-size:14px}
-  .field-row,.login-actions{grid-template-columns:1fr}
-  .login-card{padding:22px}
+  :root:not(.tv){--railW:0px;--chanW:112px;--rowH:58px;--headH:38px}
+  :root:not(.tv).rows-compact{--rowH:48px}
+  :root:not(.tv) .app{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;gap:8px;padding-block:10px 0}
+  :root:not(.tv) .rail{order:2;flex-direction:row;justify-content:space-between;gap:0;padding:2px 0 6px}
+  :root:not(.tv) .brand,:root:not(.tv) .rail .spacer{display:none}
+  :root:not(.tv) .rail-btn{flex:1;padding:8px 0 6px;font-size:9.5px;letter-spacing:.03em}
+  :root:not(.tv) .main{gap:10px}
+  :root:not(.tv) .hero{grid-template-columns:minmax(0,1fr);height:auto;gap:10px}
+  :root:not(.tv) .stage{width:100%;height:auto;max-width:none}
+  :root:not(.tv) .info{gap:6px}
+  :root:not(.tv) .info-desc,:root:not(.tv) .info-next,:root:not(.tv) .info-head .clock{display:none}
+  :root:not(.tv) .info-title{font-size:22px;-webkit-line-clamp:1}
+  :root:not(.tv) .info-meta{font-size:13px}
+  :root:not(.tv) .chan{flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;padding:0 8px}
+  :root:not(.tv) .chan .logo{display:none}
+  :root:not(.tv) .cnum{width:auto;text-align:left;font-size:12px}
+  :root:not(.tv) .cname{flex:none;width:100%;font-size:13px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  :root:not(.tv) .chan .star,:root:not(.tv) .chan .eq{position:absolute;right:6px;top:7px}
+  :root:not(.tv) .corner{padding:0 8px}
+  :root:not(.tv) .corner .g{font-size:13px}
+  :root:not(.tv) .tick{font-size:13px}
+  :root:not(.tv) .prog .pt{font-size:14px}
+  :root:not(.tv) .field-row,:root:not(.tv) .login-actions{grid-template-columns:1fr}
+  :root:not(.tv) .login-card{padding:22px}
 }
-@media (max-height:560px) and (min-width:761px){.hero{height:168px}.info{gap:6px}.info-next{display:none}.info-desc{-webkit-line-clamp:1}.info-title{font-size:28px;-webkit-line-clamp:1}}
+@media (max-height:560px) and (min-width:761px){
+  :root:not(.tv) .hero{height:168px}
+  :root:not(.tv) .info{gap:6px}
+  :root:not(.tv) .info-next{display:none}
+  :root:not(.tv) .info-desc{-webkit-line-clamp:1}
+  :root:not(.tv) .info-title{font-size:28px;-webkit-line-clamp:1}
+}
+/* ---------- TV (Fire TV / Android TV): 10-foot layout sized from the screen height. Info left, preview right, flat guide below. ---------- */
+:root{--vh:1vh}
+html.tv{--t-xs:calc(var(--vh)*2.3);--t-s:calc(var(--vh)*2.7);--t-m:calc(var(--vh)*3.1);--t-l:calc(var(--vh)*3.7);--t-xl:calc(var(--vh)*4.8);--t-xxl:calc(var(--vh)*6.6);--safe-x:calc(var(--vh)*5.5);--safe-y:calc(var(--vh)*3.6);--railW:0px}
+html.tv body{font-size:var(--t-m)}
+html.tv .app{grid-template-columns:minmax(0,1fr);gap:0;padding:var(--safe-y) var(--safe-x)}
+html.tv .rail,html.tv .expand-hint,html.tv #unmuteBtn,html.tv .osd-ctrls{display:none!important}
+html.tv .main{gap:calc(var(--vh)*2.6)}
+html.tv .hero{height:calc(var(--vh)*37);grid-template-columns:minmax(0,1fr) auto;gap:calc(var(--vh)*4.4)}
+html.tv .stage{order:2;max-width:none;border-radius:calc(var(--vh)*1.1)}
+html.tv .info{order:1;gap:calc(var(--vh)*1.3);padding-top:calc(var(--vh)*.3)}
+html.tv .info-chan{font-size:var(--t-l);gap:calc(var(--vh)*1.6)}
+html.tv .info-chan .logo{width:calc(var(--vh)*5.8);height:calc(var(--vh)*5.8);font-size:var(--t-s);border-radius:calc(var(--vh)*1)}
+html.tv .clock{font-size:var(--t-xl)}
+html.tv .info-title{font-size:var(--t-xxl);-webkit-line-clamp:1;margin-top:calc(var(--vh)*.6)}
+html.tv .info-meta{font-size:var(--t-m);gap:calc(var(--vh)*1) calc(var(--vh)*1.8)}
+html.tv .badge{font-size:var(--t-xs);padding:calc(var(--vh)*.6) calc(var(--vh)*1);border-radius:calc(var(--vh)*.6)}
+html.tv .badge .i{width:var(--t-xs);height:var(--t-xs)}
+html.tv .progress{height:calc(var(--vh)*.7);max-width:none;border-radius:calc(var(--vh)*.4)}
+html.tv .info-desc{font-size:var(--t-m);line-height:1.38;-webkit-line-clamp:3;max-width:none}
+html.tv .info-next{font-size:var(--t-s)}
+html.tv .guide{background:transparent;box-shadow:none;border-radius:0}
+html.tv .timebar{background:var(--bg);border-bottom:0}
+html.tv .corner{background:var(--bg);border-right:0;padding:0 calc(var(--vh)*1.2)}
+html.tv .corner .g{font-size:var(--t-m)}
+html.tv .corner .g .i{width:var(--t-s);height:var(--t-s)}
+html.tv .corner .d{font-size:var(--t-xs)}
+html.tv .tick{font-size:var(--t-s);padding:calc(var(--vh)*1.1) 0 0 calc(var(--vh)*1.2)}
+html.tv .tick.day b{font-size:var(--t-xs)}
+html.tv .now-tick{font-size:var(--t-xs);padding:calc(var(--vh)*.45) calc(var(--vh)*1) calc(var(--vh)*.5);border-radius:calc(var(--vh)*.6) calc(var(--vh)*.6) 0 0}
+html.tv .chan{background:var(--panel);border-right:0;border-bottom:calc(var(--vh)*.4) solid var(--bg);gap:calc(var(--vh)*1.6);padding:0 calc(var(--vh)*1.6) 0 calc(var(--vh)*.8)}
+html.tv .chan:hover{background:var(--panel)}
+html.tv .chan.cur{background:var(--cell-hover)}
+html.tv .cnum{font-size:var(--t-s);width:calc(var(--vh)*6)}
+html.tv .chan .logo{width:calc(var(--vh)*5.6);height:calc(var(--vh)*5.6);border-radius:calc(var(--vh)*.9);font-size:var(--t-s)}
+html.tv .cname{font-size:var(--t-m)}
+html.tv .chan .star{width:var(--t-s);height:var(--t-s)}
+html.tv .eq{height:var(--t-s)}
+html.tv .prog{top:0;bottom:calc(var(--vh)*.4);margin-left:calc(var(--vh)*.4);border-radius:calc(var(--vh)*.6);padding:0 calc(var(--vh)*1.6);justify-content:center}
+html.tv .prog:hover{background:var(--cell)}
+html.tv .prog.now:hover{background:var(--cell-now)}
+html.tv .prog.focus,html.tv .prog.focus:hover{background:var(--accent)}
+html.tv .prog .pt{font-size:var(--t-m)}
+html.tv .prog .ps{display:none}
+html.tv .prog .lv{font-size:var(--t-xs);padding:calc(var(--vh)*.35) calc(var(--vh)*.7) calc(var(--vh)*.25);vertical-align:calc(var(--vh)*.3)}
+html.tv .prog .cu{width:var(--t-s);height:var(--t-s)}
+html.tv .prog .pb{height:calc(var(--vh)*.55)}
+html.tv .nowline{width:3px;margin-left:-1.5px}
+html.tv .guide-empty{font-size:var(--t-m)}
+html.tv .guide-empty b{font-size:var(--t-xl)}
+/* full screen: info bar, no buttons */
+html.tv .osd{padding:calc(var(--vh)*16) var(--safe-x) var(--safe-y);gap:calc(var(--vh)*1.3);background:linear-gradient(rgba(5,8,12,0),rgba(5,8,12,.86) 38%,rgba(5,8,12,.97))}
+html.tv .osd-top{font-size:var(--t-l);gap:calc(var(--vh)*1.8)}
+html.tv .osd-top .logo{width:calc(var(--vh)*7.4);height:calc(var(--vh)*7.4);font-size:var(--t-m);border-radius:calc(var(--vh)*1.2)}
+html.tv .osd-top .clock{font-size:var(--t-xl)}
+html.tv .osd-now{gap:calc(var(--vh)*2.4)}
+html.tv .osd-title{font-size:var(--t-xxl)}
+html.tv .osd-time,html.tv .osd-next{font-size:var(--t-m)}
+html.tv .osd-next b{font-size:var(--t-xs)}
+html.tv .cu-flag{font-size:var(--t-xs);top:var(--safe-y);left:var(--safe-x);padding:calc(var(--vh)*1) calc(var(--vh)*1.6)}
+/* channel list over full-screen video (OK or Left) */
+.tvchans{position:absolute;top:0;bottom:0;left:0;z-index:3;width:calc(var(--vh)*80);max-width:70%;display:flex;flex-direction:column;padding:var(--safe-y) calc(var(--vh)*6) var(--safe-y) var(--safe-x);background:linear-gradient(90deg,rgba(6,10,15,.97) 62%,rgba(6,10,15,0));animation:inL .18s ease-out}
+.tvchans-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:calc(var(--vh)*2);font:600 var(--t-l) var(--font-display)}
+.tvchans-head span:last-child{color:var(--fg-2);font-variant-numeric:tabular-nums}
+.tvchans-list{display:flex;flex-direction:column;gap:calc(var(--vh)*.8)}
+.tvch{display:grid;grid-template-columns:calc(var(--vh)*6) calc(var(--vh)*6.6) minmax(0,1fr);align-items:center;gap:calc(var(--vh)*1.8);height:calc(var(--vh)*10);padding:0 calc(var(--vh)*1.6);border-radius:calc(var(--vh)*1);cursor:pointer}
+.tvch .n{font:600 var(--t-s) var(--font-display);color:var(--fg-3);text-align:right;font-variant-numeric:tabular-nums}
+.tvch .logo{width:calc(var(--vh)*6.6);height:calc(var(--vh)*6.6);font-size:var(--t-s);border-radius:calc(var(--vh)*1)}
+.tvch .t{min-width:0;display:flex;flex-direction:column;gap:calc(var(--vh)*.5)}
+.tvch .t b{font:500 var(--t-m) var(--font-display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tvch .t span{font-size:var(--t-s);color:var(--fg-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tvch .t i{display:block;height:calc(var(--vh)*.5);border-radius:2px;background:var(--line);overflow:hidden}
+.tvch .t i u{display:block;height:100%;background:var(--accent)}
+.tvch.on{background:var(--accent);color:var(--accent-ink)}
+.tvch.on .n,.tvch.on .t span{color:var(--accent-ink)}
+.tvch.on .t i{background:rgba(27,18,6,.25)}
+.tvch.on .t i u{background:var(--accent-ink)}
+.tvch.playing .n{color:var(--accent)}
+.tvch.on.playing .n{color:var(--accent-ink)}
+/* Left → groups → menu */
+.tvnav{position:fixed;top:0;bottom:0;left:0;z-index:61;display:flex;background:rgba(9,14,20,.98);box-shadow:30px 0 80px rgba(0,0,0,.55);animation:inL .2s ease-out}
+.tvnav-menu{width:calc(var(--vh)*44);display:flex;flex-direction:column;gap:calc(var(--vh)*.8);padding:var(--safe-y) calc(var(--vh)*2) var(--safe-y) var(--safe-x);border-right:1px solid var(--line)}
+.tvnav-brand{display:flex;align-items:center;gap:calc(var(--vh)*1.6);margin-bottom:calc(var(--vh)*3);font:700 var(--t-l) var(--font-display)}
+.tvnav-brand .brand-mark{width:calc(var(--vh)*6);height:calc(var(--vh)*6);font-size:var(--t-m)}
+.tvnav-item{display:flex;align-items:center;white-space:nowrap;gap:calc(var(--vh)*2);width:100%;padding:calc(var(--vh)*1.7) calc(var(--vh)*2);border-radius:calc(var(--vh)*1);font:500 var(--t-m) var(--font-display);color:var(--fg-2);text-align:left}
+.tvnav-item .i{width:calc(var(--vh)*4);height:calc(var(--vh)*4)}
+.tvnav-item.on{color:var(--fg)}
+.tvnav-item.on .i{color:var(--accent)}
+.tvnav-item:focus,.tvnav-item:focus-visible{outline:none;background:var(--accent);color:var(--accent-ink)}
+.tvnav-item:focus .i{color:var(--accent-ink)}
+.tvnav-groups{width:calc(var(--vh)*62);display:flex;flex-direction:column;min-height:0;padding-top:var(--safe-y)}
+.tvnav-groups h2{margin:0;padding:0 calc(var(--vh)*3.4) calc(var(--vh)*1.6);font:600 var(--t-xl) var(--font-display)}
+.tvnav-groups .list{padding:0 calc(var(--vh)*2) var(--safe-y)}
+.tvnav-hint{margin-top:auto;font-size:var(--t-xs);color:var(--fg-3);line-height:1.4}
+/* larger drawers, dialogs and sign-in */
+html.tv .item{min-height:calc(var(--vh)*7.8);padding:calc(var(--vh)*1.2) calc(var(--vh)*2.2);gap:calc(var(--vh)*2);border-radius:calc(var(--vh)*1)}
+html.tv .item .lbl>span:first-child{font-size:var(--t-m)}
+html.tv .item .sub,html.tv .item .n{font-size:var(--t-s)}
+html.tv .item .mark{width:var(--t-m);height:var(--t-m)}
+html.tv .item .logo.sm{width:calc(var(--vh)*5.6);height:calc(var(--vh)*5.6)}
+html.tv .item:focus{outline:none;background:var(--accent);color:var(--accent-ink)}
+html.tv .item:focus .n,html.tv .item:focus .sub{color:var(--accent-ink)}
+html.tv .list-label{font-size:var(--t-xs);padding:calc(var(--vh)*2.4) calc(var(--vh)*2.2) calc(var(--vh)*1)}
+html.tv .drawer{width:calc(var(--vh)*80)}
+html.tv .drawer header{padding:var(--safe-y) calc(var(--vh)*4) calc(var(--vh)*2)}
+html.tv .drawer h2{font-size:var(--t-xl)}
+html.tv .icon-btn{width:calc(var(--vh)*7);height:calc(var(--vh)*7)}
+html.tv .icon-btn .i{width:var(--t-l);height:var(--t-l)}
+html.tv .settings section{gap:calc(var(--vh)*1.8);padding:calc(var(--vh)*1) calc(var(--vh)*2) calc(var(--vh)*3)}
+html.tv .settings h3{font-size:var(--t-xs)}
+html.tv .kv,html.tv .keys,html.tv .setting>span,html.tv .hint{font-size:var(--t-s)}
+html.tv kbd{font-size:var(--t-xs);padding:calc(var(--vh)*.5) calc(var(--vh)*1)}
+html.tv .seg label{font-size:var(--t-s);padding:calc(var(--vh)*1.5) calc(var(--vh)*2.2)}
+html.tv .seg input:focus + label{outline:3px solid var(--accent);outline-offset:2px}
+html.tv .text-in{height:calc(var(--vh)*8);font-size:var(--t-s)}
+html.tv .btn{height:calc(var(--vh)*8.6);padding:0 calc(var(--vh)*3);font-size:var(--t-m);border-radius:calc(var(--vh)*1.2)}
+html.tv .btn .i{width:var(--t-m);height:var(--t-m)}
+html.tv .btn:focus,html.tv .btn:focus-visible,html.tv .link:focus{outline:3px solid var(--fg);outline-offset:3px}
+html.tv .modal-card{width:min(calc(var(--vh)*118),100%);padding:calc(var(--vh)*4.4);gap:calc(var(--vh)*2);border-radius:calc(var(--vh)*2)}
+html.tv .modal-card h2{font-size:var(--t-xxl)}
+html.tv .modal-card p,html.tv .modal-card .info-meta{font-size:var(--t-m)}
+html.tv .search{width:min(calc(var(--vh)*124),calc(100% - var(--safe-x)*2));top:var(--safe-y)}
+html.tv .search-bar input{height:calc(var(--vh)*9);font-size:var(--t-l)}
+html.tv .toast{font-size:var(--t-m);padding:calc(var(--vh)*2) calc(var(--vh)*3.2);bottom:var(--safe-y);border-radius:calc(var(--vh)*1.2)}
+html.tv .numentry{font-size:calc(var(--vh)*11);top:var(--safe-y);right:var(--safe-x)}
+html.tv .screen-msg{font-size:var(--t-s)}
+html.tv .screen-msg b{font-size:var(--t-l)}
+html.tv .login{padding:var(--safe-y) var(--safe-x)}
+html.tv .login-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);align-items:center;gap:calc(var(--vh)*6);width:min(calc(var(--vh)*156),100%);padding:calc(var(--vh)*5.6);border-radius:calc(var(--vh)*2.4)}
+html.tv .login-intro{gap:calc(var(--vh)*3)}
+html.tv .login-fields{gap:calc(var(--vh)*2.2)}
+html.tv .login-brand .brand-mark{width:calc(var(--vh)*7);height:calc(var(--vh)*7);font-size:var(--t-l)}
+html.tv .wordmark{font-size:var(--t-xl)}
+html.tv .kind{font-size:var(--t-xs);padding:calc(var(--vh)*1) calc(var(--vh)*1.6)}
+html.tv .kind .i{width:var(--t-s);height:var(--t-s)}
+html.tv .login h1{font-size:calc(var(--vh)*7.6);margin:calc(var(--vh)*1.6) 0}
+html.tv .login .sub{font-size:var(--t-m);line-height:1.45}
+html.tv .field{gap:calc(var(--vh)*1)}
+html.tv .field label{font-size:var(--t-xs)}
+html.tv .field input{height:calc(var(--vh)*8.4);padding:0 calc(var(--vh)*2.2);font-size:var(--t-m);border-radius:calc(var(--vh)*1.2)}
+html.tv .field input:focus{box-shadow:0 0 0 3px var(--accent)}
+html.tv .pw input{padding-right:calc(var(--vh)*9)}
+html.tv .pw button{width:calc(var(--vh)*7);height:calc(var(--vh)*7);top:calc(var(--vh)*.7);right:calc(var(--vh)*.7)}
+html.tv .pw button:focus{outline:3px solid var(--accent)}
+html.tv .check{font-size:var(--t-s);gap:calc(var(--vh)*1.6)}
+html.tv .check input{width:var(--t-m);height:var(--t-m)}
+html.tv .check input:focus{outline:3px solid var(--accent);outline-offset:3px}
+html.tv .err,html.tv .ok-note{font-size:var(--t-s);padding:calc(var(--vh)*1.6) calc(var(--vh)*2)}
+html.tv .note{font-size:var(--t-xs)}
+html.tv .login-actions{gap:calc(var(--vh)*2)}
+/* preview of the TV app in a browser: the whole app drawn inside a 16:9 frame */
+#tvFrame{position:fixed;width:960px;height:540px;transform-origin:0 0;overflow:hidden;background:var(--bg);box-shadow:0 0 0 1px var(--line),0 30px 90px rgba(0,0,0,.6)}
 @media (prefers-reduced-motion:reduce){
   .eq i,.spinner{animation-duration:3s}
   .drawer{animation:none}
@@ -375,6 +533,7 @@ kbd{display:inline-block;min-width:24px;padding:3px 6px;border-radius:5px;backgr
             <button class="osd-btn" data-osd="mute" id="osdMute"><svg class="i"><use href="#i-vol"/></svg>Sound</button>
           </div>
         </div>
+        <div class="tvchans" id="tvChans" hidden><div class="tvchans-head"><span id="tvChansGroup"></span><span id="tvChansClock"></span></div><div class="tvchans-list" id="tvChansList"></div></div>
       </div>
       <div class="info" id="info" aria-live="polite">
         <div class="info-head">
@@ -407,6 +566,20 @@ kbd{display:inline-block;min-width:24px;padding:3px 6px;border-radius:5px;backgr
 
 <div class="scrim" id="scrim" hidden></div>
 
+<aside class="tvnav" id="tvNav" hidden aria-label="Menu and channel groups">
+  <div class="tvnav-menu" id="tvNavMenu">
+    <div class="tvnav-brand"><span class="brand-mark" aria-hidden="true">T</span>Tuner</div>
+    <button class="tvnav-item" data-tv="guide"><svg class="i"><use href="#i-guide"/></svg>TV guide</button>
+    <button class="tvnav-item" data-tv="search"><svg class="i"><use href="#i-search"/></svg>Search</button>
+    <button class="tvnav-item" data-tv="fav"><svg class="i"><use href="#i-star"/></svg>Favorites</button>
+    <button class="tvnav-item" data-tv="recent"><svg class="i"><use href="#i-replay"/></svg>Recently watched</button>
+    <button class="tvnav-item" data-tv="playlists"><svg class="i"><use href="#i-playlist"/></svg>Playlists</button>
+    <button class="tvnav-item" data-tv="settings"><svg class="i"><use href="#i-settings"/></svg>Settings</button>
+    <p class="tvnav-hint">Right: back to groups · Back: close</p>
+  </div>
+  <div class="tvnav-groups"><h2>Groups</h2><div class="list" id="tvGroups"></div></div>
+</aside>
+
 <aside class="drawer left" id="groupsDrawer" hidden aria-label="Channel groups">
   <header><h2>Groups</h2><button class="icon-btn" data-close aria-label="Close"><svg class="i"><use href="#i-close"/></svg></button></header>
   <div class="list" id="groupsList"></div>
@@ -432,28 +605,32 @@ kbd{display:inline-block;min-width:24px;padding:3px 6px;border-radius:5px;backgr
 
 <div class="login" id="login" hidden role="dialog" aria-modal="true" aria-labelledby="loginTitle">
   <form class="login-card" id="loginForm" novalidate>
-    <div class="login-brand"><span class="brand-mark" aria-hidden="true">T</span><span class="wordmark">Tuner</span></div>
-    <div>
-      <span class="kind"><svg class="i"><use href="#i-signal"/></svg>Xtream Codes</span>
-      <h1 id="loginTitle">Add a playlist</h1>
-      <p class="sub">Enter the server address, username and password from your IPTV provider.</p>
+    <div class="login-intro">
+      <div class="login-brand"><span class="brand-mark" aria-hidden="true">T</span><span class="wordmark">Tuner</span></div>
+      <div>
+        <span class="kind"><svg class="i"><use href="#i-signal"/></svg>Xtream Codes</span>
+        <h1 id="loginTitle">Add a playlist</h1>
+        <p class="sub">Enter the server address, username and password from your IPTV provider.</p>
+      </div>
     </div>
-    <div class="field"><label for="fName">Playlist name</label><input id="fName" placeholder="My provider" autocomplete="off"></div>
-    <div class="field"><label for="fServer">Server URL</label><input id="fServer" inputmode="url" placeholder="http://line.example.com:8080" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
-    <div class="field-row">
-      <div class="field"><label for="fUser">Username</label><input id="fUser" autocomplete="username" autocapitalize="off" spellcheck="false"></div>
-      <div class="field"><label for="fPass">Password</label><div class="pw"><input id="fPass" type="password" autocomplete="current-password"><button type="button" id="pwToggle" aria-label="Show password"><svg class="i"><use href="#i-eye"/></svg></button></div></div>
-    </div>
-    <label class="check"><input type="checkbox" id="fRemember" checked>Remember this playlist on this device</label>
-    <div class="ok-note" id="loginInfo" hidden></div>
-    <div class="err" id="loginErr" role="alert" hidden></div>
-    <div class="login-actions">
-      <button class="btn primary" id="signInBtn" type="submit">Sign in</button>
-      <button class="btn ghost" id="demoBtn" type="button"><svg class="i"><use href="#i-play"/></svg>Open demo playlist</button>
-    </div>
-    <div class="login-foot">
-      <p class="note" id="loginNote"></p>
-      <button type="button" class="link" id="loginCancel" hidden>Cancel</button>
+    <div class="login-fields">
+      <div class="field"><label for="fName">Playlist name</label><input id="fName" placeholder="My provider" autocomplete="off"></div>
+      <div class="field"><label for="fServer">Server URL</label><input id="fServer" inputmode="url" placeholder="http://line.example.com:8080" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+      <div class="field-row">
+        <div class="field"><label for="fUser">Username</label><input id="fUser" autocomplete="username" autocapitalize="off" spellcheck="false"></div>
+        <div class="field"><label for="fPass">Password</label><div class="pw"><input id="fPass" type="password" autocomplete="current-password"><button type="button" id="pwToggle" aria-label="Show password"><svg class="i"><use href="#i-eye"/></svg></button></div></div>
+      </div>
+      <label class="check"><input type="checkbox" id="fRemember" checked>Remember this playlist on this device</label>
+      <div class="ok-note" id="loginInfo" hidden></div>
+      <div class="err" id="loginErr" role="alert" hidden></div>
+      <div class="login-actions">
+        <button class="btn primary" id="signInBtn" type="submit">Sign in</button>
+        <button class="btn ghost" id="demoBtn" type="button"><svg class="i"><use href="#i-play"/></svg>Open demo playlist</button>
+      </div>
+      <div class="login-foot">
+        <p class="note" id="loginNote"></p>
+        <button type="button" class="link" id="loginCancel" hidden>Cancel</button>
+      </div>
     </div>
   </form>
 </div>
@@ -469,6 +646,25 @@ kbd{display:inline-block;min-width:24px;padding:3px 6px;border-radius:5px;backgr
 const $ = (s, r = document) => r.querySelector(s);
 const MIN = 60000, HOUR = 60 * MIN, DAY = 24 * HOUR;
 const PROXY_ON = !!window.TUNER_PROXY;
+const TV_MODE = !!window.TUNER_TV;
+const PREVIEW_TV = !!window.TUNER_TV_PREVIEW;
+if (TV_MODE) document.documentElement.classList.add('tv');
+if (PREVIEW_TV) {
+  // Browser preview of the TV app: draw everything inside a 960x540 "screen" scaled to fit.
+  const frame = document.createElement('div');
+  frame.id = 'tvFrame';
+  while (document.body.firstChild) frame.appendChild(document.body.firstChild);
+  document.body.appendChild(frame);
+  document.documentElement.style.setProperty('--vh', '5.4px');
+  const fit = () => {
+    const k = Math.min(window.innerWidth / 960, window.innerHeight / 540);
+    frame.style.transform = 'scale(' + k + ')';
+    frame.style.left = Math.max(0, (window.innerWidth - 960 * k) / 2) + 'px';
+    frame.style.top = Math.max(0, (window.innerHeight - 540 * k) / 2) + 'px';
+  };
+  window.addEventListener('resize', fit);
+  fit();
+}
 const via = u => PROXY_ON ? '/proxy?u=' + encodeURIComponent(u) : u;
 const HLS_SRC = 'https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js';
 const MPEGTS_SRC = 'https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.js';
@@ -591,6 +787,16 @@ function computeRange() {
   rangeEnd = base + 36 * HOUR;
 }
 function readMetrics() {
+  if (TV_MODE) {
+    const w = PREVIEW_TV ? 960 : window.innerWidth, h = PREVIEW_TV ? 540 : window.innerHeight;
+    chanW = Math.round(Math.max(170, w * 0.21));
+    rowH = Math.round(h * (prefs.rows === 'compact' ? 0.068 : 0.08));
+    headH = Math.round(h * 0.06);
+    const rs = document.documentElement.style;
+    rs.setProperty('--chanW', chanW + 'px'); rs.setProperty('--rowH', rowH + 'px'); rs.setProperty('--headH', headH + 'px');
+    ppm = Math.max(2, (w - h * 0.11 - chanW) / 150);   // about two and a half hours across, like TiviMate
+    return;
+  }
   const cs = getComputedStyle(document.documentElement);
   chanW = parseFloat(cs.getPropertyValue('--chanW')) || 232;
   rowH = parseFloat(cs.getPropertyValue('--rowH')) || 62;
@@ -769,7 +975,21 @@ function renderGuide() {
   }
   if (need.length) requestEpg(need);
   sc.setAttribute('aria-activedescendant', fp ? `p${focus.i}_${fp.start}` : `p${focus.i}_e`);
+  fitTitles();
   el('cornerDate').textContent = fmtDay(leftT + 20 * MIN);
+}
+/* Programs that started before the visible edge: start their title at the edge so it stays readable. */
+function fitTitles() {
+  const leftX = guideScroll.scrollLeft;
+  rowCache.forEach(r => {
+    const cells = r.el.getElementsByClassName('prog');
+    for (let k = 0; k < cells.length; k++) {
+      const c = cells[k], l = parseFloat(c.style.left), w = parseFloat(c.style.width);
+      const shift = l < leftX && l + w > leftX ? Math.min(leftX - l, Math.max(0, w - 64)) : 0;
+      const v = shift ? shift.toFixed(0) + 'px' : '';
+      if (c.style.getPropertyValue('--shift') !== v) { if (v) c.style.setProperty('--shift', v); else c.style.removeProperty('--shift'); }
+    }
+  });
 }
 function logoHTML(ch, cls = '') {
   return `<span class="logo ${cls}" style="--h:${ch.hue}">${esc(initials(ch.name))}${ch.logo ? `<img src="${esc(ch.logo)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}</span>`;
@@ -1119,6 +1339,7 @@ function enterFull() {
 }
 function exitFull() {
   if (!app.classList.contains('is-full')) return;
+  closeTvChans();
   app.classList.remove('is-full');
   osd.classList.add('hide');
   el('cuFlag').style.display = 'none';
@@ -1160,7 +1381,9 @@ if (window.ResizeObserver) new ResizeObserver(sizeCanvas).observe(screenEl);
 const F = (px, wgt = 600) => `${wgt} ${Math.max(8, Math.round(px))}px "Barlow Semi Condensed", "Arial Narrow", sans-serif`;
 function rr(c, x0, y0, w, h, r) { c.beginPath(); c.moveTo(x0 + r, y0); c.arcTo(x0 + w, y0, x0 + w, y0 + h, r); c.arcTo(x0 + w, y0 + h, x0, y0 + h, r); c.arcTo(x0, y0 + h, x0, y0, r); c.arcTo(x0, y0, x0 + w, y0, r); c.closePath(); }
 function fitText(c, s, maxW) { if (c.measureText(s).width <= maxW) return s; while (s.length > 1 && c.measureText(s + '…').width > maxW) s = s.slice(0, -1); return s + '…'; }
+let demoClean = false;
 function lowerThird(c, w, h, title, tag, hue) {
+  if (demoClean) return;
   const y = h * .74, bh = h * .1, x0 = w * .06;
   c.font = F(bh * .4, 700); c.textBaseline = 'middle';
   const tw = c.measureText(tag).width + bh * .5;
@@ -1172,6 +1395,7 @@ function lowerThird(c, w, h, title, tag, hue) {
   c.fillText(fitText(c, title, maxW - bh * .5), x0 + tw + bh * .25, y + bh / 2);
 }
 function ticker(c, w, h, t) {
+  if (demoClean) return;
   const y = h * .885, bh = h * .075;
   c.fillStyle = 'rgba(6,10,16,.9)'; c.fillRect(0, y, w, bh);
   c.font = F(bh * .52, 500); c.fillStyle = '#dfe6ee'; c.textBaseline = 'middle';
@@ -1180,6 +1404,7 @@ function ticker(c, w, h, t) {
   for (let x0 = -off; x0 < w; x0 += tw) c.fillText(text, x0, y + bh / 2);
 }
 function cornerTitle(c, w, h, text, dark) {
+  if (demoClean) return;
   c.font = F(h * .05, 600); c.textBaseline = 'middle';
   const s = fitText(c, text, w * .6), tw = c.measureText(s).width, bh = h * .085;
   c.fillStyle = dark ? 'rgba(8,12,18,.72)' : 'rgba(255,255,255,.85)'; rr(c, w * .04, h * .06, tw + bh * .6, bh, bh * .25); c.fill();
@@ -1351,6 +1576,7 @@ function drawDemo(t) {
   if (!demoCh) return;
   const c = ctx, w = demoCanvas.width, h = demoCanvas.height;
   const p = demoCu || progAt(demoCh, Date.now());
+  demoClean = app.classList.contains('is-full') && (!osd.classList.contains('hide') || tvChansOpen());
   c.save();
   (SCENES[demoCh.scene] || SCENES.ent)(c, w, h, t, demoCh, p);
   c.restore();
@@ -1495,7 +1721,7 @@ let epgArriveQueued = false;
 function onEpgArrived(id) {
   if (epgArriveQueued) return;
   epgArriveQueued = true;
-  requestAnimationFrame(() => { epgArriveQueued = false; renderGuide(); updateHero(); updateOsd(); });
+  requestAnimationFrame(() => { epgArriveQueued = false; renderGuide(); updateHero(); updateOsd(); if (tvChansOpen()) renderTvChans(); });
 }
 function xmltvTime(s) {
   const m = /^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)?\s*([+-]\d{4})?/.exec(s || '');
@@ -1630,6 +1856,7 @@ scrim.addEventListener('click', closeAllLayers);
 document.addEventListener('click', e => { if (e.target.closest('[data-close]')) closeLayer(); });
 
 function openGroups() {
+  if (TV_MODE) { openTvNav(false); return; }
   const items = [['all', 'All channels', S.channels.length], ['fav', 'Favorites', favs.size], ['recent', 'Recently watched', recents.length]];
   let h = items.map(([id, name, n]) => groupItem(id, name, n)).join('');
   h += '<div class="list-label">Categories</div>' + S.groups.map(g => groupItem(g.id, g.name, g.count)).join('');
@@ -1642,6 +1869,82 @@ el('groupsList').addEventListener('click', e => {
   closeLayer(); applyGroup(b.dataset.group); jumpToNow(true);
 });
 el('groupBtn').addEventListener('click', openGroups);
+
+function openTvNav(focusMenu) {
+  const items = [['all', 'All channels', S.channels.length], ['fav', 'Favorites', favs.size], ['recent', 'Recently watched', recents.length]];
+  el('tvGroups').innerHTML = items.map(([id, name, n]) => groupItem(id, name, n)).join('') +
+    '<div class="list-label">Categories</div>' + S.groups.map(g => groupItem(g.id, g.name, g.count)).join('');
+  const current = S.groupId === 'fav' ? 'fav' : S.groupId === 'recent' ? 'recent' : 'guide';
+  document.querySelectorAll('.tvnav-item').forEach(b => b.classList.toggle('on', b.dataset.tv === current));
+  openLayer(el('tvNav'), focusMenu ? '.tvnav-item.on' : '#tvGroups .item.sel');
+}
+function tvNavKey(k, e) {
+  const a = document.activeElement, inMenu = !!(a && a.closest && a.closest('#tvNavMenu'));
+  if (k === 'up' || k === 'down') { e.preventDefault(); moveListFocus(inMenu ? el('tvNavMenu') : el('tvGroups'), k === 'down' ? 1 : -1); }
+  else if (k === 'left' && !inMenu) { e.preventDefault(); (el('tvNavMenu').querySelector('.tvnav-item.on') || el('tvNavMenu').querySelector('.tvnav-item')).focus(); }
+  else if (k === 'right') {
+    e.preventDefault();
+    if (inMenu) (el('tvGroups').querySelector('.item.sel') || el('tvGroups').querySelector('.item')).focus();
+    else closeLayer();
+  }
+}
+el('tvNav').addEventListener('click', e => {
+  const g = e.target.closest('[data-group]');
+  if (g) { closeLayer(); applyGroup(g.dataset.group); jumpToNow(true); return; }
+  const m = e.target.closest('[data-tv]'); if (!m) return;
+  const a = m.dataset.tv;
+  closeLayer();
+  if (a === 'guide') { if (S.groupId === 'fav' || S.groupId === 'recent') applyGroup('all'); jumpToNow(false); }
+  else if (a === 'fav' || a === 'recent') { applyGroup(a); jumpToNow(true); }
+  else if (a === 'search') openSearch();
+  else if (a === 'playlists') openPlaylists();
+  else if (a === 'settings') openSettings();
+});
+
+/* Channel list over full-screen video: OK or Left opens it, Up/Down browse, OK switches. */
+let tvChanIdx = 0, tvChanTimer = 0;
+const tvChansBase = () => (S.list.length ? S.list : S.channels);
+const tvChansOpen = () => !el('tvChans').hidden;
+function openTvChans() {
+  const base = tvChansBase();
+  tvChanIdx = Math.max(0, base.findIndex(c => c.id === S.playingId));
+  el('tvChans').hidden = false;
+  osd.classList.add('hide');
+  renderTvChans(); pokeTvChans();
+}
+function closeTvChans() { el('tvChans').hidden = true; clearTimeout(tvChanTimer); }
+function pokeTvChans() { clearTimeout(tvChanTimer); tvChanTimer = setTimeout(closeTvChans, 10000); }
+function renderTvChans() {
+  const base = tvChansBase(), now = Date.now(), n = 7;
+  const from = Math.max(0, Math.min(tvChanIdx - 3, base.length - n));
+  let h = '';
+  const need = [];
+  for (let k = from; k < Math.min(base.length, from + n); k++) {
+    const c = base[k], p = progAt(c, now), live = !!p && isNowProg(p, now);
+    if (S.provider.type === 'xtream' && !epgState.has(c.id)) need.push(c.id);
+    h += `<div class="tvch${k === tvChanIdx ? ' on' : ''}${c.id === S.playingId ? ' playing' : ''}" data-k="${k}"><span class="n">${c.num}</span>${logoHTML(c)}<span class="t"><b>${esc(c.name)}</b><span>${live ? esc(p.title) : (epgState.get(c.id) === 'done' || epgState.get(c.id) === 'error' ? 'No program information' : 'Loading guide…')}</span>${live ? `<i><u style="width:${((now - p.start) / (p.end - p.start) * 100).toFixed(0)}%"></u></i>` : ''}</span></div>`;
+  }
+  el('tvChansList').innerHTML = h;
+  el('tvChansGroup').textContent = groupLabel(S.groupId);
+  el('tvChansClock').textContent = fmtTime(now);
+  if (need.length) requestEpg(need);
+}
+function moveTvChans(d) {
+  const base = tvChansBase();
+  tvChanIdx = Math.max(0, Math.min(base.length - 1, tvChanIdx + d));
+  renderTvChans(); pokeTvChans();
+}
+function playTvChan() {
+  const base = tvChansBase(), ch = base[tvChanIdx]; if (!ch) return;
+  if (base === S.list) { focus.i = tvChanIdx; focus.t = Date.now(); focus.follow = true; }
+  if (ch.id !== S.playingId || S.catchup) play(ch);
+  renderTvChans(); pokeTvChans(); updateHero();
+}
+el('tvChansList').addEventListener('click', e => {
+  const r = e.target.closest('[data-k]'); if (!r) return;
+  e.stopPropagation();
+  tvChanIdx = +r.dataset.k; playTvChan();
+});
 
 function openPlaylists() {
   const cur = S.provider && !S.backdrop ? S.provider.id : '';
@@ -1906,7 +2209,7 @@ function keyName(e) {
   if (k === 'm' || k === 'M') return 'mute';
   return '';
 }
-function focusables(container) { return [...container.querySelectorAll('.item, .rail-btn')].filter(n => n.offsetParent !== null); }
+function focusables(container) { return [...container.querySelectorAll('.item, .rail-btn, .tvnav-item')].filter(n => n.offsetParent !== null); }
 function moveListFocus(container, d) {
   const items = focusables(container); if (!items.length) return false;
   const i = items.indexOf(document.activeElement);
@@ -1966,6 +2269,7 @@ function handleBack() {
   if (!numEl.hidden) { numEl.hidden = true; numBuf = ''; clearTimeout(numTimer); return true; }
   if (!loginEl.hidden) { if (loginCancelable) { closeLogin(); return true; } return false; }
   if (layers.length) { closeLayer(); return true; }
+  if (tvChansOpen()) { closeTvChans(); return true; }
   if (app.classList.contains('is-full')) { exitFull(); return true; }
   const a = document.activeElement;
   if (a && a.closest && a.closest('#rail')) return false;
@@ -1990,6 +2294,15 @@ document.addEventListener('keydown', e => {
   }
   if (!loginEl.hidden) { tvNav(k, e, el('loginForm')); return; }
   if (app.classList.contains('is-full') && !layers.length) {
+    if (TV_MODE && tvChansOpen()) {
+      const step = { up: -1, down: 1, pgup: -7, pgdn: 7 }[k];
+      if (step) { e.preventDefault(); moveTvChans(step); }
+      else if (k === 'ok') { e.preventDefault(); playTvChan(); }
+      else if (k === 'left' || k === 'right') { e.preventDefault(); closeTvChans(); }
+      else if (k === 'digit') { e.preventDefault(); numKey(e.key); }
+      return;
+    }
+    if (TV_MODE && (k === 'ok' || k === 'left')) { e.preventDefault(); openTvChans(); return; }
     const map = { up: () => stepChannel(-1), down: () => stepChannel(1), pgup: () => stepChannel(-1), pgdn: () => stepChannel(1), left: showOsd, right: showOsd, ok: () => osd.classList.contains('hide') ? showOsd() : osd.classList.add('hide'), info: showOsd, fav: () => { toggleFav(S.byId.get(S.playingId)); showOsd(); }, mute: () => { toggleMute(); showOsd(); } };
     if (k === 'digit') { e.preventDefault(); numKey(e.key); return; }
     if (map[k]) { e.preventDefault(); map[k](); }
@@ -1997,7 +2310,8 @@ document.addEventListener('keydown', e => {
   }
   if (layers.length) {
     const top = layers[layers.length - 1];
-    if (top.id === 'searchSheet') searchNav(k, e, top);
+    if (top.id === 'tvNav') tvNavKey(k, e);
+    else if (top.id === 'searchSheet') searchNav(k, e, top);
     else tvNav(k, e, top);
     return;
   }
@@ -2090,6 +2404,7 @@ function boot() {
   tick();
   if (loginEl.hidden) guideScroll.focus({ preventScroll: true });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { invalidateRows(); renderGuide(); });
+  if (PREVIEW_TV) setTimeout(() => toast('Use the arrow keys, Enter and Esc like the Fire TV remote', 6000), 600);
 }
 boot();
 })();
