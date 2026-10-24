@@ -509,13 +509,18 @@ struct VodDetailView: View {
 
     private func hero(_ info: VodDetails) -> some View {
         ZStack(alignment: .bottomLeading) {
-            ZStack {
-                PosterArt(name: item.name, url: info.backdrop ?? info.poster ?? item.poster, hue: item.hue, showTitle: false)
-                    .blur(radius: info.backdrop == nil ? 18 : 0)
-                LinearGradient(colors: [Theme.menu.opacity(0.1), Theme.menu], startPoint: .top, endPoint: .bottom)
-            }
-            .frame(height: 230)
-            .clipped()
+            // Overlay, so a wide backdrop image can't make the sheet wider than the screen.
+            Color.clear
+                .frame(maxWidth: .infinity)
+                .frame(height: 230)
+                .overlay {
+                    ZStack {
+                        PosterArt(name: item.name, url: info.backdrop ?? info.poster ?? item.poster, hue: item.hue, showTitle: false)
+                            .blur(radius: info.backdrop == nil ? 18 : 0)
+                        LinearGradient(colors: [Theme.menu.opacity(0.1), Theme.menu], startPoint: .top, endPoint: .bottom)
+                    }
+                }
+                .clipped()
             HStack(alignment: .bottom, spacing: 16) {
                 Color.clear
                     .frame(width: 104, height: 156)
