@@ -1,0 +1,52 @@
+# Builds Tuner-FireTV.apk and puts it on the "firetv" release, so the newest build always has the same link:
+#   https://github.com/<you>/<repo>/releases/download/firetv/Tuner-FireTV.apk
+name: Build Fire TV APK
+
+on:
+  push:
+    paths:
+      - "firetv/**"
+      - ".github/workflows/build-firetv.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: firetv
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Build the APK
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk Tuner-FireTV.apk
+          ls -lh Tuner-FireTV.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tuner-FireTV-apk
+          path: firetv/Tuner-FireTV.apk
+          if-no-files-found: error
+
+      - name: Publish to Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release view firetv >/dev/null 2>&1 || \
+            gh release create firetv --target "$GITHUB_SHA" --title "Tuner for Fire TV" \
+              --notes "Newest Fire TV build. Install it with the Downloader app on your Fire Stick, or with adb. A new build installs over the old one and keeps your playlists."
+          gh release upload firetv Tuner-FireTV.apk --clobber
+          echo "### Download Tuner-FireTV.apk" >> "$GITHUB_STEP_SUMMARY"
+          echo "https://github.com/${GH_REPO}/releases/download/firetv/Tuner-FireTV.apk" >> "$GITHUB_STEP_SUMMARY"

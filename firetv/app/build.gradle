@@ -1,0 +1,47 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'app.tuner.tv'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'app.tuner.tv'
+        minSdk 22        // Fire OS 5 and newer
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+    }
+
+    // One fixed key for every build, so a new APK installs over the old one and keeps your playlists.
+    // It's only for sideloading onto your own devices.
+    signingConfigs {
+        sideload {
+            storeFile file('tuner-sideload.jks')
+            storePassword 'tuner-sideload'
+            keyAlias 'tuner'
+            keyPassword 'tuner-sideload'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.sideload
+        }
+        debug {
+            signingConfig signingConfigs.sideload
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+}

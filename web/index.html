@@ -1,0 +1,2099 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0f15">
+<title>Tuner</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<!--TUNER_PROXY-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,500;0,600;1,500&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap">
+<style>
+/* Layout: living-room TV guide. Icon rail · preview screen beside program details · EPG grid with sticky channel column, sticky timebar and a live "now" line. One committed dark look (TV room at night). */
+:root{
+  color-scheme:dark;
+  --bg:#0a0f15;          /* room */
+  --panel:#0f1720;       /* guide + drawers */
+  --cell:#16212c;        /* program block */
+  --cell-now:#1d2c3b;    /* airing now */
+  --cell-hover:#243546;
+  --line:#21303f;
+  --line-soft:#18232e;
+  --fg:#e9eef3;
+  --fg-2:#a3b3c3;
+  --fg-3:#6c7f92;
+  --accent:#f5a83c;      /* tally-lamp amber: focus + now */
+  --accent-ink:#1b1206;
+  --accent-soft:rgba(245,168,60,.18);
+  --live:#ef4a40;
+  --ok:#5fd39a;
+  --warn:#f0c04a;
+  --font-display:"Barlow Semi Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
+  --font-body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --railW:74px;
+  --chanW:232px;
+  --rowH:62px;
+  --headH:44px;
+}
+:root.rows-compact{--rowH:50px}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.4 var(--font-body);-webkit-font-smoothing:antialiased;overflow:hidden;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0;text-align:inherit}
+input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.i.fill{fill:currentColor;stroke:none}
+
+/* ---------- shell ---------- */
+.app{height:100%;display:grid;grid-template-columns:var(--railW) minmax(0,1fr);gap:16px;padding-block:14px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.rail{display:flex;flex-direction:column;gap:4px;min-height:0}
+.brand{display:flex;justify-content:center;padding:4px 0 14px}
+.brand-mark{position:relative;width:38px;height:38px;border-radius:11px;background:var(--panel);border:1px solid var(--line);display:grid;place-items:center;font:700 19px/1 var(--font-display);letter-spacing:-.02em}
+.brand-mark::after{content:"";position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+.rail-btn{display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 2px 9px;border-radius:12px;color:var(--fg-3);font:600 10.5px/1 var(--font-display);letter-spacing:.06em;text-transform:uppercase}
+.rail-btn .i{width:22px;height:22px}
+.rail-btn:hover{color:var(--fg);background:var(--panel)}
+.rail-btn.active{color:var(--fg);background:var(--panel)}
+.rail-btn.active .i{color:var(--accent)}
+.rail-btn:focus-visible{outline:none;background:var(--accent);color:var(--accent-ink)}
+.rail-btn:focus-visible .i{color:var(--accent-ink)}
+.rail .spacer{flex:1}
+.main{display:grid;grid-template-rows:auto minmax(0,1fr);gap:16px;min-width:0;min-height:0}
+
+/* ---------- hero: preview + details ---------- */
+.hero{display:grid;grid-template-columns:auto minmax(0,1fr);gap:24px;height:clamp(190px,35vh,360px);min-height:0}
+.stage{position:relative;height:100%;aspect-ratio:16/9;max-width:56vw;border-radius:12px;overflow:hidden;background:#000;box-shadow:0 0 0 1px var(--line)}
+.screen{position:absolute;inset:0;cursor:pointer}
+.screen canvas,.screen video{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:contain;background:#000}
+.screen-msg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px;text-align:center;background:rgba(5,8,12,.82);font-size:14px;color:var(--fg-2)}
+.screen-msg b{font:600 18px var(--font-display);color:var(--fg)}
+.spinner{position:absolute;left:50%;top:50%;width:38px;height:38px;margin:-19px 0 0 -19px;border-radius:50%;border:3px solid rgba(255,255,255,.18);border-top-color:var(--accent);animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pill{position:absolute;left:10px;bottom:10px;display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:rgba(5,8,12,.78);font:600 12px var(--font-display);letter-spacing:.04em;color:var(--fg)}
+.pill .i{width:16px;height:16px}
+.expand-hint{position:absolute;right:10px;top:10px;padding:6px;border-radius:8px;background:rgba(5,8,12,.6);opacity:0;transition:opacity .2s}
+.screen:hover .expand-hint{opacity:1}
+.app.is-full .expand-hint{display:none}
+.info{display:flex;flex-direction:column;gap:9px;min-width:0;min-height:0;overflow:hidden;padding-top:2px}
+.info-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.info-chan{display:flex;align-items:center;gap:10px;min-width:0;font:600 15px var(--font-display);color:var(--fg-2)}
+.info-chan .num{color:var(--fg-3);font-variant-numeric:tabular-nums}
+.info-chan .name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.clock{font:600 24px/1 var(--font-display);font-variant-numeric:tabular-nums;color:var(--fg);flex:none}
+.info-title{margin:2px 0 0;font:600 clamp(24px,2.7vw,40px)/1.04 var(--font-display);letter-spacing:-.005em;text-wrap:balance;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.info-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;color:var(--fg-2);font-variant-numeric:tabular-nums}
+.info-meta .sep{color:var(--fg-3)}
+.badge{display:inline-flex;align-items:center;gap:4px;font:600 11px/1 var(--font-display);letter-spacing:.07em;text-transform:uppercase;padding:4px 6px;border-radius:4px;border:1px solid var(--line);color:var(--fg-2)}
+.badge.live{background:var(--live);border-color:var(--live);color:#fff}
+.badge.new{border-color:var(--accent);color:var(--accent)}
+.badge .i{width:12px;height:12px}
+.progress{height:4px;border-radius:2px;background:var(--line);overflow:hidden;max-width:540px}
+.progress i{display:block;height:100%;background:var(--accent);border-radius:2px}
+.info-desc{margin:0;max-width:68ch;color:var(--fg-2);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.info-next{color:var(--fg-3);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.info-next b{color:var(--fg-2);font-weight:500}
+
+/* ---------- logos ---------- */
+.logo{position:relative;flex:none;width:40px;height:40px;border-radius:9px;display:grid;place-items:center;overflow:hidden;font:700 14px/1 var(--font-display);letter-spacing:.02em;color:#fff;background:hsl(var(--h,210),38%,30%)}
+.logo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#0c131a;padding:3px}
+.logo.sm{width:30px;height:30px;border-radius:7px;font-size:12px}
+
+/* ---------- EPG grid ---------- */
+.guide{position:relative;min-height:0;border-radius:12px;background:var(--panel);box-shadow:0 0 0 1px var(--line);overflow:hidden}
+.guide-scroll{position:absolute;inset:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--line) transparent;outline:none}
+.guide-scroll:focus-visible{box-shadow:inset 0 0 0 2px var(--accent-soft)}
+.guide-canvas{position:relative}
+.timebar{position:sticky;top:0;z-index:6;display:flex;height:var(--headH);background:var(--panel);border-bottom:1px solid var(--line)}
+.corner{position:sticky;left:0;z-index:2;flex:none;width:var(--chanW);height:100%;display:flex;flex-direction:column;justify-content:center;gap:2px;padding:0 14px;background:var(--panel);border-right:1px solid var(--line);text-align:left}
+.corner:hover .g{color:var(--accent)}
+.corner .g{display:flex;align-items:center;gap:6px;max-width:100%;font:600 15px/1.1 var(--font-display)}
+.corner .g span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.corner .g .i{width:14px;height:14px;color:var(--fg-3)}
+.corner .d{font:600 11px/1 var(--font-display);letter-spacing:.08em;text-transform:uppercase;color:var(--fg-3)}
+.ticks{position:relative;flex:none;height:100%;overflow:hidden}
+.tick{position:absolute;top:0;height:100%;display:flex;align-items:flex-start;padding:8px 0 0 9px;border-left:1px solid var(--line);font:500 14px/1 var(--font-display);font-variant-numeric:tabular-nums;color:var(--fg-2);white-space:nowrap}
+.tick.day{color:var(--fg);border-left-color:var(--fg-3)}
+.tick.day b{font-weight:600;color:var(--accent);margin-right:6px;text-transform:uppercase;letter-spacing:.06em;font-size:12px}
+.now-tick{position:absolute;bottom:0;z-index:1;transform:translateX(-50%);padding:2px 6px 3px;border-radius:5px 5px 0 0;background:var(--accent);color:var(--accent-ink);font:700 11px/1 var(--font-display);font-variant-numeric:tabular-nums;white-space:nowrap}
+.rows{position:relative}
+.row{position:absolute;left:0;display:flex;height:var(--rowH)}
+.chan{position:sticky;left:0;z-index:4;flex:none;width:var(--chanW);height:100%;display:flex;align-items:center;gap:10px;padding:0 12px 0 8px;background:var(--panel);border-right:1px solid var(--line);border-bottom:1px solid var(--line-soft);cursor:pointer;min-width:0}
+.chan:hover{background:#121c26}
+.chan.cur{background:var(--cell-now)}
+.cnum{width:34px;flex:none;text-align:right;font:600 14px/1 var(--font-display);font-variant-numeric:tabular-nums;color:var(--fg-3)}
+.chan.cur .cnum{color:var(--accent)}
+.cname{flex:1;min-width:0;font:500 15px/1.15 var(--font-display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chan .star{width:14px;height:14px;color:var(--accent);flex:none}
+.eq{display:flex;align-items:flex-end;gap:2px;height:13px;flex:none}
+.eq i{width:3px;height:100%;background:var(--accent);border-radius:1px;transform-origin:bottom;animation:eq 1s ease-in-out infinite}
+.eq i:nth-child(2){animation-delay:-.35s}.eq i:nth-child(3){animation-delay:-.7s}
+@keyframes eq{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+.progs{position:relative;flex:none;height:100%}
+.prog{position:absolute;top:3px;bottom:3px;margin-left:2px;border-radius:7px;background:var(--cell);padding:0 10px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:3px;cursor:pointer;user-select:none}
+.prog:hover{background:var(--cell-hover)}
+.prog.now{background:var(--cell-now)}
+.prog .pt,.prog .ps{position:sticky;left:calc(var(--chanW) + 10px);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prog .pt{font:500 15px/1.15 var(--font-display);color:var(--fg)}
+.prog .ps{font-size:12px;line-height:1;color:var(--fg-3);font-variant-numeric:tabular-nums}
+.prog.past .pt{color:var(--fg-2)}
+.prog .lv{display:inline-block;margin-right:6px;padding:2px 4px 1px;border-radius:3px;background:var(--live);color:#fff;font:700 10px/1 var(--font-display);letter-spacing:.06em;vertical-align:2px}
+.prog .cu{width:13px;height:13px;margin-right:5px;vertical-align:-2px;color:var(--fg-2)}
+.prog .pb{position:absolute;left:0;bottom:0;height:3px;max-width:100%;border-radius:0 0 0 7px;background:var(--accent);opacity:.8}
+.prog.focus{background:var(--accent)}
+.prog.focus .pt,.prog.focus .ps,.prog.focus .cu{color:var(--accent-ink)}
+.prog.focus .pb{background:var(--accent-ink);opacity:.35}
+.prog.tiny{padding:0}
+.prog.tiny .pt,.prog.tiny .ps{display:none}
+.prog.empty{background:transparent;border:1px dashed var(--line)}
+.prog.empty .pt{color:var(--fg-3);font-weight:400}
+.prog.empty.focus{background:var(--accent-soft);border-color:var(--accent)}
+.prog.empty.focus .pt{color:var(--fg)}
+.nowline{position:absolute;top:var(--headH);bottom:0;z-index:3;width:2px;margin-left:-1px;background:var(--accent);box-shadow:0 0 12px rgba(245,168,60,.45);pointer-events:none}
+.guide-empty{position:absolute;inset:var(--headH) 0 0 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:24px;text-align:center;color:var(--fg-2)}
+.guide-empty b{font:600 20px var(--font-display);color:var(--fg)}
+
+/* ---------- fullscreen ---------- */
+.app.is-full .stage{position:fixed;inset:0;z-index:50;max-width:none;width:auto;height:auto;aspect-ratio:auto;border-radius:0;box-shadow:none}
+.app.is-full .screen{cursor:default}
+.osd{display:none;position:absolute;left:0;right:0;bottom:0;z-index:2;flex-direction:column;gap:10px;padding:96px max(32px,env(safe-area-inset-right,0px)) max(26px,env(safe-area-inset-bottom,0px)) max(32px,env(safe-area-inset-left,0px));background:linear-gradient(rgba(5,8,12,0),rgba(5,8,12,.82) 30%,rgba(5,8,12,.95) 60%);transition:opacity .25s,transform .25s}
+.app.is-full .osd{display:flex}
+.osd.hide{opacity:0;transform:translateY(14px);pointer-events:none}
+.osd-top{display:flex;align-items:center;gap:12px;font:600 18px var(--font-display)}
+.osd-top .num{color:var(--accent);font-variant-numeric:tabular-nums}
+.osd-top .name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.osd-top .clock{font-size:26px}
+.osd-now{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.osd-title{font:600 clamp(24px,3.4vw,44px)/1.05 var(--font-display);text-wrap:balance}
+.osd-time{color:var(--fg-2);font-variant-numeric:tabular-nums}
+.osd .progress{max-width:none}
+.osd-next{color:var(--fg-2)}
+.osd-next b{color:var(--fg-3);font:600 12px var(--font-display);letter-spacing:.08em;text-transform:uppercase;margin-right:8px}
+.osd-ctrls{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.osd-btn{display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 14px;border-radius:10px;background:rgba(255,255,255,.08);font:600 15px var(--font-display)}
+.osd-btn:hover{background:rgba(255,255,255,.16)}
+.osd-btn.on .i{color:var(--accent)}
+.cu-flag{position:absolute;top:max(18px,env(safe-area-inset-top,0px));left:max(18px,env(safe-area-inset-left,0px));z-index:2;display:none;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;background:var(--accent);color:var(--accent-ink);font:700 12px var(--font-display);letter-spacing:.06em;text-transform:uppercase}
+
+/* ---------- overlays ---------- */
+.scrim{position:fixed;inset:0;z-index:60;background:rgba(3,6,10,.6)}
+.drawer{position:fixed;top:0;bottom:0;z-index:61;width:min(380px,100%);display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);animation:inL .22s ease-out}
+.drawer.left{left:0;border-width:0 1px 0 0;padding-left:env(safe-area-inset-left,0px)}
+.drawer.right{right:0;border-width:0 0 0 1px;padding-right:env(safe-area-inset-right,0px);animation-name:inR}
+@keyframes inL{from{transform:translateX(-24px);opacity:0}}
+@keyframes inR{from{transform:translateX(24px);opacity:0}}
+.drawer header,.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px 20px 12px}
+.drawer h2,.sheet-head h2{margin:0;font:600 24px/1 var(--font-display)}
+.icon-btn{display:grid;place-items:center;width:38px;height:38px;border-radius:10px;color:var(--fg-2)}
+.icon-btn:hover{background:var(--cell);color:var(--fg)}
+.list{flex:1;min-height:0;overflow:auto;padding:4px 10px 18px;display:flex;flex-direction:column;gap:2px}
+.item{display:flex;align-items:center;gap:12px;width:100%;min-height:46px;padding:9px 12px;border-radius:10px;color:var(--fg-2);text-align:left}
+.item:hover{background:var(--cell);color:var(--fg)}
+.item:focus-visible{outline:none;background:var(--accent);color:var(--accent-ink)}
+.item:focus-visible .n,.item:focus-visible .sub{color:var(--accent-ink)}
+.item.sel{color:var(--fg);background:var(--cell)}
+.item.sel .mark{color:var(--accent)}
+.item .mark{width:18px;height:18px;flex:none;color:transparent}
+.item .lbl{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.item .lbl > span:first-child{font:500 16px/1.2 var(--font-display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .sub{font-size:13px;color:var(--fg-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .n{margin-left:auto;font:500 14px var(--font-display);font-variant-numeric:tabular-nums;color:var(--fg-3)}
+.list-label{padding:14px 12px 6px;font:600 11px var(--font-display);letter-spacing:.1em;text-transform:uppercase;color:var(--fg-3)}
+.drawer-foot{padding:12px 20px 20px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.search{position:fixed;left:50%;top:max(24px,env(safe-area-inset-top,0px));z-index:61;width:min(700px,calc(100% - 32px));max-height:calc(100% - 48px);transform:translateX(-50%);display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.search-bar{display:flex;align-items:center;gap:12px;padding:10px 10px 10px 18px;border-bottom:1px solid var(--line)}
+.search-bar input{flex:1;min-width:0;height:44px;border:0;background:transparent;font-size:18px;outline:none}
+.search-bar .i{color:var(--fg-3)}
+.modal{position:fixed;inset:0;z-index:62;display:grid;place-items:center;padding:16px;pointer-events:none}
+.modal-card{pointer-events:auto;width:min(560px,100%);max-height:100%;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:12px;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.modal-card h2{margin:0;font:600 30px/1.05 var(--font-display);text-wrap:balance}
+.modal-card p{margin:0;color:var(--fg-2)}
+.btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:46px;padding:0 18px;border-radius:10px;font:600 16px var(--font-display);letter-spacing:.02em;white-space:nowrap}
+.btn .i{width:18px;height:18px}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.ghost{background:var(--cell);color:var(--fg)}
+.btn.ghost:hover{background:var(--cell-hover)}
+.btn.danger{background:transparent;color:#ff9b93;box-shadow:inset 0 0 0 1px rgba(239,74,64,.45)}
+.btn.danger.armed{background:var(--live);color:#fff}
+.btn:disabled{opacity:.6;cursor:progress}
+.toast{position:fixed;left:50%;bottom:max(24px,calc(env(safe-area-inset-bottom,0px) + 16px));z-index:95;transform:translateX(-50%);max-width:calc(100% - 32px);padding:11px 16px;border-radius:10px;background:#1f2d3b;border:1px solid var(--line);box-shadow:0 10px 30px rgba(0,0,0,.4);font-size:14px}
+.numentry{position:fixed;top:max(24px,env(safe-area-inset-top,0px));right:max(24px,env(safe-area-inset-right,0px));z-index:96;min-width:110px;padding:10px 20px;border-radius:12px;background:var(--panel);border:1px solid var(--accent);font:700 46px/1 var(--font-display);letter-spacing:.1em;text-align:center;font-variant-numeric:tabular-nums}
+
+/* ---------- settings ---------- */
+.settings section{display:flex;flex-direction:column;gap:12px;padding:6px 10px 18px;border-bottom:1px solid var(--line-soft)}
+.settings section:last-child{border-bottom:0}
+.settings h3{margin:8px 0 0;font:600 12px var(--font-display);letter-spacing:.1em;text-transform:uppercase;color:var(--fg-3)}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 16px;margin:0;font-size:14px}
+.kv dt{color:var(--fg-3)}
+.kv dd{margin:0;text-align:right;overflow-wrap:anywhere}
+.status{display:inline-flex;align-items:center;gap:6px}
+.status::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.status.warn::before{background:var(--warn)}
+.setting{display:flex;flex-direction:column;gap:8px}
+.setting > span{font-size:14px;color:var(--fg-2)}
+.seg{display:inline-flex;flex-wrap:wrap;gap:3px;padding:3px;border-radius:10px;background:var(--bg);border:1px solid var(--line);align-self:flex-start}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{padding:8px 12px;border-radius:7px;cursor:pointer;font:600 14px/1 var(--font-display);color:var(--fg-2)}
+.seg input:checked + label{background:var(--cell-hover);color:var(--fg)}
+.seg input:focus-visible + label{outline:2px solid var(--accent)}
+.seg input:disabled + label{opacity:.45;cursor:not-allowed}
+.text-in{height:42px;padding:0 12px;border-radius:9px;border:1px solid var(--line);background:var(--bg);font-size:14px;width:100%}
+.text-in:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;font-size:14px;color:var(--fg-2)}
+kbd{display:inline-block;min-width:24px;padding:3px 6px;border-radius:5px;background:var(--cell);border:1px solid var(--line);border-bottom-width:2px;font:600 12px/1 var(--font-display);color:var(--fg);text-align:center}
+.hint{font-size:13px;color:var(--fg-3);margin:0}
+
+/* ---------- sign-in ---------- */
+.login{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;overflow:auto;padding-block:max(24px,env(safe-area-inset-top,0px)) max(24px,env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:rgba(6,9,14,.62);-webkit-backdrop-filter:blur(9px) saturate(.85);backdrop-filter:blur(9px) saturate(.85)}
+.login-card{margin:auto;width:min(480px,100%);display:flex;flex-direction:column;gap:16px;padding:28px;border-radius:18px;background:var(--panel);border:1px solid var(--line);box-shadow:0 40px 100px rgba(0,0,0,.55)}
+.login-brand{display:flex;align-items:center;gap:12px}
+.wordmark{font:700 26px/1 var(--font-display);letter-spacing:-.01em}
+.login h1{margin:4px 0 4px;font:600 30px/1.05 var(--font-display)}
+.login .sub{margin:0;color:var(--fg-2)}
+.kind{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;padding:6px 10px;border-radius:8px;background:var(--accent-soft);color:var(--accent);font:600 12px/1 var(--font-display);letter-spacing:.08em;text-transform:uppercase}
+.kind .i{width:15px;height:15px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label{font:600 12px var(--font-display);letter-spacing:.09em;text-transform:uppercase;color:var(--fg-3)}
+.field input{height:48px;width:100%;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-size:16px}
+.field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.field input::placeholder{color:#4f6072}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pw{position:relative}
+.pw input{padding-right:48px}
+.pw button{position:absolute;right:4px;top:4px;width:40px;height:40px;display:grid;place-items:center;border-radius:8px;color:var(--fg-3)}
+.pw button:hover{color:var(--fg)}
+.check{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--fg-2);cursor:pointer}
+.check input{width:18px;height:18px;accent-color:var(--accent)}
+.err{padding:11px 13px;border-radius:10px;background:rgba(239,74,64,.12);border:1px solid rgba(239,74,64,.38);color:#ffc0ba;font-size:14px}
+.ok-note{padding:9px 12px;border-radius:10px;background:rgba(95,211,154,.1);border:1px solid rgba(95,211,154,.3);color:#b7f0d3;font-size:14px}
+.login-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.login-foot{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.link{color:var(--fg-2);font-size:14px;text-decoration:underline;text-underline-offset:3px}
+.link:hover{color:var(--fg)}
+.note{margin:0;font-size:13px;color:var(--fg-3)}
+
+/* ---------- phone ---------- */
+@media (max-width:760px){
+  :root{--railW:0px;--chanW:112px;--rowH:58px;--headH:38px}
+  :root.rows-compact{--rowH:48px}
+  .app{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;gap:8px;padding-block:10px 0}
+  .rail{order:2;flex-direction:row;justify-content:space-between;gap:0;padding:2px 0 6px}
+  .brand,.rail .spacer{display:none}
+  .rail-btn{flex:1;padding:8px 0 6px;font-size:9.5px;letter-spacing:.03em}
+  .main{gap:10px}
+  .hero{grid-template-columns:minmax(0,1fr);height:auto;gap:10px}
+  .stage{width:100%;height:auto;max-width:none}
+  .info{gap:6px}
+  .info-desc,.info-next,.info-head .clock{display:none}
+  .info-title{font-size:22px;-webkit-line-clamp:1}
+  .info-meta{font-size:13px}
+  .chan{flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;padding:0 8px}
+  .chan .logo{display:none}
+  .cnum{width:auto;text-align:left;font-size:12px}
+  .cname{flex:none;width:100%;font-size:13px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .chan .star,.chan .eq{position:absolute;right:6px;top:7px}
+  .corner{padding:0 8px}
+  .corner .g{font-size:13px}
+  .tick{font-size:13px}
+  .prog .pt{font-size:14px}
+  .field-row,.login-actions{grid-template-columns:1fr}
+  .login-card{padding:22px}
+}
+@media (max-height:560px) and (min-width:761px){.hero{height:168px}.info{gap:6px}.info-next{display:none}.info-desc{-webkit-line-clamp:1}.info-title{font-size:28px;-webkit-line-clamp:1}}
+@media (prefers-reduced-motion:reduce){
+  .eq i,.spinner{animation-duration:3s}
+  .drawer{animation:none}
+  .osd{transition:none}
+}
+</style>
+</head>
+<body>
+
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-guide" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M9 9.5V20M3 14.8h18"/></symbol>
+  <symbol id="i-groups" viewBox="0 0 24 24"><path d="M4 6.5h16M4 12h16M4 17.5h10"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.6l2.6 5.3 5.8.9-4.2 4.1 1 5.8L12 17l-5.2 2.7 1-5.8-4.2-4.1 5.8-.9z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+  <symbol id="i-playlist" viewBox="0 0 24 24"><path d="M4 6h12M4 11h12M4 16h7"/><path d="M15.5 14.2v6.1l5-3.05z"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M14.5 5.5L8 12l6.5 6.5"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M6 14.5L12 8.5l6 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 9.5l6 6 6-6"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M7 9.5l5 5 5-5"/></symbol>
+  <symbol id="i-vol" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></symbol>
+  <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></symbol>
+  <symbol id="i-replay" viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4.5v4h4"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7.5 5.5l11 6.5-11 6.5z"/></symbol>
+  <symbol id="i-expand" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-signal" viewBox="0 0 24 24"><path d="M5 18.5a10 10 0 0 1 0-13M19 5.5a10 10 0 0 1 0 13M8.2 15.3a5.5 5.5 0 0 1 0-6.6M15.8 8.7a5.5 5.5 0 0 1 0 6.6"/><circle cx="12" cy="12" r="1.4"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+</svg>
+
+<div class="app" id="app">
+  <nav class="rail" id="rail" aria-label="Main menu">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">T</span></div>
+    <button class="rail-btn active" data-nav="guide"><svg class="i"><use href="#i-guide"/></svg>Guide</button>
+    <button class="rail-btn" data-nav="groups"><svg class="i"><use href="#i-groups"/></svg>Groups</button>
+    <button class="rail-btn" data-nav="favorites"><svg class="i"><use href="#i-star"/></svg>Favorites</button>
+    <button class="rail-btn" data-nav="search"><svg class="i"><use href="#i-search"/></svg>Search</button>
+    <div class="spacer"></div>
+    <button class="rail-btn" data-nav="playlists"><svg class="i"><use href="#i-playlist"/></svg>Playlists</button>
+    <button class="rail-btn" data-nav="settings"><svg class="i"><use href="#i-settings"/></svg>Settings</button>
+  </nav>
+
+  <main class="main">
+    <section class="hero" aria-label="Now selected">
+      <div class="stage" id="stage">
+        <div class="screen" id="screen" aria-label="Video preview. Select to watch full screen" role="button" tabindex="-1">
+          <canvas id="demoCanvas"></canvas>
+          <video id="video" playsinline muted hidden></video>
+          <div class="spinner" id="spinner" hidden></div>
+          <div class="screen-msg" id="screenMsg" hidden></div>
+          <button class="pill" id="unmuteBtn" hidden><svg class="i"><use href="#i-mute"/></svg>Tap for sound</button>
+          <span class="expand-hint" aria-hidden="true"><svg class="i"><use href="#i-expand"/></svg></span>
+        </div>
+        <div class="cu-flag" id="cuFlag"><svg class="i" style="width:14px;height:14px"><use href="#i-replay"/></svg><span></span></div>
+        <div class="osd hide" id="osd">
+          <div class="osd-top"><span class="logo" id="osdLogo"></span><span class="num" id="osdNum"></span><span class="name" id="osdName"></span><span class="clock" id="osdClock"></span></div>
+          <div class="osd-now"><span class="osd-title" id="osdTitle"></span><span class="osd-time" id="osdTime"></span></div>
+          <div class="progress" id="osdProg"><i></i></div>
+          <div class="osd-next" id="osdNext"></div>
+          <div class="osd-ctrls">
+            <button class="osd-btn" data-osd="back"><svg class="i"><use href="#i-back"/></svg>Guide</button>
+            <button class="osd-btn" data-osd="up" aria-label="Previous channel"><svg class="i"><use href="#i-up"/></svg>Ch</button>
+            <button class="osd-btn" data-osd="down" aria-label="Next channel"><svg class="i"><use href="#i-down"/></svg>Ch</button>
+            <button class="osd-btn" data-osd="fav" id="osdFav"><svg class="i"><use href="#i-star"/></svg>Favorite</button>
+            <button class="osd-btn" data-osd="mute" id="osdMute"><svg class="i"><use href="#i-vol"/></svg>Sound</button>
+          </div>
+        </div>
+      </div>
+      <div class="info" id="info" aria-live="polite">
+        <div class="info-head">
+          <div class="info-chan"><span class="logo sm" id="heroLogo"></span><span class="num" id="heroNum"></span><span class="name" id="heroName"></span></div>
+          <span class="clock" id="clock"></span>
+        </div>
+        <h1 class="info-title" id="heroTitle"></h1>
+        <div class="info-meta" id="heroMeta"></div>
+        <div class="progress" id="heroProg"><i></i></div>
+        <p class="info-desc" id="heroDesc"></p>
+        <div class="info-next" id="heroNext"></div>
+      </div>
+    </section>
+
+    <section class="guide" aria-label="TV guide">
+      <div class="guide-scroll" id="guideScroll" tabindex="0" role="grid" aria-label="TV guide. Arrow keys move, Enter watches">
+        <div class="guide-canvas" id="guideCanvas">
+          <div class="timebar" aria-hidden="true">
+            <button class="corner" id="groupBtn" tabindex="-1"><span class="g"><span id="groupName">All channels</span><svg class="i"><use href="#i-chev"/></svg></span><span class="d" id="cornerDate">Today</span></button>
+            <div class="ticks" id="ticks"></div>
+          </div>
+          <div class="rows" id="rows"></div>
+          <div class="nowline" id="nowLine"></div>
+        </div>
+      </div>
+      <div class="guide-empty" id="guideEmpty" hidden></div>
+    </section>
+  </main>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+
+<aside class="drawer left" id="groupsDrawer" hidden aria-label="Channel groups">
+  <header><h2>Groups</h2><button class="icon-btn" data-close aria-label="Close"><svg class="i"><use href="#i-close"/></svg></button></header>
+  <div class="list" id="groupsList"></div>
+</aside>
+
+<aside class="drawer right" id="playlistsDrawer" hidden aria-label="Playlists">
+  <header><h2>Playlists</h2><button class="icon-btn" data-close aria-label="Close"><svg class="i"><use href="#i-close"/></svg></button></header>
+  <div class="list" id="playlistsList"></div>
+  <div class="drawer-foot"><button class="btn primary" id="addPlaylistBtn"><svg class="i"><use href="#i-plus"/></svg>Add Xtream Codes playlist</button></div>
+</aside>
+
+<aside class="drawer right" id="settingsDrawer" hidden aria-label="Settings">
+  <header><h2>Settings</h2><button class="icon-btn" data-close aria-label="Close"><svg class="i"><use href="#i-close"/></svg></button></header>
+  <div class="list settings" id="settingsBody"></div>
+</aside>
+
+<div class="search" id="searchSheet" hidden role="dialog" aria-label="Search">
+  <div class="search-bar"><svg class="i"><use href="#i-search"/></svg><input id="searchInput" type="search" placeholder="Search channels and programs" autocomplete="off" spellcheck="false"><button class="icon-btn" data-close aria-label="Close search"><svg class="i"><use href="#i-close"/></svg></button></div>
+  <div class="list" id="searchResults"></div>
+</div>
+
+<div class="modal" id="progModal" hidden role="dialog" aria-modal="true" aria-label="Program details"><div class="modal-card" id="progCard"></div></div>
+
+<div class="login" id="login" hidden role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+  <form class="login-card" id="loginForm" novalidate>
+    <div class="login-brand"><span class="brand-mark" aria-hidden="true">T</span><span class="wordmark">Tuner</span></div>
+    <div>
+      <span class="kind"><svg class="i"><use href="#i-signal"/></svg>Xtream Codes</span>
+      <h1 id="loginTitle">Add a playlist</h1>
+      <p class="sub">Enter the server address, username and password from your IPTV provider.</p>
+    </div>
+    <div class="field"><label for="fName">Playlist name</label><input id="fName" placeholder="My provider" autocomplete="off"></div>
+    <div class="field"><label for="fServer">Server URL</label><input id="fServer" inputmode="url" placeholder="http://line.example.com:8080" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+    <div class="field-row">
+      <div class="field"><label for="fUser">Username</label><input id="fUser" autocomplete="username" autocapitalize="off" spellcheck="false"></div>
+      <div class="field"><label for="fPass">Password</label><div class="pw"><input id="fPass" type="password" autocomplete="current-password"><button type="button" id="pwToggle" aria-label="Show password"><svg class="i"><use href="#i-eye"/></svg></button></div></div>
+    </div>
+    <label class="check"><input type="checkbox" id="fRemember" checked>Remember this playlist on this device</label>
+    <div class="ok-note" id="loginInfo" hidden></div>
+    <div class="err" id="loginErr" role="alert" hidden></div>
+    <div class="login-actions">
+      <button class="btn primary" id="signInBtn" type="submit">Sign in</button>
+      <button class="btn ghost" id="demoBtn" type="button"><svg class="i"><use href="#i-play"/></svg>Open demo playlist</button>
+    </div>
+    <div class="login-foot">
+      <p class="note" id="loginNote"></p>
+      <button type="button" class="link" id="loginCancel" hidden>Cancel</button>
+    </div>
+  </form>
+</div>
+
+<div class="numentry" id="numEntry" hidden aria-live="assertive"></div>
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ================= basics ================= */
+const $ = (s, r = document) => r.querySelector(s);
+const MIN = 60000, HOUR = 60 * MIN, DAY = 24 * HOUR;
+const PROXY_ON = !!window.TUNER_PROXY;
+const via = u => PROXY_ON ? '/proxy?u=' + encodeURIComponent(u) : u;
+const HLS_SRC = 'https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js';
+const MPEGTS_SRC = 'https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.js';
+const reduceMotion = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('tuner:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('tuner:' + k, JSON.stringify(v)); } catch (e) {} },
+  del(k) { try { localStorage.removeItem('tuner:' + k); } catch (e) {} }
+};
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pad = n => String(n).padStart(2, '0');
+const enc = encodeURIComponent;
+const icon = (id, cls = '') => `<svg class="i ${cls}"><use href="#i-${id}"/></svg>`;
+
+const defaultClock24 = (() => { try { const hc = new Intl.DateTimeFormat(undefined, { hour: 'numeric' }).resolvedOptions().hourCycle; return hc === 'h23' || hc === 'h24'; } catch (e) { return false; } })();
+const prefs = Object.assign({ clock24: defaultClock24, rows: 'comfortable', format: 'm3u8', epgSource: 'provider', xmltvUrl: '' }, store.get('prefs', {}));
+const savePrefs = () => store.set('prefs', prefs);
+
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function fmtTime(ms) {
+  const d = new Date(ms), h = d.getHours(), m = d.getMinutes();
+  if (prefs.clock24) return pad(h) + ':' + pad(m);
+  return (h % 12 || 12) + ':' + pad(m) + (h < 12 ? ' am' : ' pm');
+}
+function startOfDay(ms) { const d = new Date(ms); d.setHours(0, 0, 0, 0); return d.getTime(); }
+function fmtDay(ms) {
+  const diff = Math.round((startOfDay(ms) - startOfDay(Date.now())) / DAY);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Tomorrow';
+  if (diff === -1) return 'Yesterday';
+  const d = new Date(ms);
+  return `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+}
+function fmtDate(ms) { const d = new Date(ms); return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`; }
+function durText(ms) { const m = Math.round(ms / MIN); if (m < 60) return m + ' min'; const h = Math.floor(m / 60), r = m % 60; return h + ' h' + (r ? ' ' + r + ' min' : ''); }
+function hash(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const pick = (r, arr) => arr[Math.floor(r() * arr.length)];
+function initials(name) {
+  const clean = String(name).replace(/^[A-Z]{2,3}\s*[:|]\s*/, '').replace(/[^A-Za-z0-9À-ɏ ]+/g, ' ').trim();
+  const w = clean.split(/\s+/).filter(Boolean);
+  if (!w.length) return '?';
+  return (w.length > 1 ? w[0][0] + w[1][0] : w[0].slice(0, 2)).toUpperCase();
+}
+
+/* ================= demo catalogue (invented channels) ================= */
+const TEAMS = ['Harbor FC', 'Meridian United', 'City Hawks', 'Northgate Rovers', 'Valley Athletic', 'Ironbridge Town', 'Coastline SC', 'Stormers'];
+const MOVIES = [
+  ['The Lantern Keeper', 'A lighthouse keeper on a storm-bound island finds a logbook that rewrites her family history.'],
+  ['Northbound Express', "Strangers on an overnight train realize one of them isn't who they claim to be."],
+  ['A Quiet Harbor', 'A retired ferry captain and his estranged son spend one summer restoring an old boat.'],
+  ['Glass Orchard', 'Two rival glassblowers are forced to share a workshop in a small mountain town.'],
+  ["The Cartographer's Daughter", 'A young mapmaker sets out to finish the survey her father never completed.'],
+  ['Seven Winters', 'A love story told across seven winters in the same snowed-in cabin.'],
+  ['Static Bloom', 'A radio engineer picks up a signal that seems to come from tomorrow.'],
+  ['Iron Meridian', 'A railway detective chases a gang of thieves across the frontier.'],
+  ['Paper Moons', 'A struggling puppet theater gets one last chance at a sold-out show.'],
+  ['The Long Field', 'A farming family fights to keep their land through a year of drought.'],
+  ['Neon Tide', 'A night-shift paramedic is pulled into a citywide conspiracy.'],
+  ['Under Copper Skies', 'Miners trapped underground keep each other going for nine days.'],
+  ['Saltwater Kings', 'Two brothers inherit a failing fishing fleet and a dangerous debt.'],
+  ['The Last Ferry', 'Passengers on the final crossing of the season are stranded by fog.']
+];
+const DEMO = [
+  { id: 'news', name: 'News', base: 101, chans: ['Harbor News 24', 'Civic Ledger', 'Northgate World', 'Metro Live 7', 'Fieldline Weather'], durs: [30, 30, 60, 60, 60],
+    titles: ['Morning Briefing', 'The Midday Report', 'World Desk', 'Business Hour', 'Evening News', 'Late Edition', 'Weather Watch', 'Headlines on the Hour', 'Politics Tonight', 'The Week in Review', 'Market Close', 'Newsroom Live'],
+    descs: ["Live coverage of the day's top stories, with reports from correspondents across the region.", 'The latest headlines, a look at the markets and a full regional weather forecast.', 'Interviews and analysis on the decisions shaping the week ahead.', 'Breaking news as it happens, with sport and weather on the hour.'], ratings: ['TV-G', 'TV-PG'] },
+  { id: 'sports', name: 'Sports', base: 201, chans: ['Meridian Sports 1', 'Meridian Sports 2', 'Apex Motor', 'Courtside', 'Fairway Golf', 'Kickoff Plus'], durs: [60, 60, 90, 120],
+    titles: ['$match', 'Matchday Countdown', 'Grand Prix Qualifying', 'Courtside Tonight', 'Highlights Reel', 'Golf: Final Round', 'The Locker Room', '$match', 'Classic Matches', 'Transfer Talk'],
+    descs: ['Full live coverage with build-up, analysis and post-match reaction.', 'Every goal, every chance and the big talking points from the weekend.', 'Former players and coaches break down the biggest moments.', 'Qualifying action as the drivers fight for pole position.'], ratings: ['TV-G'] },
+  { id: 'ent', name: 'Entertainment', base: 301, chans: ['Brightside', 'Channel Ember', 'Prime Comedy', 'Studio Nine', 'Hearth & Home', 'Quiz Nation'], durs: [30, 30, 60, 60], episodic: true,
+    titles: ['Crust & Crumb', 'Kitchen Rivals', 'Open House', 'Quiz Rush', 'Late Night with Mara Quill', 'Second Chances', 'The Renovators', 'Flat 4B', 'Talent Lane', 'Market Hunters', 'Weekend Escapes', 'The Big Swap'],
+    descs: ['The contestants face their toughest round yet, and one of them goes home.', 'A couple on a tight budget gets help turning a tired house into a home.', 'Comedy and conversation with guests from film, music and television.', 'Rent day, a broken boiler and an unexpected houseguest test the flatmates.'], ratings: ['TV-PG', 'TV-14'] },
+  { id: 'movies', name: 'Movies', base: 401, chans: ['Cinema Vault', 'Reel Classics', 'Midnight Features', 'Matinee Gold', 'Silver Screen Family'], durs: [90, 105, 120, 120, 150], movie: true, ratings: ['PG', 'PG-13', 'R'] },
+  { id: 'docs', name: 'Documentary', base: 501, chans: ['Northlight Docs', 'Wild Atlas', 'Deep Time', 'Engineered', 'Voyager History'], durs: [60, 60, 60, 30], episodic: true,
+    titles: ['Wild Atlas: Tidal Flats', 'Deep Time: The First Forests', 'Engineered: Suspension Bridges', 'Voyager: The Silk Roads', 'Planet Underground', 'Cold Frontiers', 'The Clockmakers', 'Coral Cities', 'Rivers of Ice', 'Migration Routes', 'Inside the Observatory', 'Lost Harbors'],
+    descs: ['Rare footage and expert voices follow a landscape through a single year.', 'How the engineering works, told by the people who built it.', 'A journey through deep time to the moment everything changed.', 'Scientists race to understand a world that is changing fast.'], ratings: ['TV-G', 'TV-PG'] },
+  { id: 'kids', name: 'Kids', base: 601, chans: ['Pebble Kids', 'Toon Harbor', 'Little Lab', 'Junior Jam'], durs: [15, 30, 30], episodic: true,
+    titles: ['Pip & Pebble', 'Rocket Rangers', 'The Paper Zoo', 'Little Lab Experiments', 'Doodle Dash', 'Bedtime Tales', 'Sir Sprocket', 'Moss & Moth', 'Tug the Tugboat', 'Shapes Ahoy'],
+    descs: ['Pip loses a kite and the whole harbor joins the search.', 'The rangers build a rocket out of cardboard and big ideas.', 'Songs, shapes and a surprise visitor at the zoo.', 'A gentle story to wind down the day.'], ratings: ['TV-Y', 'TV-Y7'] },
+  { id: 'music', name: 'Music', base: 701, chans: ['Loud Room', 'Vinyl Sundays', 'Pulse Hits', 'Encore Live'], durs: [60, 60, 120],
+    titles: ['Non-stop Hits', 'Vinyl Sessions', 'Encore: Live at the Old Mill', 'Top 40 Countdown', 'Late Night Grooves', 'Acoustic Corner', 'Throwback Hour', 'New Music Friday'],
+    descs: ['Back-to-back videos from the biggest artists right now.', 'A full live set recorded in front of a small crowd.', 'Deep cuts and classics, picked by the presenters.'], ratings: ['TV-PG'] },
+  { id: 'local', name: 'Local', base: 801, chans: ['Riverside 4', 'Valley Public', 'County Access'], durs: [30, 60],
+    titles: ['Riverside Today', 'Council Meeting', 'Community Calendar', 'High School Football', 'Local Weather', 'Valley Gardens', 'Ask the Mayor', 'Farm Report'],
+    descs: ['News, events and people from around the county.', 'Live coverage of the evening council session.', 'What is on this week: markets, meetings and matches.'], ratings: ['TV-G'] }
+];
+const NEWS_TICKER = ['Harbor bridge reopens after repairs', 'Markets steady ahead of rate decision', 'Rain clearing by evening, highs near 58°F', 'Council approves new library plans', 'Ferry timetable changes from Monday'];
+const SUBS = ['We should have left before the fog came in.', 'You kept the logbook all these years?', "There's still one ferry tonight.", "Tell me what the map doesn't show.", 'Then we start again in the morning.'];
+
+/* ================= state ================= */
+const S = {
+  provider: null,   // {id,type,name,server,user,pass,info}
+  backdrop: false,  // demo shown behind the sign-in screen
+  channels: [], byId: new Map(), groups: [], list: [], groupId: 'all',
+  playingId: null, catchup: null
+};
+let epg = new Map();          // channelId -> [{start,end,title,desc,ep,rating,live,isNew}]
+let epgState = new Map();     // channelId -> 'queued'|'loading'|'done'|'error'
+let epgVer = new Map();
+let favs = new Set(), recents = [];
+let rangeStart = 0, rangeEnd = 0;
+let chanW = 232, rowH = 62, headH = 44, ppm = 6.4;
+const focus = { i: 0, t: Date.now(), follow: true };
+
+const el = id => document.getElementById(id);
+const app = el('app'), guideScroll = el('guideScroll'), guideCanvas = el('guideCanvas'), rowsEl = el('rows'), ticksEl = el('ticks'), nowLine = el('nowLine');
+const screenEl = el('screen'), demoCanvas = el('demoCanvas'), video = el('video'), spinner = el('spinner'), screenMsg = el('screenMsg'), unmuteBtn = el('unmuteBtn');
+const osd = el('osd'), scrim = el('scrim'), toastEl = el('toast'), numEl = el('numEntry'), loginEl = el('login');
+if (window.TUNER_TV) video.muted = false;  // TV app: sound on from the start
+
+const x = t => (t - rangeStart) / MIN * ppm;
+const totalW = () => x(rangeEnd);
+
+function computeRange() {
+  const base = Math.floor(Date.now() / (30 * MIN)) * 30 * MIN;
+  rangeStart = base - 12 * HOUR;
+  rangeEnd = base + 36 * HOUR;
+}
+function readMetrics() {
+  const cs = getComputedStyle(document.documentElement);
+  chanW = parseFloat(cs.getPropertyValue('--chanW')) || 232;
+  rowH = parseFloat(cs.getPropertyValue('--rowH')) || 62;
+  headH = parseFloat(cs.getPropertyValue('--headH')) || 44;
+  const w = window.innerWidth;
+  ppm = w < 761 ? 3.6 : w < 1100 ? 5 : w < 1600 ? 6 : 7;
+}
+
+/* ================= demo provider ================= */
+function buildDemo() {
+  const channels = [], groups = [];
+  DEMO.forEach((g, gi) => {
+    g.chans.forEach((name, k) => {
+      channels.push({ id: 'd' + (g.base + k), num: g.base + k, name, groupId: g.id, scene: g.id, g, hue: (gi * 47 + k * 23 + 200) % 360, logo: '', archive: k % 2 === 0, archiveDays: 3 });
+    });
+    groups.push({ id: g.id, name: g.name, count: g.chans.length });
+  });
+  return { channels, groups };
+}
+function demoSchedule(ch) {
+  const g = ch.g, from = startOfDay(rangeStart) - 2 * HOUR, to = rangeEnd + 6 * HOUR;
+  const r = rng(hash(ch.id + ':' + startOfDay(rangeStart)));
+  const out = [];
+  let t = from, last = '', season = 1 + Math.floor(r() * 5), ep = 1 + Math.floor(r() * 9);
+  while (t < to) {
+    let dur = pick(r, g.durs) * MIN, title, desc, epi = '', live = false;
+    if (g.movie) {
+      let m = pick(r, MOVIES); if (m[0] === last) m = pick(r, MOVIES);
+      title = m[0]; desc = m[1]; epi = String(1978 + Math.floor(r() * 46));
+    } else {
+      title = pick(r, g.titles); if (title === last) title = pick(r, g.titles);
+      desc = pick(r, g.descs);
+      if (title === '$match') {
+        const a = pick(r, TEAMS); let b = pick(r, TEAMS); if (b === a) b = TEAMS[(TEAMS.indexOf(a) + 3) % TEAMS.length];
+        title = `Live: ${a} vs ${b}`; live = true; dur = 120 * MIN;
+        desc = `${a} host ${b}. Full live coverage with build-up, analysis and post-match reaction.`;
+      }
+      if (g.episodic) { epi = `S${season} E${ep++}`; if (ep > 12) { ep = 1; season++; } }
+      if (g.id === 'news' && r() < 0.55) live = true;
+    }
+    last = title;
+    out.push({ start: t, end: t + dur, title, desc, ep: epi, rating: pick(r, g.ratings), live, isNew: !live && r() < 0.22 });
+    t += dur;
+  }
+  return out;
+}
+function loadDemo(backdrop) {
+  const { channels, groups } = buildDemo();
+  setProvider({ id: 'demo', type: 'demo', name: 'Demo playlist', info: { status: 'Demo' } }, channels, groups);
+  S.backdrop = backdrop;
+  channels.forEach(c => { epg.set(c.id, demoSchedule(c)); epgState.set(c.id, 'done'); });
+  if (!backdrop) store.set('last', 'demo');
+  startUp();
+}
+
+/* ================= provider wiring ================= */
+function setProvider(p, channels, groups) {
+  teardownStream();
+  S.provider = p; S.channels = channels; S.groups = groups;
+  S.byId = new Map(channels.map(c => [c.id, c]));
+  epg = new Map(); epgState = new Map(); epgVer = new Map(); epgQueue = [];
+  favs = new Set(store.get('fav:' + p.id, []));
+  recents = store.get('recent:' + p.id, []).filter(id => S.byId.has(id));
+  S.groupId = store.get('group:' + p.id, 'all');
+  if (S.groupId !== 'all' && S.groupId !== 'fav' && S.groupId !== 'recent' && !groups.some(g => g.id === S.groupId)) S.groupId = 'all';
+  S.playingId = null; S.catchup = null;
+}
+function startUp() {
+  if (S.provider.type === 'xtream' && prefs.epgSource === 'xmltv') S.channels.forEach(c => epgState.set(c.id, 'loading'));
+  applyGroup(S.groupId, { keepFocus: false });
+  const lastCh = S.byId.get(store.get('lastch:' + S.provider.id, '')) || S.list[0] || S.channels[0];
+  if (lastCh) {
+    const i = S.list.indexOf(lastCh);
+    if (i >= 0) focus.i = i;
+    focus.t = Date.now(); focus.follow = true;
+    play(lastCh, { quiet: true });
+  }
+  layoutGuide();
+  jumpToNow(true);
+  if (S.provider.type === 'xtream' && prefs.epgSource === 'xmltv') loadXmltv();
+}
+
+function groupList(id) {
+  if (id === 'all') return S.channels.slice();
+  if (id === 'fav') return S.channels.filter(c => favs.has(c.id));
+  if (id === 'recent') return recents.map(i => S.byId.get(i)).filter(Boolean);
+  return S.channels.filter(c => c.groupId === id);
+}
+function groupLabel(id) {
+  if (id === 'all') return 'All channels';
+  if (id === 'fav') return 'Favorites';
+  if (id === 'recent') return 'Recently watched';
+  const g = S.groups.find(g => g.id === id);
+  return g ? g.name : 'Channels';
+}
+function applyGroup(id, { keepFocus = true } = {}) {
+  const prev = S.list[focus.i];
+  S.groupId = id; S.list = groupList(id);
+  store.set('group:' + S.provider.id, id);
+  let i = keepFocus && prev ? S.list.indexOf(prev) : -1;
+  if (i < 0) { const pl = S.byId.get(S.playingId); i = pl ? S.list.indexOf(pl) : -1; }
+  focus.i = Math.max(0, i);
+  el('groupName').textContent = groupLabel(id) + ' · ' + S.list.length;
+  document.querySelectorAll('.rail-btn').forEach(b => b.classList.toggle('active', (b.dataset.nav === 'favorites' && id === 'fav') || (b.dataset.nav === 'guide' && id !== 'fav')));
+  layoutGuide();
+}
+
+/* ================= guide layout + render ================= */
+let rowCache = new Map(), winKey = '', win = { wStart: 0, wEnd: 0 };
+function layoutGuide() {
+  readMetrics();
+  const W = totalW();
+  guideCanvas.style.width = (chanW + W) + 'px';
+  guideCanvas.style.height = (headH + S.list.length * rowH) + 'px';
+  ticksEl.style.width = W + 'px';
+  rowsEl.style.height = (S.list.length * rowH) + 'px';
+  rowsEl.textContent = ''; rowCache = new Map(); winKey = '';
+  renderTicks();
+  positionNow();
+  const empty = el('guideEmpty');
+  if (!S.list.length) {
+    empty.hidden = false;
+    empty.innerHTML = S.groupId === 'fav'
+      ? '<b>No favorites yet</b><span>Select a channel and press F, or open a program and choose Add to favorites.</span>'
+      : S.groupId === 'recent' ? '<b>Nothing watched yet</b><span>Channels you watch show up here.</span>' : '<b>No channels in this group</b>';
+  } else empty.hidden = true;
+  renderGuide();
+  updateHero();
+}
+function renderTicks() {
+  let h = '';
+  for (let t = rangeStart; t < rangeEnd; t += 30 * MIN) {
+    const d = new Date(t), midnight = d.getHours() === 0 && d.getMinutes() === 0;
+    h += `<span class="tick${midnight ? ' day' : ''}" style="left:${x(t).toFixed(1)}px">${midnight ? `<b>${esc(fmtDay(t))}</b>` : ''}${fmtTime(t)}</span>`;
+  }
+  h += `<span class="now-tick" id="nowTick"></span>`;
+  ticksEl.innerHTML = h;
+}
+function positionNow() {
+  const now = Date.now(), nx = x(now);
+  nowLine.style.left = (chanW + nx) + 'px';
+  const nt = el('nowTick');
+  if (nt) { nt.style.left = nx + 'px'; nt.textContent = fmtTime(now); }
+}
+
+let renderQueued = false;
+function scheduleRender() { if (!renderQueued) { renderQueued = true; requestAnimationFrame(() => { renderQueued = false; renderGuide(); }); } }
+function renderGuide() {
+  if (!S.list.length) { rowsEl.textContent = ''; rowCache.clear(); return; }
+  const sc = guideScroll, now = Date.now();
+  const first = Math.max(0, Math.floor(sc.scrollTop / rowH) - 3);
+  const last = Math.min(S.list.length - 1, Math.ceil((sc.scrollTop + sc.clientHeight) / rowH) + 3);
+  const leftT = rangeStart + sc.scrollLeft / ppm * MIN;
+  const span = Math.max(60, (sc.clientWidth - chanW) / ppm) * MIN;
+  const wStart = Math.max(rangeStart, Math.floor((leftT - 3 * HOUR) / HOUR) * HOUR);
+  const wEnd = Math.min(rangeEnd, Math.ceil((leftT + span + 3 * HOUR) / HOUR) * HOUR);
+  const wk = wStart + ':' + wEnd;
+  if (wk !== winKey) { winKey = wk; win = { wStart, wEnd }; rowCache.forEach(r => { r.sig = ''; }); }
+  for (const [i, r] of rowCache) {
+    if (i < first || i > last || r.ch !== S.list[i].id) { r.el.remove(); rowCache.delete(i); }
+  }
+  const fp = focusedProg(), minute = Math.floor(now / MIN), need = [], W = totalW();
+  for (let i = first; i <= last; i++) {
+    const ch = S.list[i], isF = i === focus.i;
+    const sig = [epgVer.get(ch.id) || 0, epgState.get(ch.id) || '', isF ? (fp ? fp.start : 'e') : '', S.playingId === ch.id ? 1 : 0, favs.has(ch.id) ? 1 : 0, minute, wk, prefs.clock24].join('|');
+    let r = rowCache.get(i);
+    if (!r) {
+      const rowEl = document.createElement('div');
+      rowEl.className = 'row'; rowEl.setAttribute('role', 'row');
+      rowEl.style.top = (i * rowH) + 'px'; rowEl.style.width = (chanW + W) + 'px';
+      rowsEl.appendChild(rowEl);
+      r = { el: rowEl, ch: ch.id, sig: '' }; rowCache.set(i, r);
+    }
+    if (r.sig !== sig) { r.sig = sig; r.el.innerHTML = rowHTML(ch, i, isF, fp, now, W); }
+    if (S.provider.type === 'xtream' && !epgState.has(ch.id)) need.push(ch.id);
+  }
+  if (need.length) requestEpg(need);
+  sc.setAttribute('aria-activedescendant', fp ? `p${focus.i}_${fp.start}` : `p${focus.i}_e`);
+  el('cornerDate').textContent = fmtDay(leftT + 20 * MIN);
+}
+function logoHTML(ch, cls = '') {
+  return `<span class="logo ${cls}" style="--h:${ch.hue}">${esc(initials(ch.name))}${ch.logo ? `<img src="${esc(ch.logo)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}</span>`;
+}
+function rowHTML(ch, i, isF, fp, now, W) {
+  const ps = epg.get(ch.id), { wStart, wEnd } = win;
+  const playing = S.playingId === ch.id;
+  let cells = '';
+  if (ps && ps.length) {
+    const archFrom = ch.archive ? now - (ch.archiveDays || 3) * DAY : Infinity;
+    for (let k = firstIdx(ps, wStart); k < ps.length; k++) {
+      const p = ps[k];
+      if (p.end <= wStart) continue;
+      if (p.start >= wEnd) break;
+      const l = x(Math.max(p.start, rangeStart)), w = x(Math.min(p.end, rangeEnd)) - l - 2;
+      if (w <= 0) continue;
+      const isNow = p.start <= now && p.end > now, isPast = p.end <= now;
+      const f = isF && fp && fp.start === p.start;
+      const cu = isPast && p.start >= archFrom;
+      const cls = 'prog' + (isNow ? ' now' : '') + (isPast ? ' past' : '') + (f ? ' focus' : '') + (w < 36 ? ' tiny' : '');
+      const pb = isNow ? `<i class="pb" style="width:${((now - p.start) / (p.end - p.start) * 100).toFixed(1)}%"></i>` : '';
+      cells += `<div class="${cls}" id="p${i}_${p.start}" role="gridcell" data-i="${i}" data-s="${p.start}" style="left:${l.toFixed(1)}px;width:${w.toFixed(1)}px" aria-label="${esc(p.title)}, ${fmtTime(p.start)} to ${fmtTime(p.end)}"><span class="pt">${cu ? icon('replay', 'cu') : ''}${p.live && isNow ? '<b class="lv">LIVE</b>' : ''}${esc(p.title)}</span><span class="ps">${fmtTime(p.start)} – ${fmtTime(p.end)}</span>${pb}</div>`;
+    }
+  }
+  if (!cells) {
+    const st = epgState.get(ch.id), loading = S.provider.type === 'xtream' && st !== 'done' && st !== 'error';
+    cells = `<div class="prog empty${isF && !fp ? ' focus' : ''}" id="p${i}_e" role="gridcell" data-i="${i}" data-s="" style="left:${x(wStart).toFixed(1)}px;width:${(x(wEnd) - x(wStart) - 2).toFixed(1)}px"><span class="pt">${loading ? 'Loading guide…' : 'No program information'}</span></div>`;
+  }
+  return `<div class="chan${isF ? ' cur' : ''}${playing ? ' playing' : ''}" role="rowheader" data-i="${i}"><span class="cnum">${ch.num}</span>${logoHTML(ch)}<span class="cname">${esc(ch.name)}</span>${playing ? '<span class="eq" aria-label="Playing"><i></i><i></i><i></i></span>' : favs.has(ch.id) ? icon('star', 'star fill') : ''}</div><div class="progs" style="width:${W.toFixed(0)}px">${cells}</div>`;
+}
+function firstIdx(ps, t) { let lo = 0, hi = ps.length - 1; while (lo < hi) { const m = (lo + hi) >> 1; if (ps[m].end <= t) lo = m + 1; else hi = m; } return lo; }
+function invalidateRows() { rowCache.forEach(r => { r.sig = ''; }); }
+
+/* ================= focus + navigation ================= */
+function progAt(ch, t) {
+  const ps = ch && epg.get(ch.id);
+  if (!ps || !ps.length) return null;
+  let lo = 0, hi = ps.length - 1;
+  while (lo < hi) { const m = (lo + hi + 1) >> 1; if (ps[m].start <= t) lo = m; else hi = m - 1; }
+  const p = ps[lo];
+  if (p.start <= t && p.end > t) return p;
+  if (p.start > t) return ps[0].start - t < 6 * HOUR ? ps[0] : null;
+  const n = ps[lo + 1];
+  if (n && n.start - t < 3 * HOUR) return n;
+  return t - p.end < 3 * HOUR ? p : null;
+}
+const focusedProg = () => progAt(S.list[focus.i], focus.t);
+const isNowProg = (p, now = Date.now()) => !!p && p.start <= now && p.end > now;
+function neighbor(ch, p, dir) { const ps = epg.get(ch.id) || []; const k = ps.indexOf(p); return k < 0 ? null : ps[k + dir] || null; }
+function canCatchup(ch, p, now = Date.now()) { return !!(ch && p && ch.archive && p.end <= now && p.start >= now - (ch.archiveDays || 3) * DAY); }
+
+function focusChanged(scroll = true) {
+  if (scroll) ensureVisible();
+  renderGuide();
+  updateHero();
+}
+function moveRow(d) {
+  if (!S.list.length) return;
+  focus.i = Math.max(0, Math.min(S.list.length - 1, focus.i + d));
+  if (focus.follow) focus.t = Date.now();
+  focusChanged();
+}
+function moveProg(d) {
+  const ch = S.list[focus.i]; if (!ch) return;
+  const p = focusedProg(), now = Date.now();
+  if (!p) { if (d < 0) openGroups(); return; }
+  const n = neighbor(ch, p, d);
+  if (d > 0) {
+    if (!n || n.start >= rangeEnd) return;
+    focus.t = isNowProg(n, now) ? now : n.start; focus.follow = isNowProg(n, now);
+  } else {
+    if (n && n.end > rangeStart && (n.end > now || canCatchup(ch, n, now))) {
+      focus.t = isNowProg(n, now) ? now : Math.max(n.start, rangeStart); focus.follow = isNowProg(n, now);
+    } else { openGroups(); return; }
+  }
+  focusChanged();
+}
+function jumpToNow(initial) {
+  focus.t = Date.now(); focus.follow = true;
+  const sc = guideScroll;
+  sc.scrollLeft = Math.max(0, x(Math.floor(Date.now() / (30 * MIN)) * 30 * MIN) - 6);
+  if (initial) sc.scrollTop = Math.max(0, focus.i * rowH - rowH);
+  focusChanged(!initial);
+}
+function ensureVisible() {
+  const sc = guideScroll, top = focus.i * rowH, viewH = sc.clientHeight - headH;
+  if (top < sc.scrollTop) sc.scrollTop = top;
+  else if (top + rowH > sc.scrollTop + viewH) sc.scrollTop = top + rowH - viewH;
+  const p = focusedProg();
+  if (!p) return;
+  const l = x(Math.max(p.start, rangeStart)), r = x(Math.min(p.end, rangeEnd));
+  const viewL = sc.scrollLeft, viewW = sc.clientWidth - chanW;
+  if (l >= viewL + viewW - 60) sc.scrollLeft = Math.max(0, l - 30 * ppm);
+  else if (r <= viewL + 60) sc.scrollLeft = Math.max(0, r - viewW + 30 * ppm);
+}
+function setFocusTo(i, p) {
+  focus.i = i;
+  const now = Date.now();
+  if (p) { focus.follow = isNowProg(p, now); focus.t = focus.follow ? now : p.start; }
+  else { focus.t = now; focus.follow = true; }
+}
+
+/* ================= hero + OSD ================= */
+function metaHTML(ch, p, now) {
+  if (!p) return '';
+  const bits = [];
+  bits.push(`<span>${p.start < startOfDay(now) || p.start >= startOfDay(now) + DAY ? esc(fmtDay(p.start)) + ' · ' : ''}${fmtTime(p.start)} – ${fmtTime(p.end)}</span>`);
+  if (isNowProg(p, now)) bits.push(`<span>${durText(p.end - now)} left</span>`);
+  else if (p.start > now) bits.push(`<span>Starts in ${durText(p.start - now)}</span>`);
+  else bits.push(`<span>${durText(p.end - p.start)}</span>`);
+  if (p.ep) bits.push(`<span>${esc(p.ep)}</span>`);
+  let badges = '';
+  if (p.live && isNowProg(p, now)) badges += '<span class="badge live">Live</span>';
+  if (p.isNew) badges += '<span class="badge new">New</span>';
+  if (p.rating) badges += `<span class="badge">${esc(p.rating)}</span>`;
+  if (canCatchup(ch, p, now)) badges += `<span class="badge">${icon('replay')}Catch-up</span>`;
+  return bits.join('<span class="sep">·</span>') + badges;
+}
+function updateHero() {
+  const now = Date.now();
+  let ch = S.list[focus.i], p = ch ? focusedProg() : null;
+  if (!ch) { ch = S.byId.get(S.playingId); p = ch ? progAt(ch, now) : null; }
+  if (!ch) return;
+  const logo = el('heroLogo');
+  logo.style.setProperty('--h', ch.hue);
+  logo.innerHTML = esc(initials(ch.name)) + (ch.logo ? `<img src="${esc(ch.logo)}" alt="" referrerpolicy="no-referrer">` : '');
+  el('heroNum').textContent = ch.num;
+  el('heroName').textContent = ch.name;
+  el('heroTitle').textContent = p ? p.title : ch.name;
+  el('heroMeta').innerHTML = p ? metaHTML(ch, p, now) : `<span>${epgState.get(ch.id) === 'done' || epgState.get(ch.id) === 'error' ? 'No program information' : 'Loading guide…'}</span>`;
+  const prog = el('heroProg');
+  prog.hidden = !isNowProg(p, now);
+  if (!prog.hidden) prog.firstElementChild.style.width = ((now - p.start) / (p.end - p.start) * 100).toFixed(1) + '%';
+  el('heroDesc').textContent = p ? (p.desc || '') : '';
+  const n = p ? neighbor(ch, p, 1) : null;
+  el('heroNext').innerHTML = n ? `Next · <b>${fmtTime(n.start)}</b> ${esc(n.title)}` : '';
+  el('clock').textContent = fmtTime(now);
+}
+let osdTimer = 0;
+function showOsd() {
+  if (!app.classList.contains('is-full')) return;
+  osd.classList.remove('hide');
+  clearTimeout(osdTimer);
+  osdTimer = setTimeout(() => osd.classList.add('hide'), 4500);
+}
+function updateOsd() {
+  const ch = S.byId.get(S.playingId); if (!ch) return;
+  const now = Date.now();
+  const p = S.catchup || progAt(ch, now);
+  const logo = el('osdLogo');
+  logo.style.setProperty('--h', ch.hue);
+  logo.innerHTML = esc(initials(ch.name)) + (ch.logo ? `<img src="${esc(ch.logo)}" alt="" referrerpolicy="no-referrer">` : '');
+  el('osdNum').textContent = ch.num;
+  el('osdName').textContent = ch.name;
+  el('osdClock').textContent = fmtTime(now);
+  el('osdTitle').textContent = p ? p.title : 'No program information';
+  el('osdTime').textContent = p ? `${fmtTime(p.start)} – ${fmtTime(p.end)}` : '';
+  const pr = el('osdProg');
+  pr.hidden = !(p && (S.catchup || isNowProg(p, now)));
+  if (!pr.hidden) {
+    const pos = S.catchup ? Math.min(1, (now - S.catchup.playedAt) / (p.end - p.start)) : (now - p.start) / (p.end - p.start);
+    pr.firstElementChild.style.width = (pos * 100).toFixed(1) + '%';
+  }
+  const n = p && !S.catchup ? neighbor(ch, p, 1) : null;
+  el('osdNext').innerHTML = n ? `<b>Next</b>${fmtTime(n.start)}  ${esc(n.title)}` : '';
+  el('osdFav').classList.toggle('on', favs.has(ch.id));
+  el('osdFav').lastChild.textContent = favs.has(ch.id) ? 'Favorite' : 'Add favorite';
+  const flag = el('cuFlag');
+  flag.style.display = S.catchup && app.classList.contains('is-full') ? 'inline-flex' : 'none';
+  if (S.catchup) flag.lastElementChild.textContent = `Catch-up · aired ${fmtTime(S.catchup.start)}`;
+  updateMuteUi();
+}
+
+/* ================= playback ================= */
+let hls = null, mts = null, playToken = 0, streamFail = null, userMuted = false, gestured = !!window.TUNER_TV;
+const libs = {};
+function loadScript(src) {
+  if (!libs[src]) libs[src] = new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src; s.async = true;
+    s.onload = res; s.onerror = () => { delete libs[src]; rej(new Error('lib')); };
+    document.head.appendChild(s);
+  });
+  return libs[src];
+}
+function teardownStream() {
+  if (cancelWait) cancelWait();
+  streamFail = null;
+  if (hls) { try { hls.destroy(); } catch (e) {} hls = null; }
+  if (mts) { try { mts.pause(); mts.unload(); mts.detachMediaElement(); mts.destroy(); } catch (e) {} mts = null; }
+  try { video.pause(); video.removeAttribute('src'); video.load(); } catch (e) {}
+}
+function liveUrl(ch) {
+  const p = S.provider;
+  return `${p.server}/live/${enc(p.user)}/${enc(p.pass)}/${ch.id}.${prefs.format === 'ts' ? 'ts' : 'm3u8'}`;
+}
+function tzStamp(ms, tz) {
+  try {
+    const f = new Intl.DateTimeFormat('en-CA', { timeZone: tz || undefined, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+    const o = {}; f.formatToParts(new Date(ms)).forEach(v => { o[v.type] = v.value; });
+    return `${o.year}-${o.month}-${o.day}:${o.hour === '24' ? '00' : o.hour}-${o.minute}`;
+  } catch (e) { const d = new Date(ms); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}:${pad(d.getHours())}-${pad(d.getMinutes())}`; }
+}
+function catchupUrl(ch, p) {
+  const pr = S.provider, dur = Math.ceil((p.end - p.start) / MIN);
+  return `${pr.server}/timeshift/${enc(pr.user)}/${enc(pr.pass)}/${dur}/${tzStamp(p.start, pr.info && pr.info.tz)}/${ch.id}.${prefs.format === 'ts' ? 'ts' : 'm3u8'}`;
+}
+async function play(ch, opts = {}) {
+  const token = ++playToken;
+  S.playingId = ch.id;
+  S.catchup = opts.catchup ? Object.assign({}, opts.catchup, { playedAt: Date.now() }) : null;
+  if (!opts.quiet) {
+    recents = [ch.id].concat(recents.filter(i => i !== ch.id)).slice(0, 30);
+    store.set('recent:' + S.provider.id, recents);
+  }
+  store.set('lastch:' + S.provider.id, ch.id);
+  hideScreenMsg();
+  renderGuide(); updateOsd();
+  if (opts.full) enterFull();
+  if (S.provider.type === 'demo') {
+    teardownStream();
+    video.hidden = true; demoCanvas.hidden = false; spinner.hidden = true; unmuteBtn.hidden = true;
+    demoSet(ch, S.catchup);
+    return;
+  }
+  demoStop();
+  demoCanvas.hidden = true; video.hidden = false; spinner.hidden = false;
+  const kind = prefs.format === 'ts' ? 'ts' : 'hls';
+  const url = via(S.catchup ? catchupUrl(ch, S.catchup) : liveUrl(ch));
+  try {
+    await startStream(url, kind, !S.catchup, token);
+    if (token === playToken) spinner.hidden = true;
+  } catch (err) {
+    if (token !== playToken) return;
+    spinner.hidden = true;
+    showScreenMsg(err && err.message);
+  }
+}
+let cancelWait = null;
+function waitPlaying() {
+  return new Promise((res, rej) => {
+    let finished = false;
+    const to = setTimeout(() => done(new Error('timeout')), 25000);
+    const ok = () => done();
+    const bad = () => done(new Error('media'));
+    const fail = msg => done(new Error(msg));
+    const cancel = () => done(new Error('cancel'));
+    function done(err) {
+      if (finished) return;
+      finished = true;
+      clearTimeout(to);
+      video.removeEventListener('playing', ok); video.removeEventListener('error', bad);
+      if (streamFail === fail) streamFail = null;
+      if (cancelWait === cancel) cancelWait = null;
+      err ? rej(err) : res();
+    }
+    video.addEventListener('playing', ok); video.addEventListener('error', bad);
+    streamFail = fail; cancelWait = cancel;
+  });
+}
+function safePlay() {
+  video.muted = userMuted || !gestured;
+  updateMuteUi();
+  const pr = video.play();
+  if (pr && pr.catch) pr.catch(err => {
+    if (err && err.name === 'NotAllowedError' && !video.muted) { video.muted = true; updateMuteUi(); video.play().catch(() => {}); }
+  });
+}
+async function startStream(url, kind, live, token) {
+  teardownStream();
+  const waiting = waitPlaying();
+  waiting.catch(() => {});
+  if (kind === 'ts') {
+    await loadScript(MPEGTS_SRC);
+    if (token !== playToken) return;
+    if (!window.mpegts || !mpegts.isSupported()) throw new Error('ts-unsupported');
+    mts = mpegts.createPlayer({ type: 'mpegts', isLive: live, url }, { enableWorker: false, liveBufferLatencyChasing: live, lazyLoad: false });
+    mts.attachMediaElement(video);
+    mts.on(mpegts.Events.ERROR, () => { if (streamFail) streamFail('network'); else showScreenMsg('stopped'); });
+    mts.load();
+    safePlay();
+  } else if (!window.MediaSource && !window.ManagedMediaSource && video.canPlayType('application/vnd.apple.mpegurl')) {
+    video.src = url;
+    safePlay();
+  } else {
+    await loadScript(HLS_SRC);
+    if (token !== playToken) return;
+    if (!window.Hls || !Hls.isSupported()) {
+      if (video.canPlayType('application/vnd.apple.mpegurl')) { video.src = url; safePlay(); }
+      else throw new Error('hls-unsupported');
+    } else {
+      let netRetry = 0, mediaRetry = 0;
+      hls = new Hls({ enableWorker: true, lowLatencyMode: false, backBufferLength: 30, manifestLoadingMaxRetry: 2, levelLoadingMaxRetry: 3 });
+      hls.on(Hls.Events.ERROR, (e, data) => {
+        if (!data.fatal) return;
+        if (data.type === Hls.ErrorTypes.NETWORK_ERROR && netRetry++ < 1) { hls.startLoad(); return; }
+        if (data.type === Hls.ErrorTypes.MEDIA_ERROR && mediaRetry++ < 1) { hls.recoverMediaError(); return; }
+        if (streamFail) streamFail(data.type === Hls.ErrorTypes.NETWORK_ERROR ? 'network' : 'media');
+        else showScreenMsg('stopped');
+      });
+      hls.attachMedia(video);
+      hls.loadSource(url);
+      safePlay();
+    }
+  }
+  await waiting;
+}
+const SCREEN_MSGS = {
+  timeout: ["The channel didn't start", 'It may be offline, or your connection limit may be reached.'],
+  network: ["This channel isn't playing", 'The stream could not be loaded. Try again, or switch the stream format in Settings.'],
+  media: ["This channel isn't playing", 'The video format is not supported here. Try switching the stream format in Settings.'],
+  stopped: ['Playback stopped', 'The stream was interrupted.'],
+  'ts-unsupported': ["This browser can't play MPEG-TS", 'Switch the stream format to HLS in Settings.'],
+  'hls-unsupported': ["This browser can't play HLS streams", 'Try a current version of Chrome, Edge, Firefox or Safari.'],
+  lib: ["The video player didn't load", 'Check your internet connection and try again.']
+};
+function showScreenMsg(code) {
+  const [t, d] = SCREEN_MSGS[code] || SCREEN_MSGS.network;
+  screenMsg.innerHTML = `<b>${esc(t)}</b><span>${esc(d)}</span><button class="btn ghost" data-act="retry">Try again</button>`;
+  screenMsg.hidden = false;
+  updateMuteUi();
+}
+function hideScreenMsg() { screenMsg.hidden = true; }
+function updateMuteUi() {
+  const isDemo = !S.provider || S.provider.type === 'demo';
+  unmuteBtn.hidden = isDemo || !video.muted || video.hidden || !screenMsg.hidden;
+  const b = el('osdMute');
+  b.hidden = isDemo;
+  b.firstElementChild.firstElementChild.setAttribute('href', video.muted ? '#i-mute' : '#i-vol');
+  b.lastChild.textContent = video.muted ? 'Sound off' : 'Sound';
+}
+function toggleMute() { userMuted = !video.muted ? true : false; video.muted = userMuted; updateMuteUi(); }
+function firstGesture() {
+  if (gestured) return;
+  gestured = true;
+  if (!userMuted && !video.hidden) { video.muted = false; updateMuteUi(); }
+}
+
+/* full screen */
+function enterFull() {
+  if (app.classList.contains('is-full')) { showOsd(); return; }
+  app.classList.add('is-full');
+  updateOsd(); showOsd();
+  const de = document.documentElement;
+  if (de.requestFullscreen && !document.fullscreenElement) { try { const r = de.requestFullscreen(); if (r && r.catch) r.catch(() => {}); } catch (e) {} }
+  requestAnimationFrame(sizeCanvas);
+}
+function exitFull() {
+  if (!app.classList.contains('is-full')) return;
+  app.classList.remove('is-full');
+  osd.classList.add('hide');
+  el('cuFlag').style.display = 'none';
+  if (document.fullscreenElement && document.exitFullscreen) { try { const r = document.exitFullscreen(); if (r && r.catch) r.catch(() => {}); } catch (e) {} }
+  requestAnimationFrame(() => { sizeCanvas(); renderGuide(); });
+  guideScroll.focus({ preventScroll: true });
+}
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) exitFull(); });
+function stepChannel(d) {
+  const base = S.list.length ? S.list : S.channels;
+  if (!base.length) return;
+  let i = base.findIndex(c => c.id === S.playingId);
+  i = (i + d + base.length) % base.length;
+  if (base === S.list) { focus.i = i; focus.t = Date.now(); focus.follow = true; ensureVisible(); }
+  play(base[i]);
+  updateHero(); showOsd();
+}
+
+/* ================= demo picture (canvas) ================= */
+const ctx = demoCanvas.getContext('2d');
+let demoCh = null, demoCu = null, demoRaf = 0, demoLast = 0;
+function demoSet(ch, cu) { demoCh = ch; demoCu = cu; sizeCanvas(); if (!demoRaf) demoRaf = requestAnimationFrame(demoLoop); }
+function demoStop() { if (demoRaf) cancelAnimationFrame(demoRaf); demoRaf = 0; }
+function demoLoop(ts) {
+  demoRaf = requestAnimationFrame(demoLoop);
+  if (document.hidden) return;
+  const minDt = reduceMotion.matches ? 1000 : 1000 / 30;
+  if (ts - demoLast < minDt) return;
+  demoLast = ts;
+  drawDemo(reduceMotion.matches ? ts / 4000 : ts / 1000);
+}
+function sizeCanvas() {
+  const r = screenEl.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  const w = Math.max(2, Math.round(r.width * dpr)), h = Math.max(2, Math.round(r.height * dpr));
+  if (demoCanvas.width !== w || demoCanvas.height !== h) { demoCanvas.width = w; demoCanvas.height = h; }
+}
+if (window.ResizeObserver) new ResizeObserver(sizeCanvas).observe(screenEl);
+const F = (px, wgt = 600) => `${wgt} ${Math.max(8, Math.round(px))}px "Barlow Semi Condensed", "Arial Narrow", sans-serif`;
+function rr(c, x0, y0, w, h, r) { c.beginPath(); c.moveTo(x0 + r, y0); c.arcTo(x0 + w, y0, x0 + w, y0 + h, r); c.arcTo(x0 + w, y0 + h, x0, y0 + h, r); c.arcTo(x0, y0 + h, x0, y0, r); c.arcTo(x0, y0, x0 + w, y0, r); c.closePath(); }
+function fitText(c, s, maxW) { if (c.measureText(s).width <= maxW) return s; while (s.length > 1 && c.measureText(s + '…').width > maxW) s = s.slice(0, -1); return s + '…'; }
+function lowerThird(c, w, h, title, tag, hue) {
+  const y = h * .74, bh = h * .1, x0 = w * .06;
+  c.font = F(bh * .4, 700); c.textBaseline = 'middle';
+  const tw = c.measureText(tag).width + bh * .5;
+  c.fillStyle = tag === 'LIVE' ? '#e5483f' : `hsl(${hue},55%,38%)`; c.fillRect(x0, y, tw, bh);
+  c.fillStyle = '#fff'; c.fillText(tag, x0 + bh * .25, y + bh / 2);
+  const maxW = w * .84 - tw;
+  c.fillStyle = 'rgba(255,255,255,.95)'; c.fillRect(x0 + tw, y, maxW, bh);
+  c.fillStyle = '#10161d'; c.font = F(bh * .48, 600);
+  c.fillText(fitText(c, title, maxW - bh * .5), x0 + tw + bh * .25, y + bh / 2);
+}
+function ticker(c, w, h, t) {
+  const y = h * .885, bh = h * .075;
+  c.fillStyle = 'rgba(6,10,16,.9)'; c.fillRect(0, y, w, bh);
+  c.font = F(bh * .52, 500); c.fillStyle = '#dfe6ee'; c.textBaseline = 'middle';
+  const text = NEWS_TICKER.join('   •   ') + '   •   ';
+  const tw = c.measureText(text).width, off = (t * h * .12) % tw;
+  for (let x0 = -off; x0 < w; x0 += tw) c.fillText(text, x0, y + bh / 2);
+}
+function cornerTitle(c, w, h, text, dark) {
+  c.font = F(h * .05, 600); c.textBaseline = 'middle';
+  const s = fitText(c, text, w * .6), tw = c.measureText(s).width, bh = h * .085;
+  c.fillStyle = dark ? 'rgba(8,12,18,.72)' : 'rgba(255,255,255,.85)'; rr(c, w * .04, h * .06, tw + bh * .6, bh, bh * .25); c.fill();
+  c.fillStyle = dark ? '#fff' : '#1c2a3a'; c.fillText(s, w * .04 + bh * .3, h * .06 + bh / 2);
+}
+const SCENES = {
+  news(c, w, h, t, ch, p) {
+    const g = c.createLinearGradient(0, 0, w, h); g.addColorStop(0, `hsl(${ch.hue},55%,18%)`); g.addColorStop(1, `hsl(${ch.hue + 25},60%,7%)`);
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+    const cols = 5, rows = 3, ox = w * .14, oy = h * .07, pw = w * .72 / cols, ph = h * .46 / rows;
+    for (let r = 0; r < rows; r++) for (let k = 0; k < cols; k++) {
+      const a = .16 + .2 * (Math.sin(t * 1.1 + r * 1.9 + k * 1.3) * .5 + .5);
+      c.fillStyle = `hsla(${ch.hue + k * 9},70%,60%,${a})`; c.fillRect(ox + k * pw + 3, oy + r * ph + 3, pw - 6, ph - 6);
+    }
+    c.strokeStyle = `hsla(${ch.hue + 40},80%,75%,.4)`; c.lineWidth = Math.max(1, h * .004);
+    for (let i = 0; i < 3; i++) { c.beginPath(); c.ellipse(w * .5, h * .3, Math.max(1, h * .15 * Math.abs(Math.cos(t * .4 + i))), h * .15, 0, 0, 7); c.stroke(); }
+    c.beginPath(); c.moveTo(w * .5 - h * .15, h * .3); c.lineTo(w * .5 + h * .15, h * .3); c.stroke();
+    const dg = c.createLinearGradient(0, h * .6, 0, h * .72); dg.addColorStop(0, `hsl(${ch.hue},25%,28%)`); dg.addColorStop(1, `hsl(${ch.hue},25%,12%)`);
+    c.fillStyle = dg; rr(c, w * .2, h * .6, w * .6, h * .1, h * .02); c.fill();
+    lowerThird(c, w, h, p ? p.title : ch.name, p && p.live ? 'LIVE' : 'NEWS', ch.hue);
+    ticker(c, w, h, t);
+  },
+  sports(c, w, h, t, ch, p) {
+    c.fillStyle = '#21703a'; c.fillRect(0, 0, w, h);
+    for (let i = 1; i < 12; i += 2) { c.fillStyle = 'rgba(255,255,255,.05)'; c.fillRect(i * w / 12, 0, w / 12, h); }
+    const m = h * .08; c.strokeStyle = 'rgba(255,255,255,.75)'; c.lineWidth = Math.max(1, h * .006);
+    c.strokeRect(m, m, w - 2 * m, h - 2 * m);
+    c.beginPath(); c.moveTo(w / 2, m); c.lineTo(w / 2, h - m); c.stroke();
+    c.beginPath(); c.arc(w / 2, h / 2, h * .14, 0, 7); c.stroke();
+    const bw = w * .11, bh = h * .44; c.strokeRect(m, (h - bh) / 2, bw, bh); c.strokeRect(w - m - bw, (h - bh) / 2, bw, bh);
+    const bx = w / 2 + Math.sin(t * .7) * w * .3 + Math.sin(t * 1.9) * w * .05, by = h / 2 + Math.sin(t * 1.1 + 1) * h * .28;
+    const form = [[.1, .5], [.24, .25], [.24, .75], [.36, .42], [.36, .58], [.44, .2], [.44, .8]];
+    form.forEach((f, k) => {
+      for (let side = 0; side < 2; side++) {
+        const px = (side ? 1 - f[0] : f[0]) * w + (bx - w / 2) * .25 + Math.sin(t * 1.3 + k * 2 + side) * w * .015;
+        const py = f[1] * h + (by - h / 2) * .2 + Math.cos(t * 1.1 + k + side * 3) * h * .02;
+        c.fillStyle = side ? '#f2f2f2' : `hsl(${ch.hue},75%,52%)`; c.beginPath(); c.arc(px, py, h * .022, 0, 7); c.fill();
+      }
+    });
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(bx, by, h * .014, 0, 7); c.fill();
+    const mt = p && /^Live: (.+?) vs (.+)$/.exec(p.title);
+    if (mt) {
+      const ab = s => s.replace(/\b(FC|SC|United|Town|Athletic)\b/g, '').trim().slice(0, 3).toUpperCase();
+      const el2 = Math.max(0, Date.now() - p.start), mins = Math.floor(el2 / MIN), secs = Math.floor(el2 / 1000) % 60;
+      const sa = Math.min(4, Math.floor(mins / 37)), sb = Math.min(3, Math.floor((mins + 15) / 51));
+      const x0 = w * .04, y0 = h * .05, hh = h * .08; c.font = F(hh * .56, 700); c.textBaseline = 'middle';
+      const txt = `${ab(mt[1])}  ${sa} – ${sb}  ${ab(mt[2])}`, tw = c.measureText(txt).width;
+      c.fillStyle = 'rgba(8,12,18,.86)'; c.fillRect(x0, y0, tw + hh * .6, hh);
+      c.fillStyle = '#fff'; c.fillText(txt, x0 + hh * .3, y0 + hh / 2);
+      const clock = `${pad(Math.min(mins, 120))}:${pad(secs)}`, cw = c.measureText(clock).width;
+      c.fillStyle = '#f5a83c'; c.fillRect(x0 + tw + hh * .6, y0, cw + hh * .6, hh);
+      c.fillStyle = '#1b1206'; c.fillText(clock, x0 + tw + hh * .9, y0 + hh / 2);
+    } else lowerThird(c, w, h, p ? p.title : ch.name, 'SPORT', ch.hue);
+  },
+  movies(c, w, h, t, ch, p) {
+    const hue = ch.hue + Math.sin(t * .05) * 30;
+    const g = c.createRadialGradient(w * .5 + Math.sin(t * .1) * w * .2, h * .5, 0, w * .5, h * .5, w * .7);
+    g.addColorStop(0, `hsl(${hue},45%,30%)`); g.addColorStop(1, `hsl(${hue + 50},50%,6%)`);
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+    for (let i = 0; i < 14; i++) {
+      const s = i * 97.13, bx = ((s * 7 + t * w * .012 * (1 + i % 3)) % (w * 1.2)) - w * .1, by = h * .2 + ((s * 13) % (h * .6));
+      const r = h * (.03 + (i % 5) * .016), a = .1 + .07 * Math.sin(t * .6 + i);
+      const rg = c.createRadialGradient(bx, by, 0, bx, by, r);
+      rg.addColorStop(0, `hsla(${hue + i * 12},80%,75%,${a + .06})`); rg.addColorStop(1, `hsla(${hue + i * 12},80%,75%,0)`);
+      c.fillStyle = rg; c.fillRect(bx - r, by - r, 2 * r, 2 * r);
+    }
+    const bar = h * .12; c.fillStyle = '#000'; c.fillRect(0, 0, w, bar); c.fillRect(0, h - bar, w, bar);
+    const line = SUBS[Math.floor(t / 4.5) % SUBS.length];
+    c.font = `italic 500 ${Math.max(8, Math.round(h * .046))}px "Barlow", sans-serif`; c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+    c.fillStyle = 'rgba(0,0,0,.7)'; c.fillText(line, w / 2 + 1, h - bar - h * .05 + 1);
+    c.fillStyle = '#f3efe4'; c.fillText(line, w / 2, h - bar - h * .05);
+    c.textAlign = 'left';
+  },
+  kids(c, w, h, t, ch, p) {
+    const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#76c3ff'); g.addColorStop(1, '#d8f1ff');
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+    c.fillStyle = '#ffd34d'; c.beginPath(); c.arc(w * .85, h * .2, h * .09, 0, 7); c.fill();
+    hills(c, w, h, t, '#80d46c', .7, .05, .6, 8); hills(c, w, h, t, '#4db35a', .82, .06, 1.1, 14);
+    const cols = ['#ff6b6b', '#ffa94d', '#845ef7', '#20c997', '#f06595'];
+    for (let i = 0; i < 5; i++) {
+      const bx = ((i * w * .23 + t * w * .06) % (w * 1.15)) - w * .07, b = Math.abs(Math.sin(t * 2.2 + i * 1.3));
+      const by = h * .72 - b * h * .32, s = h * .07;
+      c.save(); c.translate(bx, by); if (b < .12) c.scale(1.18, .84); c.fillStyle = cols[i];
+      if (i % 3 === 0) { c.beginPath(); c.arc(0, 0, s, 0, 7); c.fill(); }
+      else if (i % 3 === 1) { rr(c, -s, -s, 2 * s, 2 * s, s * .35); c.fill(); }
+      else { c.beginPath(); c.moveTo(0, -s * 1.1); c.lineTo(s * 1.05, s * .8); c.lineTo(-s * 1.05, s * .8); c.closePath(); c.fill(); }
+      c.restore();
+    }
+    cornerTitle(c, w, h, p ? p.title : ch.name, false);
+  },
+  docs(c, w, h, t, ch, p) {
+    const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#1b2a4a'); g.addColorStop(.55, '#df8659'); g.addColorStop(1, '#f2c48a');
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+    c.fillStyle = 'rgba(255,236,200,.92)'; c.beginPath(); c.arc(w * .3, h * .56, h * .08, 0, 7); c.fill();
+    [['#6b4a5e', .56, .08, .15, 5], ['#45334a', .68, .07, .35, 7], ['#231b2d', .82, .06, .7, 10]].forEach(a => ridge(c, w, h, t, a[0], a[1], a[2], a[3], a[4]));
+    c.strokeStyle = 'rgba(30,20,30,.75)'; c.lineWidth = Math.max(1, h * .004);
+    for (let i = 0; i < 4; i++) {
+      const bx = ((t * w * .03 + i * w * .08) % (w * 1.2)) - w * .1, by = h * .24 + i * h * .03 + Math.sin(t + i) * h * .01, s = h * .02, f = Math.sin(t * 6 + i) * .6;
+      c.beginPath(); c.moveTo(bx - s, by - s * f); c.quadraticCurveTo(bx - s * .4, by - s * .2, bx, by); c.quadraticCurveTo(bx + s * .4, by - s * .2, bx + s, by - s * f); c.stroke();
+    }
+    c.font = F(h * .05, 500); c.fillStyle = 'rgba(255,255,255,.9)'; c.textBaseline = 'alphabetic';
+    c.fillText(fitText(c, p ? p.title.toUpperCase() : ch.name.toUpperCase(), w * .8), w * .06, h * .92);
+  },
+  music(c, w, h, t, ch, p) {
+    c.fillStyle = '#07060c'; c.fillRect(0, 0, w, h);
+    for (let i = 0; i < 4; i++) {
+      const ang = Math.sin(t * .6 + i * 1.7) * .5;
+      c.save(); c.translate(w * (.15 + i * .23), 0); c.rotate(ang);
+      const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, `hsla(${ch.hue + i * 40},90%,65%,.45)`); g.addColorStop(1, `hsla(${ch.hue + i * 40},90%,65%,0)`);
+      c.fillStyle = g; c.beginPath(); c.moveTo(-w * .01, 0); c.lineTo(w * .01, 0); c.lineTo(w * .12, h); c.lineTo(-w * .12, h); c.closePath(); c.fill(); c.restore();
+    }
+    const n = 28, bw = w / n;
+    for (let i = 0; i < n; i++) {
+      const v = (Math.sin(t * 3.1 + i * .7) * .5 + .5) * (Math.sin(t * 1.7 + i * .31) * .5 + .5), bh = h * (.08 + .5 * v);
+      c.fillStyle = `hsl(${ch.hue + i * 6},85%,${55 + v * 15}%)`; c.fillRect(i * bw + bw * .15, h - bh, bw * .7, bh);
+    }
+    cornerTitle(c, w, h, p ? p.title : ch.name, true);
+  },
+  ent(c, w, h, t, ch, p) {
+    const g = c.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, `hsl(${ch.hue + 200},50%,14%)`); g.addColorStop(.62, `hsl(${ch.hue + 220},45%,24%)`); g.addColorStop(.62, `hsl(${ch.hue + 220},30%,12%)`); g.addColorStop(1, `hsl(${ch.hue + 220},30%,6%)`);
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+    for (let i = 0; i < 22; i++) {
+      const a = Math.PI * (1 + i / 21), bx = w / 2 + Math.cos(a) * w * .34, by = h * .58 + Math.sin(a) * h * .42;
+      c.fillStyle = (Math.floor(t * 4) + i) % 3 === 0 ? '#ffe7a3' : 'rgba(255,231,163,.25)'; c.beginPath(); c.arc(bx, by, h * .012, 0, 7); c.fill();
+    }
+    for (let i = 0; i < 3; i++) {
+      const sx = w * (.3 + .2 * i) + Math.sin(t * .8 + i * 2) * w * .08;
+      const rg = c.createRadialGradient(sx, h * .8, 0, sx, h * .8, w * .14); rg.addColorStop(0, 'rgba(255,255,255,.22)'); rg.addColorStop(1, 'rgba(255,255,255,0)');
+      c.fillStyle = rg; c.beginPath(); c.ellipse(sx, h * .8, w * .14, h * .06, 0, 0, 7); c.fill();
+    }
+    for (let i = 0; i < 3; i++) {
+      const px = w * (.28 + .22 * i) - w * .05;
+      c.fillStyle = `hsl(${ch.hue + i * 50},60%,45%)`; rr(c, px, h * .5, w * .1, h * .22, h * .01); c.fill();
+      c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(px + w * .012, h * .53, w * .076, h * .06);
+      c.fillStyle = '#fff'; c.font = F(h * .045, 700); c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(String((i * 130 + Math.floor(t / 3) * 10) % 990), px + w * .05, h * .56); c.textAlign = 'left';
+    }
+    lowerThird(c, w, h, p ? p.title : ch.name, ch.name.toUpperCase().slice(0, 14), ch.hue);
+  },
+  local(c, w, h, t, ch, p) {
+    const g = c.createLinearGradient(0, 0, w, h); g.addColorStop(0, '#0f3b3a'); g.addColorStop(1, '#0a1f2a');
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+    c.strokeStyle = 'rgba(255,255,255,.05)'; c.lineWidth = h * .02;
+    for (let i = -10; i < 22; i++) { const lx = i * w * .08 + (t * w * .01) % (w * .08); c.beginPath(); c.moveTo(lx, 0); c.lineTo(lx - h * .6, h); c.stroke(); }
+    const cx = w * .1, cy = h * .16 + Math.sin(t * .5) * h * .01, cw = w * .8, chh = h * .54;
+    c.fillStyle = 'rgba(255,255,255,.94)'; rr(c, cx, cy, cw, chh, h * .03); c.fill();
+    c.textBaseline = 'alphabetic';
+    c.fillStyle = '#167a73'; c.font = F(h * .045, 700); c.fillText(ch.name.toUpperCase(), cx + w * .04, cy + chh * .24);
+    c.fillStyle = '#0d1b24'; c.font = F(h * .1, 600); c.fillText(fitText(c, p ? p.title : 'Community channel', cw * .9), cx + w * .04, cy + chh * .55);
+    c.fillStyle = '#4a5a66'; c.font = F(h * .05, 500); c.fillText(p ? `${fmtTime(p.start)} – ${fmtTime(p.end)}` : '', cx + w * .04, cy + chh * .8);
+    c.fillStyle = 'rgba(255,255,255,.85)'; c.font = F(h * .055, 600); c.fillText(`${fmtTime(Date.now())}   ·   58°F  Partly cloudy`, cx, h * .86);
+  }
+};
+function hills(c, w, h, t, col, base, amp, speed, freq) {
+  c.fillStyle = col; c.beginPath(); c.moveTo(0, h);
+  for (let px = 0; px <= w + 1; px += w / 48) c.lineTo(px, h * base + Math.sin((px / w) * freq * .6 + t * speed * .2) * h * amp + Math.sin((px / w) * freq * 1.7 + t * speed * .1) * h * amp * .4);
+  c.lineTo(w, h); c.closePath(); c.fill();
+}
+function ridge(c, w, h, t, col, base, amp, speed, freq) {
+  c.fillStyle = col; c.beginPath(); c.moveTo(0, h);
+  for (let px = 0; px <= w + 1; px += w / 64) {
+    const u = px / w + t * speed * .01;
+    c.lineTo(px, h * base - (Math.abs(Math.sin(u * freq)) * .6 + Math.sin(u * freq * 2.3) * .25 + Math.sin(u * freq * 5.1) * .1) * h * amp * 2);
+  }
+  c.lineTo(w, h); c.closePath(); c.fill();
+}
+function drawDemo(t) {
+  if (!demoCh) return;
+  const c = ctx, w = demoCanvas.width, h = demoCanvas.height;
+  const p = demoCu || progAt(demoCh, Date.now());
+  c.save();
+  (SCENES[demoCh.scene] || SCENES.ent)(c, w, h, t, demoCh, p);
+  c.restore();
+  c.save();
+  const bh = h * .075; c.font = F(bh * .5, 700); c.textBaseline = 'middle';
+  const bug = `${initials(demoCh.name)} ${demoCh.num}`, bw = c.measureText(bug).width + bh * .6;
+  c.globalAlpha = .62; c.fillStyle = 'rgba(0,0,0,.45)'; rr(c, w - bw - w * .03, h * .05, bw, bh, bh * .22); c.fill();
+  c.fillStyle = '#fff'; c.fillText(bug, w - bw - w * .03 + bh * .3, h * .05 + bh / 2);
+  c.restore();
+}
+
+/* ================= Xtream Codes ================= */
+function normalizeServer(raw) {
+  let s = String(raw || '').trim();
+  if (!s) return { server: '' };
+  if (!/^https?:\/\//i.test(s)) s = 'http://' + s;
+  let u; try { u = new URL(s); } catch (e) { return { server: '' }; }
+  const out = { server: (u.origin + u.pathname.replace(/\/(get|player_api|xmltv|panel_api)\.php.*$/i, '')).replace(/\/+$/, '') };
+  const user = u.searchParams.get('username'), pass = u.searchParams.get('password');
+  if (user) out.user = user;
+  if (pass) out.pass = pass;
+  return out;
+}
+const hostOf = s => { try { return new URL(s).hostname; } catch (e) { return s; } };
+const uerr = msg => Object.assign(new Error(msg), { user: true });
+async function getText(url, timeout = 25000) {
+  const ctl = window.AbortController ? new AbortController() : null;
+  const to = setTimeout(() => ctl && ctl.abort(), timeout);
+  try {
+    const r = await fetch(via(url), { signal: ctl ? ctl.signal : undefined, cache: 'no-store' });
+    if (!r.ok) throw Object.assign(new Error('http'), { status: r.status });
+    return await r.text();
+  } catch (e) {
+    if (e && e.name === 'AbortError') throw Object.assign(new Error('timeout'), { code: 'timeout' });
+    throw e;
+  } finally { clearTimeout(to); }
+}
+async function getJSON(url, timeout) {
+  const text = await getText(url, timeout);
+  try { return JSON.parse(text); } catch (e) { throw Object.assign(new Error('bad-json'), { code: 'bad-json' }); }
+}
+function netError(e, server) {
+  if (e && e.user) return e;
+  const host = hostOf(server);
+  if (e && e.code === 'timeout') return uerr(`${host} took too long to answer. Check the address and port, then try again.`);
+  if (e && e.code === 'bad-json') return uerr(`${host} answered, but not like an Xtream Codes server. Check the address. It usually ends with a port, like :8080.`);
+  if (e && e.status) return uerr(e.status === 401 || e.status === 403 ? `${host} refused the sign-in (error ${e.status}). Check your username and password.` : `${host} returned error ${e.status}. Check the server address.`);
+  return uerr(PROXY_ON
+    ? `Couldn't reach ${host}. Check the server address and port, and that this computer is online.`
+    : `Couldn't reach ${host}. This web preview can't connect to IPTV servers. Run the downloadable version (server.js) on your computer to sign in, or open the demo playlist.`);
+}
+async function xtreamConnect(v, step) {
+  const norm = normalizeServer(v.server);
+  const server = norm.server, user = v.user || norm.user || '', pass = v.pass || norm.pass || '';
+  if (!server) throw uerr('Enter the server address from your provider, like http://line.example.com:8080.');
+  if (!user || !pass) throw uerr('Enter your username and password.');
+  const base = `${server}/player_api.php?username=${enc(user)}&password=${enc(pass)}`;
+  step('Checking account…');
+  let auth;
+  try { auth = await getJSON(base); } catch (e) { throw netError(e, server); }
+  const ui = auth && auth.user_info;
+  if (!ui || Number(ui.auth) === 0) throw uerr("The username or password wasn't accepted.");
+  if (ui.status && ui.status !== 'Active') throw uerr(`This account is ${String(ui.status).toLowerCase()}.` + (ui.exp_date ? ` It ended on ${fmtDate(Number(ui.exp_date) * 1000)}.` : '') + ' Contact your provider.');
+  step('Loading channels…');
+  let cats, streams;
+  try { [cats, streams] = await Promise.all([getJSON(base + '&action=get_live_categories'), getJSON(base + '&action=get_live_streams', 60000)]); }
+  catch (e) { throw netError(e, server); }
+  if (!Array.isArray(streams) || !streams.length) throw uerr('Signed in, but the provider sent no live channels for this account.');
+  const catName = new Map((Array.isArray(cats) ? cats : []).map(c => [String(c.category_id), c.category_name]));
+  const order = new Map((Array.isArray(cats) ? cats : []).map((c, k) => [String(c.category_id), k]));
+  const channels = streams.filter(s => s && s.stream_id != null).map((s, k) => {
+    const gid = String(s.category_id != null ? s.category_id : (Array.isArray(s.category_ids) && s.category_ids.length ? s.category_ids[0] : 'none'));
+    const name = String(s.name || 'Channel ' + (k + 1)).trim();
+    return { id: String(s.stream_id), num: Number(s.num) || k + 1, name, logo: s.stream_icon || '', groupId: gid, epgId: String(s.epg_channel_id || '').toLowerCase(), archive: Number(s.tv_archive) === 1, archiveDays: Number(s.tv_archive_duration) || 0, hue: hash(name) % 360, scene: 'ent' };
+  }).sort((a, b) => a.num - b.num);
+  const counts = new Map();
+  channels.forEach(c => counts.set(c.groupId, (counts.get(c.groupId) || 0) + 1));
+  const groups = [...counts].map(([id, n]) => ({ id, name: catName.get(id) || 'Other channels', count: n }))
+    .sort((a, b) => (order.has(a.id) ? order.get(a.id) : 1e9) - (order.has(b.id) ? order.get(b.id) : 1e9));
+  const si = auth.server_info || {};
+  return {
+    playlist: { id: 'x' + hash(server + '|' + user).toString(36), type: 'xtream', name: v.name || hostOf(server), server, user, pass,
+      info: { status: ui.status || 'Active', exp: ui.exp_date ? Number(ui.exp_date) * 1000 : null, max: ui.max_connections, active: ui.active_cons, trial: String(ui.is_trial) === '1', tz: si.timezone || '' } },
+    channels, groups
+  };
+}
+function b64(s) {
+  if (!s) return '';
+  try {
+    const bin = atob(String(s).replace(/\s/g, ''));
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder('utf-8').decode(bytes);
+  } catch (e) { return String(s); }
+}
+function parseServerTime(s) { if (!s) return NaN; const m = /^(\d{4})-(\d\d)-(\d\d)[ T](\d\d):(\d\d)(?::(\d\d))?/.exec(s); return m ? new Date(+m[1], m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0)).getTime() : NaN; }
+function cleanList(list) {
+  list = list.filter(p => p.end > p.start && isFinite(p.start) && isFinite(p.end)).sort((a, b) => a.start - b.start);
+  const out = [];
+  for (const p of list) {
+    const prev = out[out.length - 1];
+    if (prev && p.start === prev.start) continue;
+    if (prev && prev.end > p.start) prev.end = p.start;
+    out.push(p);
+  }
+  return out.filter(p => p.end > p.start);
+}
+function parseListings(arr) {
+  if (!Array.isArray(arr)) return [];
+  return cleanList(arr.map(l => ({
+    start: Number(l.start_timestamp) * 1000 || parseServerTime(l.start),
+    end: Number(l.stop_timestamp) * 1000 || parseServerTime(l.end || l.stop),
+    title: b64(l.title) || 'Untitled', desc: b64(l.description), ep: '', rating: '', live: false, isNew: false
+  })));
+}
+async function loadXtreamEpg(id) {
+  const pr = S.provider, base = `${pr.server}/player_api.php?username=${enc(pr.user)}&password=${enc(pr.pass)}`;
+  let list = [];
+  try { list = parseListings((await getJSON(base + '&action=get_simple_data_table&stream_id=' + enc(id))).epg_listings); } catch (e) {}
+  if (!list.length) list = parseListings((await getJSON(base + '&action=get_short_epg&limit=60&stream_id=' + enc(id))).epg_listings);
+  return list;
+}
+let epgQueue = [], epgActive = 0;
+function requestEpg(ids) {
+  epgQueue = ids.filter(id => !epgState.has(id));
+  ids.forEach(id => { if (!epgState.has(id)) epgState.set(id, 'queued'); });
+  epgState.forEach((v, k) => { if (v === 'queued' && !epgQueue.includes(k)) epgState.delete(k); });
+  pumpEpg();
+}
+function pumpEpg() {
+  const prov = S.provider;
+  while (epgActive < 4 && epgQueue.length) {
+    const id = epgQueue.shift();
+    epgState.set(id, 'loading'); epgActive++;
+    loadXtreamEpg(id)
+      .then(list => { if (S.provider === prov) { epg.set(id, list); epgState.set(id, 'done'); } })
+      .catch(() => { if (S.provider === prov) { epg.set(id, []); epgState.set(id, 'error'); } })
+      .finally(() => { epgActive--; if (S.provider === prov) { epgVer.set(id, (epgVer.get(id) || 0) + 1); onEpgArrived(id); } pumpEpg(); });
+  }
+}
+let epgArriveQueued = false;
+function onEpgArrived(id) {
+  if (epgArriveQueued) return;
+  epgArriveQueued = true;
+  requestAnimationFrame(() => { epgArriveQueued = false; renderGuide(); updateHero(); updateOsd(); });
+}
+function xmltvTime(s) {
+  const m = /^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)?\s*([+-]\d{4})?/.exec(s || '');
+  if (!m) return NaN;
+  if (!m[7]) return new Date(+m[1], m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0)).getTime();
+  const off = (m[7][0] === '-' ? -1 : 1) * (parseInt(m[7].slice(1, 3), 10) * 60 + parseInt(m[7].slice(3), 10));
+  return Date.UTC(+m[1], m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0)) - off * MIN;
+}
+const unxml = s => String(s || '').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#(\d+);/g, (a, n) => String.fromCharCode(+n)).replace(/&amp;/g, '&').trim();
+const attr = (a, n) => { const m = new RegExp(n + '="([^"]*)"').exec(a); return m ? m[1] : ''; };
+const tag = (b, n) => { const m = new RegExp('<' + n + '\\b[^>]*>([\\s\\S]*?)</' + n + '>').exec(b); return m ? m[1] : ''; };
+function parseXmltv(text) {
+  const wanted = new Map();
+  S.channels.forEach(c => { if (c.epgId) { if (!wanted.has(c.epgId)) wanted.set(c.epgId, []); wanted.get(c.epgId).push(c.id); } });
+  const lists = new Map(), re = /<programme\b([^>]*)>([\s\S]*?)<\/programme>/g;
+  let m, n = 0;
+  while ((m = re.exec(text))) {
+    const ids = wanted.get(attr(m[1], 'channel').toLowerCase());
+    if (!ids) continue;
+    const s = xmltvTime(attr(m[1], 'start')), e = xmltvTime(attr(m[1], 'stop'));
+    if (!(e > rangeStart - DAY && s < rangeEnd)) continue;
+    const p = { start: s, end: e, title: unxml(tag(m[2], 'title')) || 'Untitled', desc: unxml(tag(m[2], 'desc')), ep: unxml(tag(m[2], 'episode-num')).replace(/^\s*$/, ''), rating: unxml(tag(tag(m[2], 'rating'), 'value')), live: false, isNew: /<new\s*\/?>/.test(m[2]) };
+    if (p.ep && /^\d+\.\d+\./.test(p.ep)) { const q = p.ep.split('.'); p.ep = `S${(+q[0] || 0) + 1} E${(+q[1] || 0) + 1}`; }
+    ids.forEach(id => { if (!lists.has(id)) lists.set(id, []); lists.get(id).push(Object.assign({}, p)); });
+    n++;
+  }
+  lists.forEach((l, id) => epg.set(id, cleanList(l)));
+  S.channels.forEach(c => { epgState.set(c.id, 'done'); epgVer.set(c.id, (epgVer.get(c.id) || 0) + 1); if (!epg.has(c.id)) epg.set(c.id, []); });
+  return n;
+}
+async function loadXmltv() {
+  const pr = S.provider; if (!pr || pr.type !== 'xtream') return;
+  const url = prefs.xmltvUrl || `${pr.server}/xmltv.php?username=${enc(pr.user)}&password=${enc(pr.pass)}`;
+  S.channels.forEach(c => epgState.set(c.id, 'loading'));
+  invalidateRows(); renderGuide();
+  toast('Loading TV guide…', 0);
+  try {
+    const text = await getText(url, 180000);
+    if (S.provider !== pr) return;
+    const n = parseXmltv(text);
+    toast(`TV guide loaded · ${n.toLocaleString()} programs`);
+  } catch (e) {
+    if (S.provider !== pr) return;
+    epgState = new Map();
+    toast("Couldn't load the XMLTV guide. Using the provider's guide instead.", 4000);
+  }
+  invalidateRows(); renderGuide(); updateHero();
+}
+
+/* ================= playlists + sign-in ================= */
+const savedPlaylists = () => store.get('playlists', []);
+function savePlaylist(p) {
+  const list = savedPlaylists().filter(q => q.id !== p.id);
+  list.unshift({ id: p.id, type: p.type, name: p.name, server: p.server, user: p.user, pass: p.pass });
+  store.set('playlists', list);
+}
+function removePlaylist(id) {
+  store.set('playlists', savedPlaylists().filter(q => q.id !== id));
+  ['fav:', 'recent:', 'group:', 'lastch:'].forEach(k => store.del(k + id));
+  if (store.get('last') === id) store.del('last');
+}
+async function connectPlaylist(saved, { fromLogin = false, remember = true, step = () => {} } = {}) {
+  const res = await xtreamConnect(saved, step);
+  setProvider(res.playlist, res.channels, res.groups);
+  S.backdrop = false;
+  if (remember) { savePlaylist(res.playlist); store.set('last', res.playlist.id); }
+  startUp();
+  if (fromLogin || !loginEl.hidden) closeLogin();
+  toast(`Signed in to ${res.playlist.name} · ${res.channels.length.toLocaleString()} channels`);
+  return res;
+}
+let loginCancelable = false;
+function openLogin({ cancelable = false, values = null, error = '' } = {}) {
+  loginCancelable = cancelable;
+  el('loginCancel').hidden = !cancelable;
+  el('loginErr').hidden = !error; el('loginErr').textContent = error;
+  el('loginInfo').hidden = true;
+  if (values) { el('fName').value = values.name || ''; el('fServer').value = values.server || ''; el('fUser').value = values.user || ''; el('fPass').value = values.pass || ''; }
+  el('loginNote').textContent = PROXY_ON ? 'Your details stay in this browser and are only sent to your provider.' : 'Preview: sign-in needs the downloadable version. The demo playlist shows every feature here.';
+  closeAllLayers();
+  exitFull();
+  loginEl.hidden = false;
+  setTimeout(() => (values ? el('signInBtn') : el('fServer')).focus({ preventScroll: true }), 30);
+}
+function closeLogin() { loginEl.hidden = true; guideScroll.focus({ preventScroll: true }); }
+el('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = el('signInBtn'), err = el('loginErr');
+  err.hidden = true;
+  const v = { name: el('fName').value.trim(), server: el('fServer').value.trim(), user: el('fUser').value.trim(), pass: el('fPass').value };
+  btn.disabled = true;
+  const step = s => { btn.textContent = s; };
+  try { await connectPlaylist(v, { fromLogin: true, remember: el('fRemember').checked, step }); }
+  catch (ex) { err.textContent = ex && ex.user ? ex.message : netError(ex, normalizeServer(v.server).server || v.server).message; err.hidden = false; }
+  finally { btn.disabled = false; btn.textContent = 'Sign in'; }
+});
+function autofillFromLink() {
+  const n = normalizeServer(el('fServer').value);
+  if (n.user && n.pass) {
+    el('fUser').value = n.user; el('fPass').value = n.pass; el('fServer').value = n.server;
+    const info = el('loginInfo'); info.textContent = 'Filled in your username and password from the link.'; info.hidden = false;
+  }
+}
+el('fServer').addEventListener('change', autofillFromLink);
+el('fServer').addEventListener('paste', () => setTimeout(autofillFromLink, 0));
+el('pwToggle').addEventListener('click', () => {
+  const f = el('fPass'), show = f.type === 'password';
+  f.type = show ? 'text' : 'password';
+  el('pwToggle').setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+});
+el('demoBtn').addEventListener('click', () => {
+  if (S.provider && S.provider.type === 'demo') { S.backdrop = false; store.set('last', 'demo'); }
+  else loadDemo(false);
+  closeLogin();
+});
+el('loginCancel').addEventListener('click', closeLogin);
+
+/* ================= drawers, search, details ================= */
+const layers = [];
+function openLayer(node, focusSel) {
+  if (layers.includes(node)) return;
+  node.hidden = false; scrim.hidden = false; layers.push(node);
+  setTimeout(() => { const f = node.querySelector(focusSel || '.item.sel, .item, input, button:not([data-close])'); if (f) f.focus({ preventScroll: false }); }, 20);
+}
+function closeLayer() {
+  const node = layers.pop();
+  if (node) node.hidden = true;
+  if (!layers.length) { scrim.hidden = true; guideScroll.focus({ preventScroll: true }); }
+}
+function closeAllLayers() { while (layers.length) closeLayer(); }
+scrim.addEventListener('click', closeAllLayers);
+document.addEventListener('click', e => { if (e.target.closest('[data-close]')) closeLayer(); });
+
+function openGroups() {
+  const items = [['all', 'All channels', S.channels.length], ['fav', 'Favorites', favs.size], ['recent', 'Recently watched', recents.length]];
+  let h = items.map(([id, name, n]) => groupItem(id, name, n)).join('');
+  h += '<div class="list-label">Categories</div>' + S.groups.map(g => groupItem(g.id, g.name, g.count)).join('');
+  el('groupsList').innerHTML = h;
+  openLayer(el('groupsDrawer'));
+}
+const groupItem = (id, name, n) => `<button class="item${S.groupId === id ? ' sel' : ''}" data-group="${esc(id)}">${icon('check', 'mark')}<span class="lbl"><span>${esc(name)}</span></span><span class="n">${n}</span></button>`;
+el('groupsList').addEventListener('click', e => {
+  const b = e.target.closest('[data-group]'); if (!b) return;
+  closeLayer(); applyGroup(b.dataset.group); jumpToNow(true);
+});
+el('groupBtn').addEventListener('click', openGroups);
+
+function openPlaylists() {
+  const cur = S.provider && !S.backdrop ? S.provider.id : '';
+  const saved = savedPlaylists();
+  let h = saved.map(p => `<button class="item${cur === p.id ? ' sel' : ''}" data-pl="${esc(p.id)}">${icon('check', 'mark')}<span class="lbl"><span>${esc(p.name)}</span><span class="sub">Xtream Codes · ${esc(hostOf(p.server))}</span></span></button>`).join('');
+  h += `<button class="item${cur === 'demo' ? ' sel' : ''}" data-pl="demo">${icon('check', 'mark')}<span class="lbl"><span>Demo playlist</span><span class="sub">Built-in sample channels and guide</span></span></button>`;
+  el('playlistsList').innerHTML = h;
+  openLayer(el('playlistsDrawer'));
+}
+el('playlistsList').addEventListener('click', async e => {
+  const b = e.target.closest('[data-pl]'); if (!b) return;
+  const id = b.dataset.pl;
+  closeAllLayers();
+  if (id === 'demo') { loadDemo(false); toast('Demo playlist'); return; }
+  if (S.provider && S.provider.id === id) return;
+  const saved = savedPlaylists().find(p => p.id === id); if (!saved) return;
+  toast(`Connecting to ${saved.name}…`, 0);
+  try { await connectPlaylist(saved); }
+  catch (ex) { toastEl.hidden = true; openLogin({ cancelable: true, values: saved, error: ex.message }); }
+});
+el('addPlaylistBtn').addEventListener('click', () => openLogin({ cancelable: true, values: { name: '', server: '', user: '', pass: '' } }));
+
+function openSearch() {
+  el('searchInput').value = '';
+  runSearch('');
+  openLayer(el('searchSheet'), 'input');
+}
+function runSearch(q) {
+  q = q.trim().toLowerCase();
+  const now = Date.now(), out = [];
+  if (!q) {
+    const rec = recents.map(id => S.byId.get(id)).filter(Boolean).slice(0, 8);
+    if (rec.length) { out.push('<div class="list-label">Recently watched</div>'); rec.forEach(c => out.push(chanResult(c, now))); }
+    else out.push('<p class="hint" style="padding:12px">Type a channel name, a number or a program title.</p>');
+  } else {
+    const chs = S.channels.filter(c => c.name.toLowerCase().includes(q) || String(c.num) === q).slice(0, 25);
+    if (chs.length) { out.push('<div class="list-label">Channels</div>'); chs.forEach(c => out.push(chanResult(c, now))); }
+    const progs = [];
+    for (const c of S.channels) {
+      const ps = epg.get(c.id); if (!ps) continue;
+      for (const p of ps) { if (p.end > now && p.start < rangeEnd && p.title.toLowerCase().includes(q)) { progs.push([c, p]); if (progs.length > 200) break; } }
+      if (progs.length > 200) break;
+    }
+    progs.sort((a, b) => a[1].start - b[1].start);
+    if (progs.length) {
+      out.push('<div class="list-label">Programs</div>');
+      progs.slice(0, 40).forEach(([c, p]) => out.push(`<button class="item" data-sc="${esc(c.id)}" data-ss="${p.start}">${logoHTML(c, 'sm')}<span class="lbl"><span>${esc(p.title)}</span><span class="sub">${isNowProg(p, now) ? 'On now' : esc(fmtDay(p.start)) + ' ' + fmtTime(p.start)} · ${c.num} ${esc(c.name)}</span></span></button>`));
+    }
+    if (!chs.length && !progs.length) out.push(`<p class="hint" style="padding:12px">Nothing matches "${esc(q)}".${S.provider.type === 'xtream' ? ' Program search covers the guide data loaded so far.' : ''}</p>`);
+  }
+  el('searchResults').innerHTML = out.join('');
+}
+function chanResult(c, now) {
+  const p = progAt(c, now);
+  return `<button class="item" data-sc="${esc(c.id)}">${logoHTML(c, 'sm')}<span class="lbl"><span>${c.num} · ${esc(c.name)}</span><span class="sub">${p && isNowProg(p, now) ? 'Now: ' + esc(p.title) : 'Live channel'}</span></span></button>`;
+}
+el('searchInput').addEventListener('input', e => runSearch(e.target.value));
+el('searchResults').addEventListener('click', e => {
+  const b = e.target.closest('[data-sc]'); if (!b) return;
+  const ch = S.byId.get(b.dataset.sc); if (!ch) return;
+  closeAllLayers();
+  let i = S.list.indexOf(ch);
+  if (i < 0) { applyGroup('all'); i = S.list.indexOf(ch); }
+  if (b.dataset.ss) {
+    const p = (epg.get(ch.id) || []).find(q => q.start === +b.dataset.ss);
+    setFocusTo(i, p); focusChanged();
+    if (p && !isNowProg(p)) openDetails(ch, p); else play(ch);
+  } else { setFocusTo(i, null); focusChanged(); play(ch); }
+});
+
+function openDetails(ch, p) {
+  const now = Date.now(), live = isNowProg(p, now), cu = canCatchup(ch, p, now);
+  let btns = '';
+  if (live) btns += `<button class="btn primary" data-d="watch">${icon('play', 'fill')}Watch now</button>`;
+  if (cu) btns += `<button class="btn ${live ? 'ghost' : 'primary'}" data-d="catchup">${icon('replay')}Watch from start</button>`;
+  if (!live) btns += `<button class="btn ${cu ? 'ghost' : 'primary'}" data-d="watch">${icon('play', 'fill')}Watch channel live</button>`;
+  btns += `<button class="btn ghost" data-d="fav">${icon('star', favs.has(ch.id) ? 'fill' : '')}${favs.has(ch.id) ? 'Remove favorite' : 'Add to favorites'}</button>`;
+  const past = p.end <= now && !cu ? `<p class="hint">This program has ended${ch.archive ? ' and is older than the catch-up window' : ' and this channel has no catch-up'}.</p>` : '';
+  el('progCard').innerHTML = `<div class="info-chan">${logoHTML(ch, 'sm')}<span class="num">${ch.num}</span><span class="name">${esc(ch.name)}</span></div><h2>${esc(p.title)}</h2><div class="info-meta">${metaHTML(ch, p, now)}</div>${p.desc ? `<p>${esc(p.desc)}</p>` : ''}${past}<div class="btns">${btns}</div>`;
+  el('progCard').dataset.ch = ch.id; el('progCard').dataset.s = p.start;
+  openLayer(el('progModal'), '.btn');
+}
+el('progCard').addEventListener('click', e => {
+  const b = e.target.closest('[data-d]'); if (!b) return;
+  const ch = S.byId.get(el('progCard').dataset.ch); if (!ch) return;
+  const p = (epg.get(ch.id) || []).find(q => q.start === +el('progCard').dataset.s);
+  if (b.dataset.d === 'fav') { toggleFav(ch); if (p) { closeLayer(); openDetails(ch, p); } return; }
+  closeAllLayers();
+  if (b.dataset.d === 'watch') play(ch, { full: true });
+  if (b.dataset.d === 'catchup' && p) play(ch, { full: true, catchup: p });
+});
+function toggleFav(ch) {
+  if (!ch) return;
+  if (favs.has(ch.id)) { favs.delete(ch.id); toast(`Removed ${ch.name} from favorites`); }
+  else { favs.add(ch.id); toast(`Added ${ch.name} to favorites`); }
+  store.set('fav:' + S.provider.id, [...favs]);
+  if (S.groupId === 'fav') applyGroup('fav'); else renderGuide();
+  updateOsd();
+}
+
+/* settings */
+function seg(name, opts, val, disabled) {
+  return `<div class="seg" role="radiogroup">${opts.map(([v, l]) => `<input type="radio" name="${name}" id="${name}-${v}" value="${v}"${String(val) === String(v) ? ' checked' : ''}${disabled ? ' disabled' : ''}><label for="${name}-${v}">${l}</label>`).join('')}</div>`;
+}
+function openSettings() {
+  const p = S.provider, demo = p.type === 'demo', inf = p.info || {};
+  const exp = inf.exp ? fmtDate(inf.exp) : demo ? 'Never' : 'Unlimited';
+  const soon = inf.exp && inf.exp - Date.now() < 7 * DAY;
+  el('settingsBody').innerHTML = `
+  <section><h3>Playlist</h3>
+    <dl class="kv">
+      <dt>Name</dt><dd>${esc(p.name)}</dd>
+      <dt>Type</dt><dd>${demo ? 'Built-in demo' : 'Xtream Codes'}</dd>
+      ${demo ? '' : `<dt>Server</dt><dd>${esc(p.server)}</dd><dt>Username</dt><dd>${esc(p.user)}</dd>`}
+      <dt>Status</dt><dd><span class="status${soon ? ' warn' : ''}">${esc(inf.status || 'Active')}${inf.trial ? ' · trial' : ''}</span></dd>
+      <dt>Expires</dt><dd>${esc(exp)}</dd>
+      ${demo ? '' : `<dt>Connections</dt><dd>${esc(inf.active != null ? inf.active : '–')} of ${esc(inf.max != null ? inf.max : '–')} in use</dd>`}
+      <dt>Channels</dt><dd>${S.channels.length.toLocaleString()} in ${S.groups.length} groups</dd>
+    </dl>
+    <div class="btns"><button class="btn ghost" data-s="switch">${icon('playlist')}Switch playlist</button>${demo ? '' : `<button class="btn danger" data-s="remove">Remove playlist</button>`}</div>
+  </section>
+  <section><h3>TV guide</h3>
+    <div class="setting"><span>Clock</span>${seg('clock', [['12', '12-hour'], ['24', '24-hour']], prefs.clock24 ? 24 : 12)}</div>
+    <div class="setting"><span>Row size</span>${seg('rows', [['compact', 'Compact'], ['comfortable', 'Comfortable']], prefs.rows)}</div>
+    <div class="setting"><span>Guide source</span>${seg('epg', [['provider', 'From provider'], ['xmltv', 'XMLTV file']], demo ? 'provider' : prefs.epgSource, demo)}
+      ${demo ? '<p class="hint">The demo playlist has a built-in guide.</p>' : `<input class="text-in" id="xmltvUrl" placeholder="${esc(p.server)}/xmltv.php?username=…" value="${esc(prefs.xmltvUrl)}" ${prefs.epgSource === 'xmltv' ? '' : 'hidden'}><p class="hint">${prefs.epgSource === 'xmltv' ? 'Leave empty to use your provider’s XMLTV file. Large files can take a minute.' : 'Loads guide data for the channels on screen as you scroll.'}</p>`}
+    </div>
+    ${demo ? '' : '<div class="btns"><button class="btn ghost" data-s="reload">Reload guide</button></div>'}
+  </section>
+  <section><h3>Playback</h3>
+    <div class="setting"><span>Stream format</span>${seg('fmt', [['m3u8', 'HLS (.m3u8)'], ['ts', 'MPEG-TS (.ts)']], prefs.format, demo)}<p class="hint">If a channel won't start, try the other format.</p></div>
+  </section>
+  <section><h3>Remote and keyboard</h3>
+    <div class="keys">
+      <span><kbd>↑</kbd> <kbd>↓</kbd></span><span>Move between channels</span>
+      <span><kbd>←</kbd> <kbd>→</kbd></span><span>Move through programs and catch-up</span>
+      <span><kbd>OK</kbd></span><span>Watch, or open program details</span>
+      <span><kbd>Back</kbd></span><span>Return to now, then open the menu</span>
+      <span><kbd>0</kbd>–<kbd>9</kbd></span><span>Jump to a channel number</span>
+      <span><kbd>F</kbd></span><span>Add or remove favorite</span>
+      <span><kbd>G</kbd> <kbd>/</kbd></span><span>Groups, search</span>
+      <span><kbd>Ch+</kbd> <kbd>Ch−</kbd></span><span>Page through the guide</span>
+    </div>
+  </section>`;
+  openLayer(el('settingsDrawer'), 'button:not([data-close])');
+}
+el('settingsBody').addEventListener('change', e => {
+  const t = e.target;
+  if (t.name === 'clock') { prefs.clock24 = t.value === '24'; savePrefs(); renderTicks(); positionNow(); invalidateRows(); renderGuide(); updateHero(); updateOsd(); }
+  if (t.name === 'rows') { prefs.rows = t.value; savePrefs(); applyRowSize(); layoutGuide(); ensureVisible(); renderGuide(); }
+  if (t.name === 'fmt') { prefs.format = t.value; savePrefs(); const ch = S.byId.get(S.playingId); if (ch && S.provider.type === 'xtream') play(ch, { quiet: true }); }
+  if (t.name === 'epg') { prefs.epgSource = t.value; savePrefs(); reloadGuide(); openSettingsKeep(); }
+  if (t.id === 'xmltvUrl') { prefs.xmltvUrl = t.value.trim(); savePrefs(); if (prefs.epgSource === 'xmltv') reloadGuide(); }
+});
+function openSettingsKeep() { const d = el('settingsDrawer'); const st = d.querySelector('.list').scrollTop; layers.splice(layers.indexOf(d), 1); d.hidden = true; openSettings(); setTimeout(() => { d.querySelector('.list').scrollTop = st; }, 30); }
+let removeArmed = 0;
+el('settingsBody').addEventListener('click', e => {
+  const b = e.target.closest('[data-s]'); if (!b) return;
+  if (b.dataset.s === 'switch') { closeLayer(); openPlaylists(); }
+  if (b.dataset.s === 'reload') { reloadGuide(); toast('Reloading guide…'); }
+  if (b.dataset.s === 'remove') {
+    if (!b.classList.contains('armed')) { b.classList.add('armed'); b.textContent = 'Select again to remove'; clearTimeout(removeArmed); removeArmed = setTimeout(() => { b.classList.remove('armed'); b.textContent = 'Remove playlist'; }, 3500); return; }
+    const id = S.provider.id, name = S.provider.name;
+    removePlaylist(id); closeAllLayers();
+    loadDemo(true); openLogin({}); toast(`Removed ${name}`);
+  }
+});
+function reloadGuide() {
+  if (S.provider.type !== 'xtream') return;
+  epg = new Map(); epgState = new Map(); epgQueue = [];
+  invalidateRows();
+  if (prefs.epgSource === 'xmltv') loadXmltv(); else { renderGuide(); updateHero(); }
+}
+function applyRowSize() { document.documentElement.classList.toggle('rows-compact', prefs.rows === 'compact'); }
+
+/* ================= input ================= */
+el('rail').addEventListener('click', e => {
+  const b = e.target.closest('[data-nav]'); if (!b) return;
+  const n = b.dataset.nav;
+  if (n === 'guide') { if (S.groupId === 'fav') applyGroup('all'); jumpToNow(false); guideScroll.focus({ preventScroll: true }); }
+  if (n === 'favorites') { applyGroup(S.groupId === 'fav' ? 'all' : 'fav'); jumpToNow(true); guideScroll.focus({ preventScroll: true }); }
+  if (n === 'groups') openGroups();
+  if (n === 'search') openSearch();
+  if (n === 'playlists') openPlaylists();
+  if (n === 'settings') openSettings();
+});
+rowsEl.addEventListener('click', e => {
+  const now = Date.now();
+  const c = e.target.closest('.chan');
+  if (c) {
+    const i = +c.dataset.i, ch = S.list[i];
+    setFocusTo(i, null); focusChanged(false);
+    if (S.playingId === ch.id && !S.catchup) enterFull(); else play(ch);
+    return;
+  }
+  const pe = e.target.closest('.prog'); if (!pe) return;
+  const i = +pe.dataset.i, ch = S.list[i];
+  const p = pe.dataset.s ? (epg.get(ch.id) || []).find(q => q.start === +pe.dataset.s) : null;
+  const before = focusedProg();
+  const was = focus.i === i && (p ? before === p : !before);
+  setFocusTo(i, p); focusChanged(false);
+  if (!p || isNowProg(p, now)) {
+    if (was) { if (S.playingId === ch.id && !S.catchup) enterFull(); else play(ch, { full: true }); }
+    else if (S.playingId !== ch.id || S.catchup) play(ch);
+  } else if (was) openDetails(ch, p);
+});
+rowsEl.addEventListener('dblclick', e => { if (e.target.closest('.prog.now, .prog.empty, .chan')) enterFull(); });
+guideScroll.addEventListener('scroll', scheduleRender, { passive: true });
+screenEl.addEventListener('click', e => {
+  if (e.target.closest('[data-act="retry"]')) { const ch = S.byId.get(S.playingId); if (ch) play(ch, { quiet: true, catchup: S.catchup }); return; }
+  if (e.target.closest('#unmuteBtn')) { userMuted = false; video.muted = false; updateMuteUi(); return; }
+  if (app.classList.contains('is-full')) { osd.classList.contains('hide') ? showOsd() : osd.classList.add('hide'); }
+  else if (S.playingId) enterFull();
+});
+el('stage').addEventListener('mousemove', () => { if (app.classList.contains('is-full')) showOsd(); });
+osd.addEventListener('click', e => {
+  const b = e.target.closest('[data-osd]'); if (!b) return;
+  const a = b.dataset.osd;
+  if (a === 'back') exitFull();
+  if (a === 'up') stepChannel(-1);
+  if (a === 'down') stepChannel(1);
+  if (a === 'fav') toggleFav(S.byId.get(S.playingId));
+  if (a === 'mute') toggleMute();
+  showOsd();
+});
+document.addEventListener('error', e => { const t = e.target; if (t && t.tagName === 'IMG' && t.parentElement && t.parentElement.classList.contains('logo')) t.remove(); }, true);
+document.addEventListener('pointerdown', firstGesture, true);
+
+let numBuf = '', numTimer = 0;
+function numKey(d) {
+  numBuf = (numBuf + d).slice(-4);
+  numEl.textContent = numBuf; numEl.hidden = false;
+  clearTimeout(numTimer);
+  numTimer = setTimeout(() => {
+    numEl.hidden = true;
+    const n = +numBuf; numBuf = '';
+    const ch = S.channels.find(c => c.num === n);
+    if (!ch) { toast(`There's no channel ${n}`); return; }
+    let i = S.list.indexOf(ch);
+    if (i < 0) { applyGroup('all'); i = S.list.indexOf(ch); }
+    setFocusTo(i, null); focusChanged();
+    play(ch);
+    if (app.classList.contains('is-full')) showOsd();
+  }, 1300);
+}
+function keyName(e) {
+  const k = e.key, kc = e.keyCode;
+  if (k === 'ArrowUp' || kc === 38) return 'up';
+  if (k === 'ArrowDown' || kc === 40) return 'down';
+  if (k === 'ArrowLeft' || kc === 37) return 'left';
+  if (k === 'ArrowRight' || kc === 39) return 'right';
+  if (k === 'Enter' || kc === 13) return 'ok';
+  if (k === 'Escape' || k === 'GoBack' || k === 'BrowserBack' || kc === 10009 || kc === 461) return 'back';
+  if (k === 'Backspace') return 'backspace';
+  if (k === 'PageUp' || k === 'ChannelUp' || kc === 427) return 'pgup';
+  if (k === 'PageDown' || k === 'ChannelDown' || kc === 428) return 'pgdn';
+  if (/^[0-9]$/.test(k)) return 'digit';
+  if (k === 'f' || k === 'F') return 'fav';
+  if (k === '/') return 'search';
+  if (k === 'g' || k === 'G') return 'groups';
+  if (k === 'i' || k === 'I' || k === 'ContextMenu') return 'info';
+  if (k === 'm' || k === 'M') return 'mute';
+  return '';
+}
+function focusables(container) { return [...container.querySelectorAll('.item, .rail-btn')].filter(n => n.offsetParent !== null); }
+function moveListFocus(container, d) {
+  const items = focusables(container); if (!items.length) return false;
+  const i = items.indexOf(document.activeElement);
+  const next = items[Math.max(0, Math.min(items.length - 1, i < 0 ? 0 : i + d))];
+  next.focus(); return true;
+}
+
+/* ---- remote-friendly focus for forms and drawers (TV remotes have no Tab key) ---- */
+const TV = !!window.TUNER_TV;
+let kbFor = null;
+function isTextInput(n) { return !!n && n.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|range)$/i.test(n.type); }
+function showKeyboard(n) { kbFor = n; try { if (window.TunerNative) window.TunerNative.showKeyboard(); } catch (e) {} }
+function formFocusables(container) {
+  return [...container.querySelectorAll('input:not([type=hidden]):not([type=radio]), input[type=radio]:checked, button, .item')]
+    .filter(n => !n.disabled && n.offsetParent !== null);
+}
+function moveFormFocus(container, d) {
+  const items = formFocusables(container); if (!items.length) return null;
+  const i = items.indexOf(document.activeElement);
+  const next = items[Math.max(0, Math.min(items.length - 1, i < 0 ? 0 : i + d))];
+  next.focus(); return next;
+}
+function tvNav(k, e, container) {
+  const a = document.activeElement;
+  if (k === 'up' || k === 'down') { e.preventDefault(); moveFormFocus(container, k === 'down' ? 1 : -1); return true; }
+  if (k === 'left' || k === 'right') {
+    if (a && (a.tagName === 'BUTTON' || (a.tagName === 'INPUT' && a.type === 'checkbox'))) { e.preventDefault(); moveFormFocus(container, k === 'right' ? 1 : -1); return true; }
+    return false;
+  }
+  if (k === 'ok') {
+    if (a && a.tagName === 'INPUT' && a.type === 'checkbox') { e.preventDefault(); a.click(); return true; }
+    if (TV && isTextInput(a)) {
+      e.preventDefault();
+      if (kbFor === a) { kbFor = null; const n = moveFormFocus(container, 1); if (isTextInput(n) && !n.value) showKeyboard(n); }
+      else showKeyboard(a);
+      return true;
+    }
+  }
+  return false;
+}
+function searchNav(k, e, top) {
+  const a = document.activeElement, input = el('searchInput'), items = focusables(top);
+  if (a === input) {
+    if (k === 'down' && items.length) { e.preventDefault(); items[0].focus(); }
+    else if (k === 'ok' && TV) { e.preventDefault(); if (kbFor === input) { kbFor = null; if (items.length) items[0].focus(); } else showKeyboard(input); }
+    return;
+  }
+  if (k === 'up' || k === 'down') {
+    e.preventDefault();
+    if (k === 'up' && items.indexOf(a) <= 0) { input.focus(); return; }
+    moveListFocus(top, k === 'down' ? 1 : -1);
+  }
+}
+
+/* Back / Escape: close what's open, return the guide to now, then the menu. Returns false when there's nothing left (the TV app then offers to exit). */
+function handleBack() {
+  if (!numEl.hidden) { numEl.hidden = true; numBuf = ''; clearTimeout(numTimer); return true; }
+  if (!loginEl.hidden) { if (loginCancelable) { closeLogin(); return true; } return false; }
+  if (layers.length) { closeLayer(); return true; }
+  if (app.classList.contains('is-full')) { exitFull(); return true; }
+  const a = document.activeElement;
+  if (a && a.closest && a.closest('#rail')) return false;
+  const p = focusedProg();
+  if (p && !isNowProg(p)) { jumpToNow(false); guideScroll.focus({ preventScroll: true }); return true; }
+  const b = document.querySelector('.rail-btn.active') || document.querySelector('.rail-btn');
+  if (b && b.offsetParent) { b.focus(); return true; }
+  return false;
+}
+window.tunerBack = handleBack;
+
+document.addEventListener('keydown', e => {
+  firstGesture();
+  let k = keyName(e); if (!k) return;
+  const a = document.activeElement;
+  const inField = !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
+  if (k === 'backspace') { if (inField) return; k = 'back'; }
+  if (k === 'back') {
+    if (isTextInput(a) && e.key !== 'Escape') return;
+    if (handleBack()) e.preventDefault();
+    return;
+  }
+  if (!loginEl.hidden) { tvNav(k, e, el('loginForm')); return; }
+  if (app.classList.contains('is-full') && !layers.length) {
+    const map = { up: () => stepChannel(-1), down: () => stepChannel(1), pgup: () => stepChannel(-1), pgdn: () => stepChannel(1), left: showOsd, right: showOsd, ok: () => osd.classList.contains('hide') ? showOsd() : osd.classList.add('hide'), info: showOsd, fav: () => { toggleFav(S.byId.get(S.playingId)); showOsd(); }, mute: () => { toggleMute(); showOsd(); } };
+    if (k === 'digit') { e.preventDefault(); numKey(e.key); return; }
+    if (map[k]) { e.preventDefault(); map[k](); }
+    return;
+  }
+  if (layers.length) {
+    const top = layers[layers.length - 1];
+    if (top.id === 'searchSheet') searchNav(k, e, top);
+    else tvNav(k, e, top);
+    return;
+  }
+  if (inField) return;
+  if (a && a.closest && a.closest('#rail')) {
+    if (k === 'up' || k === 'down') { e.preventDefault(); moveListFocus(el('rail'), k === 'down' ? 1 : -1); }
+    else if (k === 'right') { e.preventDefault(); guideScroll.focus({ preventScroll: true }); }
+    return;
+  }
+  const visRows = Math.max(1, Math.floor((guideScroll.clientHeight - headH) / rowH) - 1);
+  switch (k) {
+    case 'up': e.preventDefault(); moveRow(-1); break;
+    case 'down': e.preventDefault(); moveRow(1); break;
+    case 'pgup': e.preventDefault(); moveRow(-visRows); break;
+    case 'pgdn': e.preventDefault(); moveRow(visRows); break;
+    case 'left': e.preventDefault(); moveProg(-1); break;
+    case 'right': e.preventDefault(); moveProg(1); break;
+    case 'ok': {
+      if (a && a.tagName === 'BUTTON') return;
+      e.preventDefault();
+      const ch = S.list[focus.i]; if (!ch) return;
+      const p = focusedProg();
+      if (!p || isNowProg(p)) { if (S.playingId === ch.id && !S.catchup) enterFull(); else play(ch, { full: true }); }
+      else openDetails(ch, p);
+      break;
+    }
+    case 'info': { e.preventDefault(); const ch = S.list[focus.i], p = focusedProg(); if (ch && p) openDetails(ch, p); break; }
+    case 'digit': e.preventDefault(); numKey(e.key); break;
+    case 'fav': e.preventDefault(); toggleFav(S.list[focus.i]); break;
+    case 'search': e.preventDefault(); openSearch(); break;
+    case 'groups': e.preventDefault(); openGroups(); break;
+    case 'mute': e.preventDefault(); toggleMute(); break;
+  }
+});
+
+/* Stop the stream while the app or tab is in the background (providers limit connections), resume on return. */
+document.addEventListener('visibilitychange', () => {
+  if (!S.provider || S.provider.type !== 'xtream') return;
+  if (document.hidden) { playToken++; teardownStream(); spinner.hidden = true; }
+  else { const ch = S.byId.get(S.playingId); if (ch) play(ch, { quiet: true, catchup: S.catchup }); }
+});
+
+let toastTimer = 0;
+function toast(msg, ms = 2800) {
+  toastEl.textContent = msg; toastEl.hidden = false;
+  clearTimeout(toastTimer);
+  if (ms) toastTimer = setTimeout(() => { toastEl.hidden = true; }, ms);
+}
+
+/* ================= clock + resize ================= */
+let lastMinute = 0;
+function tick() {
+  const now = Date.now();
+  if (now - rangeStart > 24 * HOUR) {
+    computeRange();
+    if (S.provider && S.provider.type === 'demo') S.channels.forEach(c => epg.set(c.id, demoSchedule(c)));
+    layoutGuide();
+  }
+  if (focus.follow) { const ch = S.list[focus.i], p = focusedProg(); if (!p || !isNowProg(p, now) || focus.t < now - MIN) focus.t = now; }
+  positionNow();
+  const m = Math.floor(now / MIN);
+  if (m !== lastMinute) { lastMinute = m; invalidateRows(); renderGuide(); }
+  updateHero(); updateOsd();
+}
+let resizeT = 0;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeT);
+  resizeT = setTimeout(() => {
+    const oldPpm = ppm, centerT = rangeStart + (guideScroll.scrollLeft / oldPpm) * MIN;
+    layoutGuide();
+    guideScroll.scrollLeft = Math.max(0, x(centerT));
+    ensureVisible(); renderGuide(); sizeCanvas();
+  }, 120);
+});
+
+/* ================= boot ================= */
+function boot() {
+  computeRange(); applyRowSize(); readMetrics();
+  const saved = savedPlaylists(), last = store.get('last', null);
+  if (last === 'demo') loadDemo(false);
+  else {
+    loadDemo(true);
+    const sp = last && saved.find(p => p.id === last);
+    if (sp) {
+      toast(`Connecting to ${sp.name}…`, 0);
+      connectPlaylist(sp).catch(ex => { toastEl.hidden = true; openLogin({ cancelable: false, values: sp, error: ex.message }); });
+    } else openLogin({});
+  }
+  setInterval(tick, 15000);
+  tick();
+  if (loginEl.hidden) guideScroll.focus({ preventScroll: true });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { invalidateRows(); renderGuide(); });
+}
+boot();
+})();
+</script>
+
+</body>
+</html>

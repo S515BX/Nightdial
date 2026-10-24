@@ -1,0 +1,71 @@
+# Builds Tuner.ipa on a GitHub-hosted Mac and puts it on the "ios" release:
+#   https://github.com/<you>/<repo>/releases/download/ios/Tuner.ipa
+# The .ipa is unsigned on purpose: Sideloadly signs it with your Apple ID when it installs it.
+name: Build iOS IPA
+
+on:
+  push:
+    paths:
+      - "ios/**"
+      - ".github/workflows/build-ios.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: ios
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xcode version
+        run: xcodebuild -version
+
+      - name: Build the app
+        run: |
+          set -o pipefail
+          xcodebuild -project Tuner.xcodeproj -target Tuner -configuration Release -sdk iphoneos \
+            SYMROOT="$PWD/build" \
+            PRODUCT_BUNDLE_IDENTIFIER=app.tuner.player \
+            DEVELOPMENT_TEAM="" CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            build 2>&1 | tee build.log
+
+      - name: Show build errors
+        if: failure()
+        run: grep -E "error:" build.log | sort -u | head -80 || true
+
+      - name: Package Tuner.ipa
+        run: |
+          mkdir -p Payload
+          cp -R build/Release-iphoneos/Tuner.app Payload/
+          zip -qry Tuner.ipa Payload
+          ls -lh Tuner.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tuner-ipa
+          path: ios/Tuner.ipa
+          if-no-files-found: error
+
+      - name: Publish to Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release view ios >/dev/null 2>&1 || \
+            gh release create ios --target "$GITHUB_SHA" --title "Tuner for iPhone and iPad" \
+              --notes "Newest iOS build (unsigned). Install it with Sideloadly, which signs it with your Apple ID."
+          gh release upload ios Tuner.ipa --clobber
+          echo "### Download Tuner.ipa" >> "$GITHUB_STEP_SUMMARY"
+          echo "https://github.com/${GH_REPO}/releases/download/ios/Tuner.ipa" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: build-log
+          path: ios/build.log

@@ -1,0 +1,16 @@
+# iOS
+ios/build/
+ios/Payload/
+*.ipa
+xcuserdata/
+DerivedData/
+# Android
+firetv/.gradle/
+firetv/build/
+firetv/app/build/
+firetv/local.properties
+firetv/*.apk
+.idea/
+*.iml
+# misc
+.DS_Store
