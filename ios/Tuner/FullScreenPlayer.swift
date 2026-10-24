@@ -6,6 +6,7 @@ struct FullScreenPlayer: View {
     @EnvironmentObject var model: AppModel
     @EnvironmentObject var player: PlayerController
     @StateObject private var pip = PiPController()
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var showControls = true
     @State private var showChannels = false
     @State private var hideTask: Task<Void, Never>?
@@ -59,19 +60,20 @@ struct FullScreenPlayer: View {
 
     /// Rewind, pause and fast-forward in the middle of the picture.
     private var transport: some View {
-        HStack(spacing: 34) {
+        let k: CGFloat = sizeClass == .regular ? 1.4 : 1      // bigger on iPad
+        return HStack(spacing: 34 * k) {
             Button { model.seekLive(-30); poke() } label: {
-                Image(systemName: "gobackward.30").font(.system(size: 24, weight: .semibold)).frame(width: 58, height: 58)
+                Image(systemName: "gobackward.30").font(.system(size: 24 * k, weight: .semibold)).frame(width: 58 * k, height: 58 * k)
                     .background(Circle().fill(Color.black.opacity(0.45)))
             }
             .accessibilityLabel("Rewind")
             Button { model.togglePause(); poke() } label: {
-                Image(systemName: player.isPaused ? "play.fill" : "pause.fill").font(.system(size: 30, weight: .bold)).frame(width: 76, height: 76)
+                Image(systemName: player.isPaused ? "play.fill" : "pause.fill").font(.system(size: 30 * k, weight: .bold)).frame(width: 76 * k, height: 76 * k)
                     .background(Circle().fill(Color.black.opacity(0.5)))
             }
             .accessibilityLabel(player.isPaused ? "Play" : "Pause")
             Button { model.seekLive(30); poke() } label: {
-                Image(systemName: "goforward.30").font(.system(size: 24, weight: .semibold)).frame(width: 58, height: 58)
+                Image(systemName: "goforward.30").font(.system(size: 24 * k, weight: .semibold)).frame(width: 58 * k, height: 58 * k)
                     .background(Circle().fill(Color.black.opacity(0.45)))
             }
             .accessibilityLabel("Fast-forward")
