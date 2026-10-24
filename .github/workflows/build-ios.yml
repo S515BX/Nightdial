@@ -104,11 +104,12 @@ jobs:
           match = [d for d in devs if d['name'].startswith(want)] or [d for d in devs if d['name'].startswith(want.split()[0])]
           print(match[-1]['udid'])" "$1"
           }
+          # shoot DEVICE NAME SECONDS [launch arguments...]; the sample channels need -tuner.debug.demo YES
           shoot() {
-            dev=$1; name=$2; shift 2
+            dev=$1; name=$2; wait=$3; shift 3
             xcrun simctl terminate "$dev" app.tuner.player >/dev/null 2>&1 || true
-            xcrun simctl launch "$dev" app.tuner.player -tuner.last demo "$@"
-            sleep 9
+            xcrun simctl launch "$dev" app.tuner.player "$@"
+            sleep "$wait"
             xcrun simctl io "$dev" screenshot "shots/$name.png"
           }
           for kind in "iPhone 16 Pro" "iPad Pro 13"; do
@@ -119,13 +120,19 @@ jobs:
             xcrun simctl bootstatus "$UDID" -b
             xcrun simctl status_bar "$UDID" override --time "9:41" --batteryLevel 100 --batteryState charged || true
             xcrun simctl install "$UDID" simbuild/Debug-iphonesimulator/Tuner.app
-            shoot "$UDID" "$tag-1-guide"
-            shoot "$UDID" "$tag-2-themes" -tuner.debug.sheet themes
-            shoot "$UDID" "$tag-3-channels" -tuner.debug.sheet channels
-            shoot "$UDID" "$tag-4-christmas" -tuner.look.theme christmas
-            shoot "$UDID" "$tag-5-halloween" -tuner.look.theme halloween
-            shoot "$UDID" "$tag-6-fullscreen" -tuner.debug.full YES
-            shoot "$UDID" "$tag-7-custom" -tuner.look.theme aurora -tuner.look.hl "#5EE6C4" -tuner.look.font outfit
+            D="-tuner.debug.demo YES"
+            shoot "$UDID" "$tag-01-start" 6
+            shoot "$UDID" "$tag-02-m3u-login" 6 -tuner.debug.login m3u
+            shoot "$UDID" "$tag-03-guide" 9 $D
+            shoot "$UDID" "$tag-04-movies" 8 $D -tuner.debug.sheet ondemand
+            shoot "$UDID" "$tag-05-movie-details" 10 $D -tuner.debug.sheet ondemand -tuner.debug.vod details
+            shoot "$UDID" "$tag-06-series" 10 $D -tuner.debug.sheet ondemand -tuner.debug.vod series
+            shoot "$UDID" "$tag-07-fullscreen" 9 $D -tuner.debug.full YES
+            shoot "$UDID" "$tag-08-paused" 15 $D -tuner.debug.full YES -tuner.debug.pause YES
+            shoot "$UDID" "$tag-09-themes" 9 $D -tuner.debug.sheet themes
+            shoot "$UDID" "$tag-10-channels" 9 $D -tuner.debug.sheet channels
+            shoot "$UDID" "$tag-11-christmas" 9 $D -tuner.look.theme christmas
+            shoot "$UDID" "$tag-12-custom" 9 $D -tuner.look.theme aurora -tuner.look.hl "#5EE6C4" -tuner.look.font outfit
             xcrun simctl shutdown "$UDID" || true
           done
           ls -la shots
@@ -135,6 +142,18 @@ jobs:
           name: ios-screenshots
           path: ios/shots
           if-no-files-found: error
+
+      # Also kept on a throwaway branch (replaced every run), which is easier to fetch than artifacts.
+      - name: Put screenshots on the ci-ios-shots branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd shots
+          git init -q
+          git checkout -q -b ci-ios-shots
+          git add .
+          git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -qm "iOS screenshots for ${GITHUB_SHA::7} (${GITHUB_REF_NAME})"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci-ios-shots
 
       - uses: actions/upload-artifact@v4
         if: failure()

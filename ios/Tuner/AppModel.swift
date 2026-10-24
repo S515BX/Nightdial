@@ -32,6 +32,9 @@ struct VisibleGroup: Identifiable {
 
 struct LoginPrefill {
     var name = "", server = "", user = "", pass = "", error: String? = nil
+    /// "xtream" or "m3u"
+    var kind = "xtream"
+    var m3u = "", epg = ""
 }
 
 struct ProgramHit: Identifiable {
@@ -48,6 +51,8 @@ struct SearchResults {
 @MainActor
 final class AppModel: ObservableObject {
     let player: PlayerController
+    /// Movies and series, for accounts that include them.
+    let vod = OnDemandModel()
     private let store = Store.shared
 
     @Published private(set) var provider: Provider?
@@ -86,7 +91,13 @@ final class AppModel: ObservableObject {
     @Published private(set) var recents: [String] = []
 
     @Published var isFullScreen = false
+    @Published var showOnDemand = false
     @Published var sheet: ActiveSheet?
+    /// Rewound with the provider's catch-up: the moment the stream started from.
+    @Published private(set) var timeshift: Date?
+    private var timeshiftStarted = Date()
+    private var pausedAt: Date?
+    private var guideFileLoading = false
     @Published private(set) var toast: String?
     @Published private(set) var now = Date()
     @Published private(set) var scrollToken = 0
@@ -128,18 +139,47 @@ final class AppModel: ObservableObject {
 
     // MARK: Start-up
 
+    /// Starts empty; signs in to the last playlist if there is one. (The demo is only for screenshots.)
     private func boot() {
-        let last = store.string("last")
-        if last == "demo" {
+        if UserDefaults.standard.bool(forKey: "tuner.debug.demo") {
             loadDemo(backdrop: false)
             return
         }
-        loadDemo(backdrop: true)
-        if let last, let saved = store.playlists.first(where: { $0.id == last }) {
+        loadBlank()
+        if let last = store.string("last"), let saved = store.playlists.first(where: { $0.id == last }) {
             Task { await self.connectSaved(saved) }
         } else {
             showLogin = true
         }
+    }
+
+    /// No playlist: an empty guide behind the sign-in screen.
+    func loadBlank() {
+        player.stop()
+        provider = nil
+        client = nil
+        channels = []
+        groups = []
+        list = []
+        byId = [:]
+        epg = [:]
+        epgState = [:]
+        epgQueue = []
+        epgRevision += 1
+        listRevision += 1
+        favoriteOrder = []
+        favorites = []
+        hiddenChannels = []
+        hiddenGroups = []
+        recents = []
+        groupId = "all"
+        focusIndex = 0
+        playingId = nil
+        catchup = nil
+        timeshift = nil
+        isBackdrop = false
+        showOnDemand = false
+        vod.reset()
     }
 
     private func computeRange() {
@@ -174,7 +214,7 @@ final class AppModel: ObservableObject {
             epgState[c.id] = .done
         }
         epgRevision += 1
-        if !backdrop { store.setString("demo", "last") }
+        vod.configure(client: nil, providerId: "demo", demo: true)
         startUp()
         runDebugHooks()
     }
@@ -184,28 +224,24 @@ final class AppModel: ObservableObject {
         let d = UserDefaults.standard
         let sheetName = d.string(forKey: "tuner.debug.sheet")
         let full = d.bool(forKey: "tuner.debug.full")
+        let pause = d.bool(forKey: "tuner.debug.pause")
         guard sheetName != nil || full else { return }
         Task {
             try? await Task.sleep(nanoseconds: 1_200_000_000)
             if full { self.isFullScreen = true }
+            if pause {
+                try? await Task.sleep(nanoseconds: 5_000_000_000)
+                self.togglePause()
+            }
             switch sheetName {
             case "themes": self.sheet = .themes
             case "channels": self.sheet = .channels
             case "settings": self.sheet = .settings
             case "groups": self.sheet = .groups
+            case "ondemand": self.openOnDemand()
             default: break
             }
         }
-    }
-
-    func openDemo() {
-        if provider?.kind == .demo {
-            isBackdrop = false
-            store.setString("demo", "last")
-        } else {
-            loadDemo(backdrop: false)
-        }
-        showLogin = false
     }
 
     private func setProvider(_ p: Provider, channels newChannels: [Channel], groups newGroups: [ChannelGroup], client newClient: XtreamClient?) {
@@ -229,10 +265,18 @@ final class AppModel: ObservableObject {
         groupId = g
         playingId = nil
         catchup = nil
+        timeshift = nil
+        showOnDemand = false
+    }
+
+    /// Xtream with "Use XMLTV file", or an M3U playlist with a guide link: the whole guide comes from one file.
+    private var usesGuideFile: Bool {
+        guard let p = provider else { return false }
+        return (p.kind == .xtream && useXMLTV) || (p.kind == .m3u && !p.epgUrl.isEmpty)
     }
 
     private func startUp() {
-        if provider?.kind == .xtream && useXMLTV {
+        if usesGuideFile {
             for c in channels { epgState[c.id] = .loading }
         }
         applyGroup(groupId, keepFocus: false)
@@ -245,7 +289,7 @@ final class AppModel: ObservableObject {
             play(ch, quiet: true)
         }
         jumpNowToken += 1
-        if provider?.kind == .xtream && useXMLTV {
+        if usesGuideFile {
             Task { await self.loadXMLTV() }
         }
     }
@@ -258,22 +302,52 @@ final class AppModel: ObservableObject {
         showToast("Signed in to \(result.provider.name) · \(result.channels.count) channels")
     }
 
+    func signInM3U(name: String, url: String, epg: String, remember: Bool,
+                   step: @escaping @MainActor (String) -> Void) async throws {
+        let result = try await M3U.connect(name: name, urlInput: url, epgInput: epg, step: step)
+        apply(result, remember: remember)
+        showLogin = false
+        showToast("Signed in to \(result.provider.name) · \(result.channels.count) channels")
+    }
+
     private func apply(_ r: XtreamClient.LoginResult, remember: Bool) {
         let p = r.provider
-        setProvider(p, channels: r.channels, groups: r.groups, client: XtreamClient(server: p.server, user: p.user, pass: p.pass))
+        let c: XtreamClient? = p.kind == .xtream ? XtreamClient(server: p.server, user: p.user, pass: p.pass) : nil
+        setProvider(p, channels: r.channels, groups: r.groups, client: c)
         isBackdrop = false
         if remember {
             var saved = store.playlists.filter { $0.id != p.id }
-            saved.insert(Playlist(id: p.id, name: p.name, server: p.server, user: p.user), at: 0)
+            if p.kind == .m3u {
+                // The link usually contains your username and password, so it goes in the Keychain, not the list.
+                saved.insert(Playlist(id: p.id, name: p.name, server: "", user: "", kind: "m3u", host: URL(string: p.url)?.host), at: 0)
+                store.setPlaylistLink(p.url, epg: p.epgUrl, for: p.id)
+            } else {
+                saved.insert(Playlist(id: p.id, name: p.name, server: p.server, user: p.user, kind: "xtream"), at: 0)
+                store.setPassword(p.pass, for: p.id)
+            }
             store.playlists = saved
-            store.setPassword(p.pass, for: p.id)
             store.setString(p.id, "last")
         }
+        vod.configure(client: c, providerId: p.id, demo: false)
         startUp()
     }
 
     func connectSaved(_ pl: Playlist) async {
         showToast("Connecting to \(pl.name)…", seconds: 0)
+        if pl.kind == "m3u" {
+            let link = store.playlistLink(for: pl.id)
+            do {
+                let r = try await M3U.connect(name: pl.name, urlInput: link.url, epgInput: link.epg, step: { _ in })
+                apply(r, remember: true)
+                showLogin = false
+                showToast("Signed in to \(pl.name)")
+            } catch {
+                toast = nil
+                loginPrefill = LoginPrefill(name: pl.name, error: error.localizedDescription, kind: "m3u", m3u: link.url, epg: link.epg)
+                showLogin = true
+            }
+            return
+        }
         let pass = store.password(for: pl.id)
         do {
             let r = try await XtreamClient.connect(name: pl.name, serverInput: pl.server, user: pl.user, pass: pass, step: { _ in })
@@ -306,20 +380,52 @@ final class AppModel: ObservableObject {
         Task { await self.connectSaved(pl) }
     }
 
-    func switchToDemo() {
-        sheet = nil
-        loadDemo(backdrop: false)
-        showToast("Demo playlist")
-    }
-
     func removeCurrentPlaylist() {
-        guard let p = provider, p.kind == .xtream else { return }
+        guard let p = provider, p.kind != .demo else { return }
         store.removePlaylist(p.id)
+        if store.string("last") == p.id { store.remove("last") }
         sheet = nil
-        loadDemo(backdrop: true)
+        loadBlank()
         loginPrefill = nil
         showLogin = true
         showToast("Removed \(p.name)")
+    }
+
+    /// M3U playlists: change the TV guide (XMLTV) link from Settings.
+    func setM3UGuide(_ link: String) {
+        guard var p = provider, p.kind == .m3u else { return }
+        p.epgUrl = link.trimmed
+        provider = p
+        if store.playlists.contains(where: { $0.id == p.id }) {
+            store.setPlaylistLink(p.url, epg: p.epgUrl, for: p.id)
+        }
+        reloadGuide()
+    }
+
+    // MARK: On Demand
+
+    func openOnDemand() {
+        guard vod.available else { return }
+        let wait = sheet != nil || isFullScreen
+        sheet = nil
+        isFullScreen = false
+        player.stop()            // the live channel resumes when you come back
+        if wait {
+            Task {
+                try? await Task.sleep(nanoseconds: 450_000_000)
+                self.showOnDemand = true
+            }
+        } else {
+            showOnDemand = true
+        }
+    }
+
+    func closeOnDemand() { showOnDemand = false }
+
+    /// Back from Movies & Series: pick the live channel up again.
+    func onDemandClosed() {
+        guard let ch = playingChannel, player.state == .idle else { return }
+        play(ch, quiet: true)
     }
 
     // MARK: Groups
@@ -446,6 +552,7 @@ final class AppModel: ObservableObject {
 
     var emptyText: String {
         switch groupId {
+        case _ where provider == nil: return "No playlist yet.\nAdd one to start watching."
         case "fav": return "No favorites yet.\nTouch and hold a channel, or use Edit channels to pick some."
         case "recent": return "Nothing watched yet.\nChannels you watch show up here."
         default: return "No channels in this group."
@@ -474,9 +581,15 @@ final class AppModel: ObservableObject {
     }
 
     func isLoadingGuide(_ ch: Channel) -> Bool {
-        guard provider?.kind == .xtream else { return false }
-        let st = epgState[ch.id]
-        return st != .done && st != .failed
+        switch provider?.kind {
+        case .some(.xtream):
+            let st = epgState[ch.id]
+            return st != .done && st != .failed
+        case .some(.m3u):
+            return epgState[ch.id] == .loading
+        default:
+            return false
+        }
     }
 
     func canCatchup(_ ch: Channel, _ p: Program) -> Bool {
@@ -572,6 +685,8 @@ final class AppModel: ObservableObject {
         guard let p = provider else { return }
         playingId = ch.id
         catchup = cu
+        timeshift = nil
+        pausedAt = nil
         if !quiet {
             recents = [ch.id] + recents.filter { $0 != ch.id }
             if recents.count > 30 { recents = Array(recents.prefix(30)) }
@@ -586,8 +701,93 @@ final class AppModel: ObservableObject {
         case .xtream:
             if let cu { url = client?.catchupURL(ch, cu, timezone: p.info.timezone) }
             if url == nil { url = client?.liveURL(ch) }
+        case .m3u:
+            url = ch.streamURL
         }
         if let url { player.play(url) } else { player.fail("network") }
+    }
+
+    // MARK: Pause and rewind (live TV)
+
+    func canTimeshift(_ ch: Channel) -> Bool { provider?.kind == .xtream && ch.archive }
+
+    /// Pause; when you come back after the stream has moved on, continue from the provider's catch-up if it has one.
+    func togglePause() {
+        guard let ch = playingChannel else { return }
+        if !player.isPaused {
+            player.setPaused(true)
+            pausedAt = Date()
+            return
+        }
+        let at = pausedAt
+        pausedAt = nil
+        let away = at.map { Date().timeIntervalSince($0) } ?? 0
+        if player.timeInfo.seekable || away < 45 || catchup != nil || provider?.kind == .demo {
+            player.setPaused(false)
+        } else if canTimeshift(ch), let at {
+            playTimeshift(ch, from: at)
+            showToast("Continuing from where you paused")
+        } else {
+            play(ch, quiet: true)
+            showToast("Back to live. This channel can't continue from where you paused.", seconds: 4)
+        }
+    }
+
+    /// Rewind or fast-forward: within the stream when it allows, otherwise 5 minutes at a time with catch-up.
+    func seekLive(_ seconds: Double) {
+        guard let ch = playingChannel else { return }
+        if player.timeInfo.seekable {
+            player.skip(by: seconds)
+            return
+        }
+        if let ts = timeshift {
+            let at = ts.addingTimeInterval(Date().timeIntervalSince(timeshiftStarted) + (seconds < 0 ? -300 : 300))
+            if at >= Date().addingTimeInterval(-60) {
+                play(ch, quiet: true)
+                showToast("Back to live")
+            } else {
+                playTimeshift(ch, from: at)
+            }
+            return
+        }
+        if seconds < 0 && canTimeshift(ch) {
+            playTimeshift(ch, from: Date().addingTimeInterval(-300))
+            showToast("Rewound 5 minutes")
+            return
+        }
+        showToast(seconds < 0 ? "This channel can't be rewound" : "You're watching live")
+    }
+
+    func goLive() {
+        guard let ch = playingChannel else { return }
+        if timeshift != nil || catchup != nil {
+            play(ch, quiet: true)
+        } else {
+            player.seekToLiveEdge()
+        }
+        showToast("Back to live")
+    }
+
+    /// "4:12 behind" while paused or rewound on a live channel.
+    func behindLiveText() -> String {
+        guard let p = provider, p.kind != .demo else { return "" }
+        if let ts = timeshift {
+            let behind = Date().timeIntervalSince(ts) - player.timeInfo.position
+            return behind > 30 ? Fmt.clock(behind) + " behind" : ""
+        }
+        guard catchup == nil else { return "" }
+        let info = player.timeInfo
+        return info.seekable && info.behind > 15 ? Fmt.clock(info.behind) + " behind" : ""
+    }
+
+    private func playTimeshift(_ ch: Channel, from: Date) {
+        let n = Date()
+        let earliest = n.addingTimeInterval(-Double(max(1, ch.archiveDays)) * 86400 + 3600)
+        let start = min(n.addingTimeInterval(-60), max(earliest, from))
+        let title = program(for: ch, at: start)?.title ?? ch.name
+        play(ch, catchup: Program(start: start, end: n.addingTimeInterval(3 * 3600), title: title), quiet: true)
+        timeshift = start
+        timeshiftStarted = Date()
     }
 
     func watchFromDetails(_ ch: Channel, catchup cu: Program?) {
@@ -706,18 +906,34 @@ final class AppModel: ObservableObject {
     }
 
     func reloadGuide() {
-        guard provider?.kind == .xtream else { return }
+        guard let p = provider, p.kind == .xtream || p.kind == .m3u else { return }
         epg = [:]
         epgState = [:]
         epgQueue = []
         epgRevision += 1
-        if useXMLTV { Task { await self.loadXMLTV() } }
+        if usesGuideFile { Task { await self.loadXMLTV() } }
     }
 
     func loadXMLTV() async {
-        guard let p = provider, p.kind == .xtream, let client else { return }
+        guard let p = provider else { return }
+        let downloader: XtreamClient
+        let source: String?
+        switch p.kind {
+        case .xtream:
+            guard let client else { return }
+            downloader = client
+            source = xmltvURL.trimmed.nonEmpty
+        case .m3u:
+            guard !p.epgUrl.isEmpty else { return }
+            downloader = XtreamClient(server: "", user: "", pass: "")
+            source = p.epgUrl
+        case .demo:
+            return
+        }
         for c in channels { epgState[c.id] = .loading }
+        guideFileLoading = true
         epgRevision += 1
+        defer { guideFileLoading = false }
         showToast("Loading TV guide…", seconds: 0)
         var wantedIds: [String: [String]] = [:]
         for c in channels where !c.epgId.isEmpty { wantedIds[c.epgId, default: []].append(c.id) }
@@ -725,7 +941,7 @@ final class AppModel: ObservableObject {
         let from = rangeStart.addingTimeInterval(-86400)
         let to = rangeEnd
         do {
-            let file = try await client.downloadXMLTV(from: xmltvURL.trimmed.nonEmpty)
+            let file = try await downloader.downloadXMLTV(from: source)
             let parsed = await Task.detached(priority: .userInitiated) {
                 XMLTVParser.parse(file: file, wanted: wanted, from: from, to: to)
             }.value
@@ -741,8 +957,13 @@ final class AppModel: ObservableObject {
             guard provider?.id == p.id else { return }
             epg = [:]
             epgState = [:]
+            if p.kind == .m3u {
+                for c in channels { epgState[c.id] = .failed }
+                showToast("Couldn't load the TV guide from your guide link. Check it in Settings.", seconds: 4)
+            } else {
+                showToast("Couldn't load the XMLTV guide. Using the provider's guide instead.", seconds: 4)
+            }
             epgRevision += 1
-            showToast("Couldn't load the XMLTV guide. Using the provider's guide instead.", seconds: 4)
         }
     }
 
@@ -767,7 +988,7 @@ final class AppModel: ObservableObject {
             epg: epg,
             epgState: epgState,
             epgRevision: epgRevision,
-            isXtream: provider?.kind == .xtream,
+            isXtream: provider?.kind == .xtream || guideFileLoading,
             focusIndex: focusIndex,
             focusStart: focusedProgram?.start,
             playingId: playingId,

@@ -36,6 +36,16 @@ struct RootView: View {
                 .environmentObject(model)
                 .environmentObject(player)
         }
+        .background(
+            // A second cover needs its own host view.
+            Color.clear.fullScreenCover(isPresented: $model.showOnDemand, onDismiss: { model.onDemandClosed() }) {
+                OnDemandView()
+                    .environmentObject(model)
+                    .environmentObject(model.vod)
+                    .preferredColorScheme(.dark)
+                    .tint(Theme.accent)
+            }
+        )
         .sheet(item: $model.sheet) { sheet in
             SheetHost(sheet: sheet)
                 .environmentObject(model)
@@ -122,6 +132,7 @@ struct GuideHost: View {
 struct NavRail: View {
     enum Style { case wide, narrow, bar }
     @EnvironmentObject var model: AppModel
+    @EnvironmentObject var vod: OnDemandModel
     let style: Style
 
     var body: some View {
@@ -159,6 +170,9 @@ struct NavRail: View {
         item("Groups", "line.3.horizontal", active: false) { model.sheet = .groups }
         item("Favorites", "star", active: model.groupId == "fav") { model.toggleFavoritesGroup() }
         item("Search", "magnifyingglass", active: false) { model.sheet = .search }
+        if vod.available {
+            item("Movies & Series", "film", active: false) { model.openOnDemand() }
+        }
     }
 
     @ViewBuilder private var extraButtons: some View {
@@ -181,7 +195,7 @@ struct NavRail: View {
                 } else {
                     VStack(spacing: 4) {
                         Image(systemName: icon).font(.system(size: 18, weight: .medium))
-                        Text(title == "Edit channels" ? "Channels" : title)
+                        Text(title == "Edit channels" ? "Channels" : title == "Movies & Series" ? "Movies" : title)
                             .font(.ui(10, .medium))
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
@@ -298,6 +312,19 @@ struct InfoPanel: View {
                             .font(.ui(13)).foregroundStyle(Theme.fg3).lineLimit(1)
                     }
                 }
+            }
+            if channel == nil && model.provider == nil {
+                Text("Welcome to Nightdial").font(.cond(compact ? 20 : 30, .semibold)).foregroundStyle(Theme.fg)
+                Text("Add an Xtream Codes or M3U playlist to start watching.").font(.ui(14)).foregroundStyle(Theme.fg2)
+                Button { model.addPlaylist() } label: {
+                    Label("Add playlist", systemImage: "plus")
+                        .font(.cond(15, .semibold))
+                        .foregroundStyle(Theme.accentInk)
+                        .padding(.horizontal, 18)
+                        .frame(height: 40)
+                        .background(Capsule().fill(Theme.accentGradient))
+                }
+                .buttonStyle(.plain)
             }
             if !compact { Spacer(minLength: 0) }
         }

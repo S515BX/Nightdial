@@ -26,6 +26,8 @@ struct Channel: Identifiable, Hashable {
     let hue: Double
     var demoKind: String? = nil
     var demoStream: URL? = nil
+    /// M3U playlists: the channel's own stream link.
+    var streamURL: URL? = nil
 
     var initials: String { Channel.makeInitials(name) }
 
@@ -74,6 +76,9 @@ struct Playlist: Codable, Identifiable, Hashable {
     var name: String
     var server: String
     var user: String
+    /// nil or "xtream" for Xtream Codes, "m3u" for an M3U link (the link itself is kept in the Keychain).
+    var kind: String? = nil
+    var host: String? = nil
 }
 
 struct AccountInfo: Hashable {
@@ -85,7 +90,7 @@ struct AccountInfo: Hashable {
     var timezone: String? = nil
 }
 
-enum ProviderKind { case demo, xtream }
+enum ProviderKind { case demo, xtream, m3u }
 
 struct Provider {
     let id: String
@@ -95,6 +100,8 @@ struct Provider {
     var user: String = ""
     var pass: String = ""
     var info = AccountInfo()
+    var url: String = ""
+    var epgUrl: String = ""
 }
 
 enum EPGLoad { case queued, loading, done, failed }
@@ -151,4 +158,87 @@ extension Array where Element == Program {
         let j = i + offset
         return indices.contains(j) ? self[j] : nil
     }
+}
+
+// MARK: On Demand (movies and series)
+
+enum VodKind: String, Hashable, CaseIterable {
+    case movies, series
+    var title: String { self == .movies ? "Movies" : "Series" }
+}
+
+struct VodCategory: Identifiable, Hashable {
+    let id: String
+    let name: String
+}
+
+/// A movie or a series in the provider's catalog.
+struct VodItem: Identifiable, Hashable {
+    let id: String
+    let kind: VodKind
+    let name: String
+    let poster: URL?
+    let categoryId: String
+    let rating: Double       // out of 10, 0 when unknown
+    let year: String
+    let ext: String          // movies: container extension (mp4, mkv…)
+    let added: Double
+    var plot: String = ""
+    var genre: String = ""
+
+    var hue: Double { Double(fnv1a(name) % 360) }
+    var resumeKey: String { (kind == .movies ? "m:" : "s:") + id }
+}
+
+struct VodDetails: Hashable {
+    var plot = ""
+    var genre = ""
+    var cast = ""
+    var director = ""
+    var duration = ""
+    var year = ""
+    var rating: Double = 0
+    var backdrop: URL? = nil
+    var poster: URL? = nil
+    var ext = ""
+}
+
+struct Episode: Identifiable, Hashable {
+    let id: String
+    let season: Int
+    let number: Int
+    let title: String
+    let ext: String
+    var plot = ""
+    var duration = ""
+    var image: URL? = nil
+
+    var resumeKey: String { "e:" + id }
+}
+
+struct SeriesDetails: Hashable {
+    var info = VodDetails()
+    var seasons: [Int] = []
+    var episodes: [Int: [Episode]] = [:]
+}
+
+/// Where you stopped in a movie or episode.
+struct ResumePoint: Codable, Hashable {
+    var pos: Double
+    var dur: Double
+    var at: Double
+    var title: String
+    /// Episodes: the series they belong to, for "Continue watching".
+    var series: String? = nil
+
+    var fraction: Double { dur > 0 ? min(1, max(0, pos / dur)) : 0 }
+}
+
+/// Pulls a release year out of a title like "Movie Name (2019)".
+func yearFrom(_ name: String, _ fallback: String?) -> String {
+    if let f = fallback?.trimmed, f.count >= 4, let y = Int(f.prefix(4)), y > 1900 { return String(y) }
+    if let r = name.range(of: "\\((19|20)[0-9]{2}\\)", options: .regularExpression) {
+        return String(name[r].dropFirst().dropLast())
+    }
+    return ""
 }

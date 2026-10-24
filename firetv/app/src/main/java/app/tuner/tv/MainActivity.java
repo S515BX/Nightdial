@@ -6,6 +6,8 @@ import android.content.Context;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -60,8 +62,19 @@ public class MainActivity extends Activity {
     private WebView web;
     private PlayerView playerView;
     private ExoPlayer player;
+    private Secrets secrets;
     private long lastBackPress;
     private int retries;
+    /** Player position for the page ("pos;duration;paused;seekable;behindLive", ms), refreshed on the main thread. */
+    private volatile String playerState = "0;-1;0;0;-1";
+    private final Handler ui = new Handler(Looper.getMainLooper());
+    private final Runnable stateTicker = new Runnable() {
+        @Override
+        public void run() {
+            updatePlayerState();
+            ui.postDelayed(this, 500);
+        }
+    };
     private volatile String audioTracksJson = "[]";
     private final List<int[]> audioTrackIndex = new ArrayList<>();
 
@@ -70,6 +83,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        secrets = new Secrets(this);
 
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(Color.rgb(10, 15, 21));
@@ -91,8 +105,13 @@ public class MainActivity extends Activity {
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
         s.setMediaPlaybackRequiresUserGesture(false);
-        s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        // Only channel logos load over plain http; scripts and data never do.
+        s.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
         s.setAllowFileAccess(false);
+        s.setAllowContentAccess(false);
+        s.setGeolocationEnabled(false);
+        s.setJavaScriptCanOpenWindowsAutomatically(false);
+        s.setSupportMultipleWindows(false);
         s.setUserAgentString(s.getUserAgentString() + " TunerTV/1.0");
 
         web.setWebViewClient(new Client());
@@ -131,9 +150,12 @@ public class MainActivity extends Activity {
             case KeyEvent.KEYCODE_ENTER:
             case KeyEvent.KEYCODE_NUMPAD_ENTER:
             case KeyEvent.KEYCODE_BUTTON_A:
+                key = "Enter";
+                break;
             case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
             case KeyEvent.KEYCODE_MEDIA_PLAY:
-                key = "Enter";
+            case KeyEvent.KEYCODE_MEDIA_PAUSE:
+                key = "MediaPlayPause";
                 break;
             case KeyEvent.KEYCODE_MENU:
             case KeyEvent.KEYCODE_INFO:
@@ -185,7 +207,7 @@ public class MainActivity extends Activity {
             @Override
             public void onPlaybackStateChanged(int state) {
                 if (state == Player.STATE_BUFFERING) send("buffering", "");
-                else if (state == Player.STATE_ENDED) send("error", "stopped|ENDED");
+                else if (state == Player.STATE_ENDED) send("ended", "");
             }
 
             @Override
@@ -219,6 +241,36 @@ public class MainActivity extends Activity {
             }
         });
         playerView.setPlayer(player);
+        ui.removeCallbacks(stateTicker);
+        ui.post(stateTicker);
+    }
+
+    private void updatePlayerState() {
+        if (player == null) {
+            playerState = "0;-1;0;0;-1";
+            return;
+        }
+        long dur = player.getDuration();
+        long behind = player.isCurrentMediaItemLive() ? player.getCurrentLiveOffset() : C.TIME_UNSET;
+        playerState = Math.max(0, player.getCurrentPosition()) + ";" + (dur == C.TIME_UNSET ? -1 : dur) + ";"
+                + (player.getPlayWhenReady() ? "0" : "1") + ";" + (player.isCurrentMediaItemSeekable() ? "1" : "0") + ";"
+                + (behind == C.TIME_UNSET ? -1 : behind);
+    }
+
+    private void startPlayback(String url, long startMs) {
+        ensurePlayer();
+        retries = 0;
+        MediaItem.Builder item = new MediaItem.Builder().setUri(url);
+        String path = Uri.parse(url).getPath();
+        if (path != null && path.toLowerCase(Locale.ROOT).endsWith(".m3u8")) item.setMimeType(MimeTypes.APPLICATION_M3U8);
+        if (startMs > 0) player.setMediaItem(item.build(), startMs); else player.setMediaItem(item.build());
+        player.prepare();
+        player.setPlayWhenReady(true);
+        playerView.setVisibility(View.VISIBLE);
+    }
+
+    private static boolean webUrl(String url) {
+        return url != null && (url.startsWith("http://") || url.startsWith("https://"));
     }
 
     private static String classify(PlaybackException e) {
@@ -295,6 +347,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        ui.removeCallbacks(stateTicker);
         if (player != null) {
             player.release();
             player = null;
@@ -306,6 +359,12 @@ public class MainActivity extends Activity {
     // ---------------------------------------------------------------- page + relay
 
     private final class Client extends WebViewClient {
+        /** The page never navigates; anything that tries to leave the app's own page is blocked. */
+        @Override
+        public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+            return !HOST.equals(request.getUrl().getHost());
+        }
+
         @Override
         public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
             Uri url = request.getUrl();
@@ -324,9 +383,12 @@ public class MainActivity extends Activity {
 
     private WebResourceResponse page() throws IOException {
         String html = Relay.readAll(getAssets().open("index.html"));
+        // Keep this script identical to TV_FLAG in build.js: its hash is in the page's Content-Security-Policy.
         html = html.replace("<!--TUNER_PROXY-->", "<script>window.TUNER_PROXY=true;window.TUNER_TV=true;</script>");
         Map<String, String> headers = new HashMap<>();
         headers.put("Cache-Control", "no-store");
+        headers.put("X-Content-Type-Options", "nosniff");
+        headers.put("Referrer-Policy", "no-referrer");
         return new WebResourceResponse("text/html", "utf-8", 200, "OK", headers,
                 new ByteArrayInputStream(html.getBytes(StandardCharsets.UTF_8)));
     }
@@ -355,17 +417,63 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void play(String url, boolean live) {
+            if (!webUrl(url)) return;
+            runOnUiThread(() -> startPlayback(url, 0));
+        }
+
+        /** Movies and episodes: start at a saved position. */
+        @JavascriptInterface
+        public void playFrom(String url, double startMs) {
+            if (!webUrl(url)) return;
+            runOnUiThread(() -> startPlayback(url, (long) Math.max(0, startMs)));
+        }
+
+        @JavascriptInterface
+        public void setPaused(boolean paused) {
             runOnUiThread(() -> {
-                ensurePlayer();
-                retries = 0;
-                MediaItem.Builder item = new MediaItem.Builder().setUri(url);
-                String path = Uri.parse(url).getPath();
-                if (path != null && path.toLowerCase(Locale.ROOT).endsWith(".m3u8")) item.setMimeType(MimeTypes.APPLICATION_M3U8);
-                player.setMediaItem(item.build());
-                player.prepare();
-                player.setPlayWhenReady(true);
-                playerView.setVisibility(View.VISIBLE);
+                if (player != null) player.setPlayWhenReady(!paused);
+                updatePlayerState();
             });
+        }
+
+        /** Skip back or forward; on live streams only within what the stream keeps (its DVR window). */
+        @JavascriptInterface
+        public void seekBy(double ms) {
+            runOnUiThread(() -> {
+                if (player == null || !player.isCurrentMediaItemSeekable()) return;
+                long target = Math.max(0, player.getCurrentPosition() + (long) ms);
+                long dur = player.getDuration();
+                if (dur != C.TIME_UNSET) target = Math.min(target, Math.max(0, dur - 1000));
+                player.seekTo(target);
+                updatePlayerState();
+            });
+        }
+
+        @JavascriptInterface
+        public void seekToLive() {
+            runOnUiThread(() -> {
+                if (player != null) player.seekToDefaultPosition();
+            });
+        }
+
+        @JavascriptInterface
+        public String position() {
+            return playerState;
+        }
+
+        @JavascriptInterface
+        public String secretGet(String name) {
+            return secrets.get(name);
+        }
+
+        @JavascriptInterface
+        public void secretSet(String name, String value) {
+            secrets.set(name, value);
+        }
+
+        @JavascriptInterface
+        public void secretDel(String name) {
+            secrets.delete(name);
         }
 
         @JavascriptInterface

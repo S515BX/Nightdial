@@ -18,6 +18,9 @@ struct FullScreenPlayer: View {
             PlaybackOverlay(compact: false)
             if showControls && !showChannels {
                 controls.transition(.opacity)
+                if player.state == .playing || player.isPaused {
+                    transport.transition(.opacity)
+                }
             }
             if showChannels {
                 HStack {
@@ -54,9 +57,65 @@ struct FullScreenPlayer: View {
         .onDisappear { hideTask?.cancel() }
     }
 
+    /// Rewind, pause and fast-forward in the middle of the picture.
+    private var transport: some View {
+        HStack(spacing: 34) {
+            Button { model.seekLive(-30); poke() } label: {
+                Image(systemName: "gobackward.30").font(.system(size: 24, weight: .semibold)).frame(width: 58, height: 58)
+                    .background(Circle().fill(Color.black.opacity(0.45)))
+            }
+            .accessibilityLabel("Rewind")
+            Button { model.togglePause(); poke() } label: {
+                Image(systemName: player.isPaused ? "play.fill" : "pause.fill").font(.system(size: 30, weight: .bold)).frame(width: 76, height: 76)
+                    .background(Circle().fill(Color.black.opacity(0.5)))
+            }
+            .accessibilityLabel(player.isPaused ? "Play" : "Pause")
+            Button { model.seekLive(30); poke() } label: {
+                Image(systemName: "goforward.30").font(.system(size: 24, weight: .semibold)).frame(width: 58, height: 58)
+                    .background(Circle().fill(Color.black.opacity(0.45)))
+            }
+            .accessibilityLabel("Fast-forward")
+        }
+        .foregroundStyle(.white)
+        .buttonStyle(.plain)
+    }
+
+    /// "Paused · 2:10 behind" or "2:10 behind live", with a button back to live; position for catch-up.
+    private var liveLine: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { _ in
+            let behind = model.behindLiveText()
+            let paused = player.isPaused
+            let info = player.timeInfo
+            HStack(spacing: 10) {
+                if model.catchup != nil && model.timeshift == nil && info.duration > 0 {
+                    Text("\(paused ? "Paused · " : "")\(Fmt.clock(info.position)) / \(Fmt.clock(info.duration))")
+                        .font(.ui(14, .medium)).foregroundStyle(Theme.fg2).monospacedDigit()
+                } else if paused || !behind.isEmpty {
+                    Text(paused ? "Paused" + (behind.isEmpty ? "" : " · " + behind) : behind + " live")
+                        .font(.ui(14, .medium)).foregroundStyle(Theme.warn).monospacedDigit()
+                    if !behind.isEmpty {
+                        Button { model.goLive(); poke() } label: {
+                            HStack(spacing: 6) {
+                                Circle().fill(Theme.live).frame(width: 7, height: 7)
+                                Text("Go live").font(.ui(13, .semibold))
+                            }
+                            .padding(.horizontal, 12)
+                            .frame(height: 30)
+                            .background(Capsule().fill(Color.white.opacity(0.14)))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+
     private var controls: some View {
         let ch = model.playingChannel
-        let program: Program? = model.catchup ?? ch.flatMap { model.program(for: $0, at: model.now) }
+        var program: Program? = model.catchup ?? ch.flatMap { model.program(for: $0, at: model.now) }
+        if let ch, let ts = model.timeshift {
+            program = model.program(for: ch, at: ts.addingTimeInterval(player.timeInfo.position)) ?? program
+        }
         let favorite = ch.map { model.favorites.contains($0.id) } ?? false
         return VStack(spacing: 0) {
             HStack(spacing: 10) {
@@ -64,7 +123,9 @@ struct FullScreenPlayer: View {
                     Label("Guide", systemImage: "chevron.left").osdButton()
                 }
                 Spacer()
-                if model.catchup != nil {
+                if model.timeshift != nil {
+                    Badge(text: "REWOUND", style: .new, icon: "gobackward")
+                } else if model.catchup != nil {
                     Badge(text: "CATCH-UP", style: .new, icon: "gobackward")
                 }
                 AirPlayButton().frame(width: 44, height: 44)
@@ -105,6 +166,7 @@ struct FullScreenPlayer: View {
                 if let p = program, model.catchup == nil, p.isNow(model.now) {
                     ProgressBar(value: model.progress(p))
                 }
+                liveLine
                 if let ch, let p = program, model.catchup == nil, let n = model.next(after: p, on: ch) {
                     Text("Next  \(Fmt.time(n.start, model.clock24))  \(n.title)")
                         .font(.ui(14))
@@ -150,7 +212,7 @@ struct FullScreenPlayer: View {
         .buttonStyle(.plain)
     }
 
-    /// Channel options: favorite, hide, details, audio track, format reload.
+    /// Channel options: favorite, pause, back to live, details, audio track, reload, hide.
     private func optionsMenu(_ ch: Channel, _ program: Program?) -> some View {
         let favorite = model.favorites.contains(ch.id)
         return Menu {
@@ -160,6 +222,14 @@ struct FullScreenPlayer: View {
             if let p = program, model.catchup == nil {
                 Button { model.detailsFromFullScreen(ch, p) } label: {
                     Label("Program details", systemImage: "info.circle")
+                }
+            }
+            Button { model.togglePause() } label: {
+                Label(player.isPaused ? "Resume" : "Pause", systemImage: player.isPaused ? "play.fill" : "pause.fill")
+            }
+            if model.timeshift != nil || !model.behindLiveText().isEmpty {
+                Button { model.goLive() } label: {
+                    Label("Back to live", systemImage: "dot.radiowaves.left.and.right")
                 }
             }
             if player.audioOptions.count > 1 {
@@ -194,7 +264,7 @@ struct FullScreenPlayer: View {
         hideTask?.cancel()
         hideTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 5_000_000_000)
-            if !Task.isCancelled && !showChannels { showControls = false }
+            if !Task.isCancelled && !showChannels && !player.isPaused { showControls = false }   // stay up while paused
         }
     }
 

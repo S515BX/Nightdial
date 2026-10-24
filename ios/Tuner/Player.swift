@@ -14,6 +14,8 @@ final class PlayerController: ObservableObject {
     /// Audio tracks of the current stream (languages, Dolby, etc.) when there's more than one.
     @Published private(set) var audioOptions: [String] = []
     @Published private(set) var audioIndex = 0
+    /// Paused by you (or by the system, e.g. headphones unplugged).
+    @Published private(set) var isPaused = false
     private var audioGroup: AVMediaSelectionGroup?
 
     private var statusObservation: NSKeyValueObservation?
@@ -36,6 +38,7 @@ final class PlayerController: ObservableObject {
         audioOptions = []
         audioIndex = 0
         audioGroup = nil
+        isPaused = false
         let asset = AVURLAsset(url: url, options: ["AVURLAssetHTTPHeaderFieldsKey": ["User-Agent": "Tuner/1.0"]])
         let item = AVPlayerItem(asset: asset)
         statusObservation = item.observe(\.status, options: [.new]) { [weak self] observed, _ in
@@ -45,9 +48,15 @@ final class PlayerController: ObservableObject {
             }
         }
         controlObservation = player.observe(\.timeControlStatus, options: [.new]) { [weak self] observed, _ in
-            let playing = observed.timeControlStatus == .playing
+            let status = observed.timeControlStatus
             Task { @MainActor [weak self] in
-                if playing { self?.markPlaying() }
+                guard let self else { return }
+                if status == .playing {
+                    self.markPlaying()
+                    self.isPaused = false
+                } else if status == .paused && self.state == .playing {
+                    self.isPaused = true
+                }
             }
         }
         endObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemFailedToPlayToEndTime, object: item, queue: .main) { [weak self] _ in
@@ -70,6 +79,7 @@ final class PlayerController: ObservableObject {
     func fail(_ code: String) {
         clearObservers()
         player.replaceCurrentItem(with: nil)
+        isPaused = false
         state = .failed(code)
     }
 
@@ -78,7 +88,60 @@ final class PlayerController: ObservableObject {
         player.pause()
         player.replaceCurrentItem(with: nil)
         currentURL = nil
+        isPaused = false
         state = .idle
+    }
+
+    // MARK: Pause and rewind
+
+    struct TimeInfo {
+        /// The stream keeps enough of itself to rewind (live DVR window or a recording).
+        var seekable = false
+        /// Seconds behind the newest point of the stream.
+        var behind: Double = 0
+        var position: Double = 0
+        var duration: Double = 0
+    }
+
+    var timeInfo: TimeInfo {
+        guard let item = player.currentItem else { return TimeInfo() }
+        let t = player.currentTime().seconds
+        let pos = t.isFinite ? t : 0
+        let d = item.duration.seconds
+        var info = TimeInfo(position: pos, duration: d.isFinite ? d : 0)
+        if let r = item.seekableTimeRanges.last?.timeRangeValue {
+            let start = r.start.seconds, end = (r.start + r.duration).seconds
+            if start.isFinite, end.isFinite, end - start > 60 {
+                info.seekable = true
+                info.behind = max(0, end - pos)
+            }
+        }
+        return info
+    }
+
+    func setPaused(_ paused: Bool) {
+        guard player.currentItem != nil else { return }
+        if paused { player.pause() } else { player.play() }
+        isPaused = paused
+    }
+
+    /// Jumps within what the stream keeps; stays a few seconds short of the live edge.
+    func skip(by seconds: Double) {
+        guard let item = player.currentItem else { return }
+        var target = player.currentTime().seconds + seconds
+        if let r = item.seekableTimeRanges.last?.timeRangeValue {
+            let start = r.start.seconds, end = (r.start + r.duration).seconds
+            if start.isFinite && end.isFinite { target = min(max(start, target), max(start, end - 3)) }
+        }
+        guard target.isFinite else { return }
+        let tolerance = CMTime(seconds: 1, preferredTimescale: 600)
+        player.seek(to: CMTime(seconds: target, preferredTimescale: 600), toleranceBefore: tolerance, toleranceAfter: tolerance)
+    }
+
+    func seekToLiveEdge() {
+        guard let r = player.currentItem?.seekableTimeRanges.last?.timeRangeValue else { return }
+        player.seek(to: r.start + r.duration)
+        if isPaused { setPaused(false) }
     }
 
     private func markPlaying() {

@@ -160,22 +160,20 @@ struct PlaylistsSheet: View {
                         Button {
                             model.switchTo(pl)
                         } label: {
-                            row(pl.name, "Xtream Codes · \(URL(string: pl.server)?.host ?? pl.server)", selected: model.provider?.id == pl.id && !model.isBackdrop)
+                            row(pl.name, pl.kind == "m3u" ? "M3U playlist · \(pl.host ?? "")" : "Xtream Codes · \(URL(string: pl.server)?.host ?? pl.server)",
+                                selected: model.provider?.id == pl.id && !model.isBackdrop)
                         }
                         .listRowBackground(Theme.cell)
                     }
-                    Button {
-                        model.switchToDemo()
-                    } label: {
-                        row("Demo playlist", "Built-in sample channels and guide", selected: model.provider?.id == "demo" && !model.isBackdrop)
+                    if model.savedPlaylists.isEmpty {
+                        Text("No saved playlists yet.").foregroundStyle(Theme.fg3).listRowBackground(Theme.cell)
                     }
-                    .listRowBackground(Theme.cell)
                 }
                 Section {
                     Button {
                         model.addPlaylist()
                     } label: {
-                        Label("Add Xtream Codes playlist", systemImage: "plus").foregroundStyle(Theme.accent)
+                        Label("Add playlist (Xtream Codes or M3U)", systemImage: "plus").foregroundStyle(Theme.accent)
                     }
                     .listRowBackground(Theme.cell)
                 }
@@ -206,6 +204,7 @@ struct PlaylistsSheet: View {
 struct SettingsSheet: View {
     @EnvironmentObject var model: AppModel
     @State private var confirmRemove = false
+    @State private var m3uGuide = ""
 
     var body: some View {
         NavigationStack {
@@ -213,17 +212,24 @@ struct SettingsSheet: View {
                 if let p = model.provider {
                     Section("Playlist") {
                         value("Name", p.name)
-                        value("Type", p.kind == .demo ? "Built-in demo" : "Xtream Codes")
+                        value("Type", p.kind == .demo ? "Built-in demo" : p.kind == .m3u ? "M3U playlist" : "Xtream Codes")
                         if p.kind == .xtream {
                             value("Server", p.server)
                             value("Username", p.user)
                             value("Connections", "\(p.info.activeConnections ?? "–") of \(p.info.maxConnections ?? "–") in use")
                         }
-                        value("Status", p.info.status + (p.info.trial ? " · trial" : ""))
-                        value("Expires", p.info.expires.map { Fmt.dateFormatter.string(from: $0) } ?? (p.kind == .demo ? "Never" : "Unlimited"))
+                        if p.kind == .m3u {
+                            value("Playlist from", URL(string: p.url)?.host ?? "–")
+                        } else {
+                            value("Status", p.info.status + (p.info.trial ? " · trial" : ""))
+                            value("Expires", p.info.expires.map { Fmt.dateFormatter.string(from: $0) } ?? (p.kind == .demo ? "Never" : "Unlimited"))
+                        }
                         value("Channels", "\(model.channels.count) in \(model.groups.count) groups")
+                        if model.vod.available {
+                            Button("Movies & Series") { model.openOnDemand() }
+                        }
                         Button("Switch playlist") { model.sheet = .playlists }
-                        if p.kind == .xtream {
+                        if p.kind != .demo {
                             Button("Remove playlist", role: .destructive) { confirmRemove = true }
                         }
                     }
@@ -281,11 +287,27 @@ struct SettingsSheet: View {
                     }
                     .listRowBackground(Theme.cell)
                 }
+                if model.provider?.kind == .m3u {
+                    Section {
+                        TextField("XMLTV link (optional)", text: $m3uGuide)
+                            .keyboardType(.URL)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                        Button("Save and reload guide") { model.setM3UGuide(m3uGuide) }
+                    } header: {
+                        Text("Guide source")
+                    } footer: {
+                        Text("The TV guide for an M3U playlist comes from an XMLTV file. Your provider's playlist may already include one.")
+                    }
+                    .listRowBackground(Theme.cell)
+                    .onAppear { m3uGuide = model.provider?.epgUrl ?? "" }
+                }
                 Section("Tips") {
                     tip("hand.tap", "Tap a program to select it. Tap it again to watch, or to see details.")
                     tip("hand.point.up.left", "Touch and hold a channel to add it to favorites.")
                     tip("arrow.up.arrow.down", "In full screen, swipe up or down to change channel, or swipe right for the channel list.")
                     tip("ellipsis.circle", "In full screen, the … button has channel options: favorite, hide, audio track and more.")
+                    tip("gobackward.30", "Pause and rewind live TV from the full-screen controls. Channels with catch-up can go back further.")
                     tip("airplayvideo", "Use AirPlay or Picture in Picture from the full-screen controls.")
                 }
                 .listRowBackground(Theme.cell)

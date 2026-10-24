@@ -14,6 +14,7 @@ struct TunerApp: App {
             RootView()
                 .environmentObject(model)
                 .environmentObject(model.player)
+                .environmentObject(model.vod)
         }
     }
 }

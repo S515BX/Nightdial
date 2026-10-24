@@ -1,3 +1,4 @@
+import Compression
 import Foundation
 
 struct TunerError: LocalizedError {
@@ -287,7 +288,168 @@ struct XtreamClient {
         let dest = FileManager.default.temporaryDirectory.appendingPathComponent("tuner-guide.xml")
         try? FileManager.default.removeItem(at: dest)
         try FileManager.default.moveItem(at: tmp, to: dest)
+        return try XtreamClient.gunzipIfNeeded(dest)
+    }
+
+    /// Guide files are often shared compressed (.xml.gz). Unpacks them in chunks so big guides don't fill memory.
+    static func gunzipIfNeeded(_ file: URL) throws -> URL {
+        guard let input = try? FileHandle(forReadingFrom: file) else { return file }
+        defer { try? input.close() }
+        let head = input.readData(ofLength: 4096)
+        guard head.count > 18, head[0] == 0x1f, head[1] == 0x8b else { return file }
+        guard head[2] == 8 else { throw TunerError("The guide file is compressed in a format Nightdial can't read.") }
+        // Skip the gzip header to reach the deflate data.
+        let flags = head[3]
+        var i = 10
+        if flags & 4 != 0, head.count > i + 1 { i += 2 + (Int(head[i]) | Int(head[i + 1]) << 8) }
+        if flags & 8 != 0 { while i < head.count && head[i] != 0 { i += 1 }; i += 1 }
+        if flags & 16 != 0 { while i < head.count && head[i] != 0 { i += 1 }; i += 1 }
+        if flags & 2 != 0 { i += 2 }
+        let size = (try? FileManager.default.attributesOfItem(atPath: file.path)[.size] as? NSNumber)?.intValue ?? 0
+        var remaining = size - i - 8          // the last 8 bytes are a checksum and length
+        guard i < head.count, remaining > 0 else { throw TunerError("The guide file is damaged.") }
+        let dest = file.deletingLastPathComponent().appendingPathComponent("tuner-guide-unpacked.xml")
+        try? FileManager.default.removeItem(at: dest)
+        FileManager.default.createFile(atPath: dest.path, contents: nil)
+        let output = try FileHandle(forWritingTo: dest)
+        defer { try? output.close() }
+        do {
+            let filter = try OutputFilter(.decompress, using: .zlib) { data in
+                if let data, !data.isEmpty { output.write(data) }
+            }
+            try input.seek(toOffset: UInt64(i))
+            while remaining > 0 {
+                let chunk = input.readData(ofLength: min(1 << 16, remaining))
+                if chunk.isEmpty { break }
+                remaining -= chunk.count
+                try filter.write(chunk)
+            }
+            try filter.finalize()
+        } catch {
+            throw TunerError("The guide file couldn't be unpacked.")
+        }
+        try? FileManager.default.removeItem(at: file)
         return dest
+    }
+
+    // MARK: On Demand
+
+    func vodCategories(_ kind: VodKind) async -> [VodCategory] {
+        let action = kind == .movies ? "get_vod_categories" : "get_series_categories"
+        guard let data = try? await fetch("&action=" + action, timeout: 20),
+              let arr = (try? parseJSON(data)) as? [[String: Any]] else { return [] }
+        return arr.compactMap { c in
+            guard let id = looseString(c["category_id"]) else { return nil }
+            return VodCategory(id: id, name: (looseString(c["category_name"]) ?? "Other").trimmed)
+        }
+    }
+
+    func vodItems(_ kind: VodKind) async throws -> [VodItem] {
+        let data: Data
+        do {
+            data = try await fetch("&action=" + (kind == .movies ? "get_vod_streams" : "get_series"), timeout: 90)
+        } catch {
+            throw XtreamClient.friendly(error, server: server)
+        }
+        guard let arr = (try? parseJSON(data)) as? [[String: Any]] else { return [] }
+        var out: [VodItem] = []
+        out.reserveCapacity(arr.count)
+        for (i, v) in arr.enumerated() {
+            guard let id = looseString(kind == .movies ? v["stream_id"] : v["series_id"]) else { continue }
+            let name = (looseString(v["name"]) ?? "Untitled \(i + 1)").trimmed
+            let icon = looseString(kind == .movies ? v["stream_icon"] : v["cover"]) ?? ""
+            var gid = looseString(v["category_id"]) ?? ""
+            if gid.isEmpty, let ids = v["category_ids"] as? [Any], let f = ids.first { gid = looseString(f) ?? "" }
+            var rating = looseNumber(v["rating"]) ?? 0
+            if rating == 0, let r5 = looseNumber(v["rating_5based"]) { rating = r5 * 2 }
+            out.append(VodItem(
+                id: id, kind: kind, name: name,
+                poster: icon.isEmpty ? nil : URL(string: icon),
+                categoryId: gid.isEmpty ? "none" : gid,
+                rating: min(10, max(0, rating)),
+                year: yearFrom(name, looseString(v["year"]) ?? looseString(v["releaseDate"]) ?? looseString(v["release_date"])),
+                ext: (looseString(v["container_extension"]) ?? "mp4").trimmed,
+                added: looseNumber(v["added"]) ?? looseNumber(v["last_modified"]) ?? Double(arr.count - i),
+                plot: (looseString(v["plot"]) ?? "").trimmed,
+                genre: (looseString(v["genre"]) ?? "").trimmed))
+        }
+        return out
+    }
+
+    private static func details(_ info: [String: Any]) -> VodDetails {
+        var d = VodDetails()
+        d.plot = (looseString(info["plot"]) ?? looseString(info["description"]) ?? "").trimmed
+        d.genre = (looseString(info["genre"]) ?? "").trimmed
+        d.cast = (looseString(info["cast"]) ?? looseString(info["actors"]) ?? "").trimmed
+        d.director = (looseString(info["director"]) ?? "").trimmed
+        if let secs = looseNumber(info["duration_secs"]), secs > 0 {
+            d.duration = Fmt.duration(secs)
+        } else if let dur = looseString(info["duration"])?.trimmed, !dur.isEmpty, dur != "00:00:00" {
+            let parts = dur.split(separator: ":").compactMap { Double($0) }
+            d.duration = parts.count == 3 ? Fmt.duration(parts[0] * 3600 + parts[1] * 60 + parts[2]) : dur
+        } else if let mins = looseNumber(info["episode_run_time"]), mins > 0 {
+            d.duration = Fmt.duration(mins * 60)
+        }
+        d.year = yearFrom("", looseString(info["releasedate"]) ?? looseString(info["releaseDate"]) ?? looseString(info["year"]))
+        d.rating = min(10, max(0, looseNumber(info["rating"]) ?? 0))
+        if let b = (info["backdrop_path"] as? [Any])?.first.flatMap({ looseString($0) }) ?? looseString(info["backdrop_path"]), !b.isEmpty {
+            d.backdrop = URL(string: b)
+        }
+        if let img = looseString(info["movie_image"]) ?? looseString(info["cover_big"]) ?? looseString(info["cover"]), !img.isEmpty {
+            d.poster = URL(string: img)
+        }
+        return d
+    }
+
+    func movieInfo(_ id: String) async throws -> VodDetails {
+        let data = try await fetch("&action=get_vod_info&vod_id=\(id.urlEncoded)", timeout: 30)
+        guard let obj = (try? parseJSON(data)) as? [String: Any] else { return VodDetails() }
+        var d = XtreamClient.details((obj["info"] as? [String: Any]) ?? [:])
+        if let md = obj["movie_data"] as? [String: Any], let ext = looseString(md["container_extension"]) { d.ext = ext }
+        return d
+    }
+
+    func seriesInfo(_ id: String) async throws -> SeriesDetails {
+        let data = try await fetch("&action=get_series_info&series_id=\(id.urlEncoded)", timeout: 30)
+        guard let obj = (try? parseJSON(data)) as? [String: Any] else { return SeriesDetails() }
+        var out = SeriesDetails()
+        out.info = XtreamClient.details((obj["info"] as? [String: Any]) ?? [:])
+        // Episodes come as {"1": [...], "2": [...]} or as [[...], [...]].
+        var lists: [[String: Any]] = []
+        if let dict = obj["episodes"] as? [String: Any] {
+            for (_, v) in dict { lists += (v as? [[String: Any]]) ?? [] }
+        } else if let arr = obj["episodes"] as? [Any] {
+            for v in arr { lists += (v as? [[String: Any]]) ?? ((v as? [String: Any]).map { [$0] } ?? []) }
+        }
+        var bySeason: [Int: [Episode]] = [:]
+        for e in lists {
+            guard let eid = looseString(e["id"]) else { continue }
+            let info = (e["info"] as? [String: Any]) ?? [:]
+            let season = Int(looseNumber(e["season"]) ?? looseNumber(info["season"]) ?? 1)
+            let num = Int(looseNumber(e["episode_num"]) ?? 0)
+            var dur = ""
+            if let secs = looseNumber(info["duration_secs"]), secs > 0 { dur = Fmt.duration(secs) }
+            let img = looseString(info["movie_image"]) ?? ""
+            bySeason[season, default: []].append(Episode(
+                id: eid, season: season, number: num,
+                title: (looseString(e["title"]) ?? "Episode \(num)").trimmed,
+                ext: (looseString(e["container_extension"]) ?? "mp4").trimmed,
+                plot: (looseString(info["plot"]) ?? "").trimmed,
+                duration: dur,
+                image: img.isEmpty ? nil : URL(string: img)))
+        }
+        for k in bySeason.keys { bySeason[k]?.sort { $0.number < $1.number } }
+        out.episodes = bySeason
+        out.seasons = bySeason.keys.sorted()
+        return out
+    }
+
+    func movieURL(_ item: VodItem, ext: String? = nil) -> URL? {
+        URL(string: "\(server)/movie/\(user.urlEncoded)/\(pass.urlEncoded)/\(item.id).\((ext?.nonEmpty ?? item.ext.nonEmpty) ?? "mp4")")
+    }
+
+    func episodeURL(_ e: Episode) -> URL? {
+        URL(string: "\(server)/series/\(user.urlEncoded)/\(pass.urlEncoded)/\(e.id).\(e.ext.nonEmpty ?? "mp4")")
     }
 
     // MARK: Stream addresses (Apple's player needs HLS, so always .m3u8)

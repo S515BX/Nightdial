@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /*
-  Tuner local server
+  Nightdial local server
   ------------------
-  Serves the Tuner app and relays its requests to your IPTV provider.
+  Serves the Nightdial app and relays its requests to your IPTV provider.
 
   Why: browsers don't let a web page talk to most IPTV servers directly
   (they don't send CORS headers, and many only speak plain http). This
@@ -29,13 +29,13 @@ const HOST = process.env.HOST || '127.0.0.1';
 const UA = process.env.UA || 'Tuner/1.0';
 
 if (typeof fetch !== 'function') {
-  console.error('Tuner needs Node.js 18 or newer. Download it from https://nodejs.org');
+  console.error('Nightdial needs Node.js 18 or newer. Download it from https://nodejs.org');
   process.exit(1);
 }
 
 function page() {
   const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
-  return html.replace('<!--TUNER_PROXY-->', '<script>window.TUNER_PROXY=true</script>');
+  return html.replace('<!--TUNER_PROXY-->', '<script>window.TUNER_PROXY=true</script>');   // its hash is in the page's CSP (build.js)
 }
 
 const isPlaylist = (contentType, url) => /mpegurl/i.test(contentType || '') || /\.m3u8?(\?|$)/i.test(url || '');
@@ -55,10 +55,10 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
 
   if (url.pathname === '/' || url.pathname === '/index.html') {
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'referrer-policy': 'no-referrer', 'x-frame-options': 'DENY' });
     return res.end(page());
   }
-  if (url.pathname !== '/proxy') { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('Not found'); }
+  if (url.pathname !== '/proxy' || (req.method !== 'GET' && req.method !== 'HEAD')) { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('Not found'); }
 
   let target;
   try { target = new URL(url.searchParams.get('u') || ''); } catch (e) { target = null; }
@@ -74,11 +74,12 @@ const server = http.createServer(async (req, res) => {
 
     if (isPlaylist(type, up.url) || isPlaylist('', target.pathname)) {
       const body = rewritePlaylist(await up.text(), up.url);
-      res.writeHead(up.status, { 'content-type': 'application/vnd.apple.mpegurl', 'cache-control': 'no-store' });
+      res.writeHead(up.status, { 'content-type': 'application/vnd.apple.mpegurl', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': 'sandbox' });
       return res.end(body);
     }
 
-    const out = { 'content-type': type || 'application/octet-stream', 'cache-control': 'no-store' };
+    // Provider content is data, never a page: sandboxed and not sniffed, so it can't run script on this origin.
+    const out = { 'content-type': type || 'application/octet-stream', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': 'sandbox' };
     for (const h of ['content-range', 'accept-ranges']) { const v = up.headers.get(h); if (v) out[h] = v; }
     if (!up.headers.get('content-encoding') && up.headers.get('content-length')) out['content-length'] = up.headers.get('content-length');
     res.writeHead(up.status, out);
@@ -93,7 +94,7 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, HOST, () => {
   const shown = HOST === '0.0.0.0' ? 'localhost' : HOST;
-  console.log(`\n  Tuner is running → http://${shown}:${PORT}\n`);
+  console.log(`\n  Nightdial is running → http://${shown}:${PORT}\n`);
   if (HOST === '0.0.0.0') console.log('  Open it from other devices on your network with this computer\'s IP address.\n');
   console.log('  Press Ctrl+C to stop.\n');
 });

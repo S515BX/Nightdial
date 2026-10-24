@@ -13,14 +13,16 @@
 		7C1A0000000000000000001A /* FullScreenPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A00000000000000000019 /* FullScreenPlayer.swift */; };
 		7C1A0000000000000000001C /* GuideGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A0000000000000000001B /* GuideGrid.swift */; };
 		7C1A0000000000000000001E /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A0000000000000000001D /* LoginView.swift */; };
-		7C1A00000000000000000020 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A0000000000000000001F /* Models.swift */; };
-		7C1A00000000000000000022 /* Player.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A00000000000000000021 /* Player.swift */; };
-		7C1A00000000000000000024 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A00000000000000000023 /* RootView.swift */; };
-		7C1A00000000000000000026 /* Sheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A00000000000000000025 /* Sheets.swift */; };
-		7C1A00000000000000000028 /* Storage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A00000000000000000027 /* Storage.swift */; };
-		7C1A0000000000000000002A /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A00000000000000000029 /* Theme.swift */; };
-		7C1A0000000000000000002C /* TunerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A0000000000000000002B /* TunerApp.swift */; };
-		7C1A0000000000000000002E /* XtreamClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A0000000000000000002D /* XtreamClient.swift */; };
+		7C1A00000000000000000020 /* M3U.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A0000000000000000001F /* M3U.swift */; };
+		7C1A00000000000000000022 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A00000000000000000021 /* Models.swift */; };
+		7C1A00000000000000000024 /* OnDemand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A00000000000000000023 /* OnDemand.swift */; };
+		7C1A00000000000000000026 /* Player.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A00000000000000000025 /* Player.swift */; };
+		7C1A00000000000000000028 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A00000000000000000027 /* RootView.swift */; };
+		7C1A0000000000000000002A /* Sheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A00000000000000000029 /* Sheets.swift */; };
+		7C1A0000000000000000002C /* Storage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A0000000000000000002B /* Storage.swift */; };
+		7C1A0000000000000000002E /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A0000000000000000002D /* Theme.swift */; };
+		7C1A00000000000000000030 /* TunerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A0000000000000000002F /* TunerApp.swift */; };
+		7C1A00000000000000000032 /* XtreamClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1A00000000000000000031 /* XtreamClient.swift */; };
 		7C1A00000000000000000011 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7C1A00000000000000000010 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -31,14 +33,16 @@
 		7C1A00000000000000000019 /* FullScreenPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullScreenPlayer.swift; sourceTree = "<group>"; };
 		7C1A0000000000000000001B /* GuideGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuideGrid.swift; sourceTree = "<group>"; };
 		7C1A0000000000000000001D /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
-		7C1A0000000000000000001F /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
-		7C1A00000000000000000021 /* Player.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Player.swift; sourceTree = "<group>"; };
-		7C1A00000000000000000023 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
-		7C1A00000000000000000025 /* Sheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sheets.swift; sourceTree = "<group>"; };
-		7C1A00000000000000000027 /* Storage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Storage.swift; sourceTree = "<group>"; };
-		7C1A00000000000000000029 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
-		7C1A0000000000000000002B /* TunerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunerApp.swift; sourceTree = "<group>"; };
-		7C1A0000000000000000002D /* XtreamClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XtreamClient.swift; sourceTree = "<group>"; };
+		7C1A0000000000000000001F /* M3U.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M3U.swift; sourceTree = "<group>"; };
+		7C1A00000000000000000021 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		7C1A00000000000000000023 /* OnDemand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnDemand.swift; sourceTree = "<group>"; };
+		7C1A00000000000000000025 /* Player.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Player.swift; sourceTree = "<group>"; };
+		7C1A00000000000000000027 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		7C1A00000000000000000029 /* Sheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sheets.swift; sourceTree = "<group>"; };
+		7C1A0000000000000000002B /* Storage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Storage.swift; sourceTree = "<group>"; };
+		7C1A0000000000000000002D /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		7C1A0000000000000000002F /* TunerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunerApp.swift; sourceTree = "<group>"; };
+		7C1A00000000000000000031 /* XtreamClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XtreamClient.swift; sourceTree = "<group>"; };
 		7C1A00000000000000000010 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7C1A00000000000000000012 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7C1A00000000000000000005 /* Tuner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tuner.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -72,14 +76,16 @@
 				7C1A00000000000000000019 /* FullScreenPlayer.swift */,
 				7C1A0000000000000000001B /* GuideGrid.swift */,
 				7C1A0000000000000000001D /* LoginView.swift */,
-				7C1A0000000000000000001F /* Models.swift */,
-				7C1A00000000000000000021 /* Player.swift */,
-				7C1A00000000000000000023 /* RootView.swift */,
-				7C1A00000000000000000025 /* Sheets.swift */,
-				7C1A00000000000000000027 /* Storage.swift */,
-				7C1A00000000000000000029 /* Theme.swift */,
-				7C1A0000000000000000002B /* TunerApp.swift */,
-				7C1A0000000000000000002D /* XtreamClient.swift */,
+				7C1A0000000000000000001F /* M3U.swift */,
+				7C1A00000000000000000021 /* Models.swift */,
+				7C1A00000000000000000023 /* OnDemand.swift */,
+				7C1A00000000000000000025 /* Player.swift */,
+				7C1A00000000000000000027 /* RootView.swift */,
+				7C1A00000000000000000029 /* Sheets.swift */,
+				7C1A0000000000000000002B /* Storage.swift */,
+				7C1A0000000000000000002D /* Theme.swift */,
+				7C1A0000000000000000002F /* TunerApp.swift */,
+				7C1A00000000000000000031 /* XtreamClient.swift */,
 				7C1A00000000000000000010 /* Assets.xcassets */,
 				7C1A00000000000000000012 /* Info.plist */,
 			);
@@ -169,14 +175,16 @@
 				7C1A0000000000000000001A /* FullScreenPlayer.swift in Sources */,
 				7C1A0000000000000000001C /* GuideGrid.swift in Sources */,
 				7C1A0000000000000000001E /* LoginView.swift in Sources */,
-				7C1A00000000000000000020 /* Models.swift in Sources */,
-				7C1A00000000000000000022 /* Player.swift in Sources */,
-				7C1A00000000000000000024 /* RootView.swift in Sources */,
-				7C1A00000000000000000026 /* Sheets.swift in Sources */,
-				7C1A00000000000000000028 /* Storage.swift in Sources */,
-				7C1A0000000000000000002A /* Theme.swift in Sources */,
-				7C1A0000000000000000002C /* TunerApp.swift in Sources */,
-				7C1A0000000000000000002E /* XtreamClient.swift in Sources */,
+				7C1A00000000000000000020 /* M3U.swift in Sources */,
+				7C1A00000000000000000022 /* Models.swift in Sources */,
+				7C1A00000000000000000024 /* OnDemand.swift in Sources */,
+				7C1A00000000000000000026 /* Player.swift in Sources */,
+				7C1A00000000000000000028 /* RootView.swift in Sources */,
+				7C1A0000000000000000002A /* Sheets.swift in Sources */,
+				7C1A0000000000000000002C /* Storage.swift in Sources */,
+				7C1A0000000000000000002E /* Theme.swift in Sources */,
+				7C1A00000000000000000030 /* TunerApp.swift in Sources */,
+				7C1A00000000000000000032 /* XtreamClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -58,7 +58,9 @@ public final class Relay {
 
         Map<String, String> headers = new HashMap<>();
         headers.put("Cache-Control", "no-store");
-        headers.put("Access-Control-Allow-Origin", "*");
+        // Provider content is data, never a page: it can't run script inside the app.
+        headers.put("Content-Security-Policy", "sandbox");
+        headers.put("X-Content-Type-Options", "nosniff");
 
         if (isPlaylist(type, finalUrl) || isPlaylist(null, target)) {
             String body = rewrite(readAll(in), finalUrl);

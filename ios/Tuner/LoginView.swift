@@ -15,19 +15,33 @@ struct LoginView: View {
     @State private var errorText: String?
     @State private var infoText: String?
     @State private var lastServer = ""
+    @State private var kind = "xtream"
+    @State private var m3u = ""
+    @State private var epg = ""
     @FocusState private var focused: Field?
 
-    enum Field: Hashable { case name, server, user, pass }
+    enum Field: Hashable { case name, server, user, pass, m3u, epg }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 header
+                Picker("Playlist type", selection: $kind) {
+                    Text("Xtream Codes").tag("xtream")
+                    Text("M3U playlist").tag("m3u")
+                }
+                .pickerStyle(.segmented)
+                .disabled(busy)
                 VStack(alignment: .leading, spacing: 14) {
                     field("Playlist name", text: $name, prompt: "My provider", field: .name, capitalize: true)
-                    field("Server URL", text: $server, prompt: "http://line.example.com:8080", field: .server, keyboard: .URL)
-                    field("Username", text: $user, prompt: "", field: .user, content: .username)
-                    passwordField
+                    if kind == "m3u" {
+                        field("M3U playlist link", text: $m3u, prompt: "http://provider.example.com/playlist.m3u", field: .m3u, keyboard: .URL)
+                        field("TV guide link (XMLTV, optional)", text: $epg, prompt: "Leave empty to use the playlist's guide", field: .epg, keyboard: .URL)
+                    } else {
+                        field("Server URL", text: $server, prompt: "http://line.example.com:8080", field: .server, keyboard: .URL)
+                        field("Username", text: $user, prompt: "", field: .user, content: .username)
+                        passwordField
+                    }
                 }
                 Toggle("Remember this playlist on this device", isOn: $remember)
                     .tint(Theme.accent)
@@ -69,14 +83,16 @@ struct LoginView: View {
                 BrandMark(size: 42)
                 Text("Nightdial").font(.cond(24, .semibold)).foregroundStyle(Theme.fg)
             }
-            Label("XTREAM CODES", systemImage: "dot.radiowaves.left.and.right")
+            Label(kind == "m3u" ? "M3U PLAYLIST" : "XTREAM CODES", systemImage: kind == "m3u" ? "list.bullet.rectangle" : "dot.radiowaves.left.and.right")
                 .font(.cond(11.5, .semibold))
                 .foregroundStyle(Theme.accent)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 7)
                 .background(Capsule().fill(Theme.accentSoft))
             Text("Add a playlist").font(.cond(28, .semibold)).foregroundStyle(Theme.fg)
-            Text("Enter the server address, username and password from your IPTV provider. You can also paste your full M3U link into Server URL.")
+            Text(kind == "m3u"
+                 ? "Paste the M3U link from your IPTV provider. Add a TV guide link if your provider gave you one."
+                 : "Enter the server address, username and password from your IPTV provider. You can also paste your full M3U link into Server URL.")
                 .font(.ui(15))
                 .foregroundStyle(Theme.fg2)
         }
@@ -90,12 +106,6 @@ struct LoginView: View {
                     Text(busy ? step : "Sign in")
                 }
                 .primaryButton()
-            }
-            .disabled(busy)
-            Button {
-                model.openDemo()
-            } label: {
-                Label("Open demo playlist", systemImage: "play.fill").secondaryButton()
             }
             .disabled(busy)
             if model.canCancelLogin {
@@ -165,11 +175,17 @@ struct LoginView: View {
         case .server: focused = .user
         case .user: focused = .pass
         case .pass: signIn()
+        case .m3u: focused = .epg
+        case .epg: signIn()
         }
     }
 
     private func prefill() {
+        if UserDefaults.standard.string(forKey: "tuner.debug.login") == "m3u" { kind = "m3u" }   // screenshots
         guard let p = model.loginPrefill else { return }
+        kind = p.kind
+        m3u = p.m3u
+        epg = p.epg
         name = p.name
         server = p.server
         lastServer = p.server
@@ -195,8 +211,23 @@ struct LoginView: View {
         guard !busy else { return }
         errorText = nil
         busy = true
-        step = "Checking account…"
         focused = nil
+        if kind == "m3u" {
+            step = "Loading playlist…"
+            let values = (name.trimmed, m3u.trimmed, epg.trimmed)
+            Task { @MainActor in
+                do {
+                    try await model.signInM3U(name: values.0, url: values.1, epg: values.2, remember: remember) { text in
+                        step = text
+                    }
+                } catch {
+                    errorText = error.localizedDescription
+                }
+                busy = false
+            }
+            return
+        }
+        step = "Checking account…"
         let values = (name.trimmed, server.trimmed, user.trimmed, pass)
         Task { @MainActor in
             do {

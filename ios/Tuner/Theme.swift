@@ -425,6 +425,13 @@ enum Fmt {
 
     static func shortDate(_ d: Date) -> String { shortFormatter.string(from: d) }
 
+    /// Playback position: 4:05 or 1:02:09.
+    static func clock(_ seconds: Double) -> String {
+        let t = max(0, Int(seconds.isFinite ? seconds.rounded() : 0))
+        let h = t / 3600, m = t % 3600 / 60, s = t % 60
+        return h > 0 ? String(format: "%d:%02d:%02d", h, m, s) : String(format: "%d:%02d", m, s)
+    }
+
     static let dayFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "EEE d MMM"

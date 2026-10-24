@@ -14,7 +14,7 @@ enum Keychain {
         SecItemDelete(base as CFDictionary)
         var add = base
         add[kSecValueData as String] = Data(value.utf8)
-        add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+        add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly   // never leaves this device (not in backups)
         SecItemAdd(add as CFDictionary, nil)
     }
 
@@ -51,6 +51,7 @@ final class Store {
     func setStrings(_ v: [String], _ k: String) { defaults.set(v, forKey: key(k)) }
 
     func string(_ k: String) -> String? { defaults.string(forKey: key(k)) }
+    func remove(_ k: String) { defaults.removeObject(forKey: key(k)) }
     func setString(_ v: String?, _ k: String) {
         if let v { defaults.set(v, forKey: key(k)) } else { defaults.removeObject(forKey: key(k)) }
     }
@@ -74,10 +75,31 @@ final class Store {
     func password(for id: String) -> String { Keychain.get("playlist." + id) ?? "" }
     func setPassword(_ p: String, for id: String) { Keychain.set(p, for: "playlist." + id) }
 
+    /// M3U links often carry the username and password, so they live in the Keychain too.
+    func playlistLink(for id: String) -> (url: String, epg: String) {
+        (Keychain.get("playlist-url." + id) ?? "", Keychain.get("playlist-epg." + id) ?? "")
+    }
+    func setPlaylistLink(_ url: String, epg: String, for id: String) {
+        Keychain.set(url, for: "playlist-url." + id)
+        Keychain.set(epg, for: "playlist-epg." + id)
+    }
+
+    /// Where you stopped in movies and episodes.
+    func resumes(_ providerId: String) -> [String: ResumePoint] {
+        guard let data = defaults.data(forKey: key("resume." + providerId)),
+              let v = try? JSONDecoder().decode([String: ResumePoint].self, from: data) else { return [:] }
+        return v
+    }
+    func setResumes(_ v: [String: ResumePoint], _ providerId: String) {
+        if let data = try? JSONEncoder().encode(v) { defaults.set(data, forKey: key("resume." + providerId)) }
+    }
+
     func removePlaylist(_ id: String) {
         playlists = playlists.filter { $0.id != id }
         Keychain.delete("playlist." + id)
-        for prefix in ["fav.", "recent.", "group.", "lastch.", "hide.", "hideg."] { defaults.removeObject(forKey: key(prefix + id)) }
+        Keychain.delete("playlist-url." + id)
+        Keychain.delete("playlist-epg." + id)
+        for prefix in ["fav.", "recent.", "group.", "lastch.", "hide.", "hideg.", "resume."] { defaults.removeObject(forKey: key(prefix + id)) }
         if string("last") == id { setString(nil, "last") }
     }
 }
