@@ -64,8 +64,8 @@ enum SceneData {
         "petals": DecoSpec(glyph: "petal", mode: "tumble", colors: [0xFFD1DC, 0xFFB7C8, 0xFFF0F4, 0xF7A8BD], n: 14, size: 9...18, dur: 11...18, op: 0.6...0.95),
         "roses": DecoSpec(glyph: "petal", mode: "tumble", colors: [0xB3123C, 0xD81B4F, 0x8C0F2E], n: 12, size: 10...18, dur: 12...19, op: 0.6...0.9),
         "clover": DecoSpec(glyph: "clover", mode: "tumble", colors: [0x2FBF6C, 0x3DDC84, 0x1F9E57], n: 10, size: 12...22, dur: 12...20, op: 0.55...0.85),
-        "fireworks": DecoSpec(glyph: "burst", mode: "burst", colors: [0xFF4D5E, 0xFFFFFF, 0x5B8CFF, 0xFFD27A], n: 8, size: 70...170, dur: 3.6...6.4, op: 0.55...0.9),
-        "goldfw": DecoSpec(glyph: "burst", mode: "burst", colors: [0xF5D06F, 0xFFF3C4, 0xE2B54A, 0xFFFFFF], n: 8, size: 70...160, dur: 3.8...6.6, op: 0.55...0.9),
+        "fireworks": DecoSpec(glyph: "burst", mode: "burst", colors: [0xFF4D5E, 0xFFFFFF, 0x5B8CFF, 0xFFD27A], n: 8, size: 60...140, dur: 3.6...6.4, op: 0.35...0.7),
+        "goldfw": DecoSpec(glyph: "burst", mode: "burst", colors: [0xF5D06F, 0xFFF3C4, 0xE2B54A, 0xFFFFFF], n: 8, size: 60...130, dur: 3.8...6.6, op: 0.35...0.7),
         "sparkle": DecoSpec(glyph: "spark", mode: "burst", colors: [0xF5D06F, 0xFFFFFF, 0xFFE6A8], n: 10, size: 8...22, dur: 2.6...5, op: 0.5...0.9),
     ]
 }
