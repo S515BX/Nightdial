@@ -11,6 +11,10 @@ final class PlayerController: ObservableObject {
     let player = AVPlayer()
     @Published private(set) var state: State = .idle
     @Published var isMuted = false { didSet { player.isMuted = isMuted } }
+    /// Audio tracks of the current stream (languages, Dolby, etc.) when there's more than one.
+    @Published private(set) var audioOptions: [String] = []
+    @Published private(set) var audioIndex = 0
+    private var audioGroup: AVMediaSelectionGroup?
 
     private var statusObservation: NSKeyValueObservation?
     private var controlObservation: NSKeyValueObservation?
@@ -29,6 +33,9 @@ final class PlayerController: ObservableObject {
         clearObservers()
         currentURL = url
         state = .loading
+        audioOptions = []
+        audioIndex = 0
+        audioGroup = nil
         let asset = AVURLAsset(url: url, options: ["AVURLAssetHTTPHeaderFieldsKey": ["User-Agent": "Tuner/1.0"]])
         let item = AVPlayerItem(asset: asset)
         statusObservation = item.observe(\.status, options: [.new]) { [weak self] observed, _ in
@@ -76,7 +83,29 @@ final class PlayerController: ObservableObject {
 
     private func markPlaying() {
         timeoutTask?.cancel()
+        let first = state != .playing
         state = .playing
+        if first, let item = player.currentItem { loadAudioOptions(item) }
+    }
+
+    private func loadAudioOptions(_ item: AVPlayerItem) {
+        let asset = item.asset
+        Task { @MainActor [weak self] in
+            guard let group = try? await asset.loadMediaSelectionGroup(for: .audible) else { return }
+            guard let self, self.player.currentItem === item else { return }
+            self.audioGroup = group
+            self.audioOptions = group.options.map { $0.displayName }
+            if let selected = item.currentMediaSelection.selectedMediaOption(in: group),
+               let i = group.options.firstIndex(of: selected) {
+                self.audioIndex = i
+            }
+        }
+    }
+
+    func selectAudio(_ index: Int) {
+        guard let group = audioGroup, group.options.indices.contains(index), let item = player.currentItem else { return }
+        item.select(group.options[index], in: group)
+        audioIndex = index
     }
 
     private func markFailed(_ code: String) {

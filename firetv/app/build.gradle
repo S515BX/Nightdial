@@ -48,3 +48,10 @@ android {
         abortOnError false
     }
 }
+
+dependencies {
+    // Android's media player: plays Dolby (AC3/E-AC3) audio, H.265 and raw MPEG-TS using the Fire TV's hardware decoders.
+    implementation 'androidx.media3:media3-exoplayer:1.4.1'
+    implementation 'androidx.media3:media3-exoplayer-hls:1.4.1'
+    implementation 'androidx.media3:media3-ui:1.4.1'
+}

@@ -29,6 +29,13 @@ struct Channel: Identifiable, Hashable {
 
     var initials: String { Channel.makeInitials(name) }
 
+    /// Name without a country prefix like "US: ", for A–Z sorting.
+    static func sortName(_ name: String) -> String {
+        var s = name
+        if let r = s.range(of: "^[A-Z]{2,3}\\s*[:|]\\s*", options: .regularExpression) { s.removeSubrange(r) }
+        return s
+    }
+
     static func makeInitials(_ name: String) -> String {
         var s = name
         if let r = s.range(of: "^[A-Z]{2,3}\\s*[:|]\\s*", options: .regularExpression) {

@@ -1,6 +1,8 @@
-# Builds Tuner.ipa on a GitHub-hosted Mac and puts it on the "ios" release:
-#   https://github.com/<you>/<repo>/releases/download/ios/Tuner.ipa
+# Builds the iPhone/iPad app on a GitHub-hosted Mac. On the main branch it also puts it on the "ios" release:
+#   https://github.com/<you>/<repo>/releases/download/ios/Nightdial.ipa
+# (Tuner.ipa is uploaded too, so older links keep working.)
 # The .ipa is unsigned on purpose: Sideloadly signs it with your Apple ID when it installs it.
+# Builds on other branches (for example "dev") keep the .ipa as an artifact and also take simulator screenshots for review.
 name: Build iOS IPA
 
 on:
@@ -39,33 +41,103 @@ jobs:
         if: failure()
         run: grep -E "error:" build.log | sort -u | head -80 || true
 
-      - name: Package Tuner.ipa
+      - name: Package Nightdial.ipa
         run: |
           mkdir -p Payload
           cp -R build/Release-iphoneos/Tuner.app Payload/
-          zip -qry Tuner.ipa Payload
-          ls -lh Tuner.ipa
+          zip -qry Nightdial.ipa Payload
+          ls -lh Nightdial.ipa
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Tuner-ipa
-          path: ios/Tuner.ipa
+          name: Nightdial-ipa
+          path: ios/Nightdial.ipa
           if-no-files-found: error
 
       - name: Publish to Releases
+        if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          gh release view ios >/dev/null 2>&1 || \
-            gh release create ios --target "$GITHUB_SHA" --title "Tuner for iPhone and iPad" \
-              --notes "Newest iOS build (unsigned). Install it with Sideloadly, which signs it with your Apple ID."
-          gh release upload ios Tuner.ipa --clobber
-          echo "### Download Tuner.ipa" >> "$GITHUB_STEP_SUMMARY"
-          echo "https://github.com/${GH_REPO}/releases/download/ios/Tuner.ipa" >> "$GITHUB_STEP_SUMMARY"
+          NOTES="Newest Nightdial build for iPhone and iPad (unsigned). Install it with Sideloadly, which signs it with your Apple ID."
+          gh release view ios >/dev/null 2>&1 || gh release create ios --target "$GITHUB_SHA" --title "Nightdial for iPhone and iPad" --notes "$NOTES"
+          gh release edit ios --title "Nightdial for iPhone and iPad" --notes "$NOTES"
+          cp Nightdial.ipa Tuner.ipa
+          gh release upload ios Nightdial.ipa Tuner.ipa --clobber
+          echo "### Download Nightdial.ipa" >> "$GITHUB_STEP_SUMMARY"
+          echo "https://github.com/${GH_REPO}/releases/download/ios/Nightdial.ipa" >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: build-log
           path: ios/build.log
+
+  # Simulator screenshots of the new build, so changes can be reviewed before they're released.
+  screenshots:
+    if: github.ref != 'refs/heads/main'
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: ios
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build for the simulator
+        run: |
+          set -o pipefail
+          xcodebuild -project Tuner.xcodeproj -target Tuner -configuration Debug -sdk iphonesimulator \
+            SYMROOT="$PWD/simbuild" ARCHS=arm64 ONLY_ACTIVE_ARCH=NO \
+            PRODUCT_BUNDLE_IDENTIFIER=app.tuner.player \
+            CODE_SIGNING_ALLOWED=NO \
+            build 2>&1 | tee sim.log | tail -5
+
+      - name: Take screenshots
+        run: |
+          mkdir -p shots
+          pick() {
+            xcrun simctl list devices available -j | python3 -c "
+          import json, sys
+          want = sys.argv[1]
+          devs = [d for rt, ds in json.load(sys.stdin)['devices'].items() if 'iOS' in rt for d in ds]
+          match = [d for d in devs if d['name'].startswith(want)] or [d for d in devs if d['name'].startswith(want.split()[0])]
+          print(match[-1]['udid'])" "$1"
+          }
+          shoot() {
+            dev=$1; name=$2; shift 2
+            xcrun simctl terminate "$dev" app.tuner.player >/dev/null 2>&1 || true
+            xcrun simctl launch "$dev" app.tuner.player -tuner.last demo "$@"
+            sleep 9
+            xcrun simctl io "$dev" screenshot "shots/$name.png"
+          }
+          for kind in "iPhone 16 Pro" "iPad Pro 13"; do
+            UDID=$(pick "$kind")
+            echo "$kind -> $UDID"
+            tag=$(echo "$kind" | awk '{print tolower($1)}')
+            xcrun simctl boot "$UDID" || true
+            xcrun simctl bootstatus "$UDID" -b
+            xcrun simctl status_bar "$UDID" override --time "9:41" --batteryLevel 100 --batteryState charged || true
+            xcrun simctl install "$UDID" simbuild/Debug-iphonesimulator/Tuner.app
+            shoot "$UDID" "$tag-1-guide"
+            shoot "$UDID" "$tag-2-themes" -tuner.debug.sheet themes
+            shoot "$UDID" "$tag-3-channels" -tuner.debug.sheet channels
+            shoot "$UDID" "$tag-4-christmas" -tuner.look.theme christmas
+            shoot "$UDID" "$tag-5-halloween" -tuner.look.theme halloween
+            shoot "$UDID" "$tag-6-fullscreen" -tuner.debug.full YES
+            shoot "$UDID" "$tag-7-custom" -tuner.look.theme aurora -tuner.look.hl "#5EE6C4" -tuner.look.font outfit
+            xcrun simctl shutdown "$UDID" || true
+          done
+          ls -la shots
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-screenshots
+          path: ios/shots
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: sim-build-log
+          path: ios/sim.log

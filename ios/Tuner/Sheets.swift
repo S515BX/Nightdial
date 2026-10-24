@@ -11,6 +11,8 @@ struct SheetHost: View {
             case .search: SearchSheet()
             case .playlists: PlaylistsSheet()
             case .settings: SettingsSheet()
+            case .channels: ChannelsSheet()
+            case .themes: ThemesSheet()
             case .details(let target): DetailsSheet(target: target)
             }
         }
@@ -34,16 +36,22 @@ struct GroupsSheet: View {
         NavigationStack {
             List {
                 Section {
-                    row("all", "All channels", model.channels.count)
+                    row("all", "All channels", model.visibleChannelCount)
                     row("fav", "Favorites", model.favorites.count)
                     row("recent", "Recently watched", model.recents.count)
                 }
-                Section("Categories") {
-                    ForEach(model.groups) { g in row(g.id, g.name, g.count) }
+                Section {
+                    ForEach(model.visibleGroups) { g in row(g.id, g.name, g.count) }
+                } header: {
+                    Text("Categories")
+                } footer: {
+                    if !model.hiddenGroups.isEmpty || !model.hiddenChannels.isEmpty {
+                        Text("Some channels or groups are hidden. Bring them back in Settings → Edit channels.")
+                    }
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(Theme.panel)
+            .background(Theme.menu)
             .navigationTitle("Groups")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { DoneButton { model.sheet = nil } }
@@ -97,7 +105,7 @@ struct SearchSheet: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(Theme.panel)
+            .background(Theme.menu)
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Channels and programs")
             .autocorrectionDisabled()
             .navigationTitle("Search")
@@ -115,7 +123,7 @@ struct SearchSheet: View {
                 LogoBadge(channel: ch, size: 34)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(ch.num) · \(ch.name)").foregroundStyle(Theme.fg).lineLimit(1)
-                    Text(now.map { "Now: \($0.title)" } ?? "Live channel").font(.system(size: 13)).foregroundStyle(Theme.fg3).lineLimit(1)
+                    Text(now.map { "Now: \($0.title)" } ?? "Live channel").font(.ui(13)).foregroundStyle(Theme.fg3).lineLimit(1)
                 }
             }
         }
@@ -132,7 +140,7 @@ struct SearchSheet: View {
                 LogoBadge(channel: hit.channel, size: 34)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(p.title).foregroundStyle(Theme.fg).lineLimit(1)
-                    Text("\(when) · \(hit.channel.num) \(hit.channel.name)").font(.system(size: 13)).foregroundStyle(Theme.fg3).lineLimit(1)
+                    Text("\(when) · \(hit.channel.num) \(hit.channel.name)").font(.ui(13)).foregroundStyle(Theme.fg3).lineLimit(1)
                 }
             }
         }
@@ -173,7 +181,7 @@ struct PlaylistsSheet: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(Theme.panel)
+            .background(Theme.menu)
             .navigationTitle("Playlists")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { DoneButton { model.sheet = nil } }
@@ -188,7 +196,7 @@ struct PlaylistsSheet: View {
                 .opacity(selected ? 1 : 0)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).foregroundStyle(Theme.fg)
-                Text(subtitle).font(.system(size: 13)).foregroundStyle(Theme.fg3).lineLimit(1)
+                Text(subtitle).font(.ui(13)).foregroundStyle(Theme.fg3).lineLimit(1)
             }
         }
     }
@@ -221,6 +229,34 @@ struct SettingsSheet: View {
                     }
                     .listRowBackground(Theme.cell)
                 }
+                Section("Look") {
+                    Button { model.sheet = .themes } label: {
+                        HStack {
+                            Label("Themes & look", systemImage: "paintpalette").foregroundStyle(Theme.fg)
+                            Spacer()
+                            Text(Look.shared.theme.name + (Look.shared.autoSeason ? " · auto" : "")).foregroundStyle(Theme.fg3)
+                            Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.fg3)
+                        }
+                    }
+                }
+                .listRowBackground(Theme.cell)
+                Section("Channels") {
+                    Picker("Sort channels", selection: $model.sortMode) {
+                        Text("Provider order").tag("provider")
+                        Text("Number").tag("number")
+                        Text("A–Z").tag("name")
+                    }
+                    value("Favorites", "\(model.favorites.count)")
+                    value("Hidden", "\(model.hiddenChannels.count) channels · \(model.hiddenGroups.count) groups")
+                    Button { model.sheet = .channels } label: {
+                        HStack {
+                            Label("Edit favorites and hidden channels", systemImage: "list.star").foregroundStyle(Theme.fg)
+                            Spacer()
+                            Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.fg3)
+                        }
+                    }
+                }
+                .listRowBackground(Theme.cell)
                 Section("TV guide") {
                     Toggle("24-hour clock", isOn: $model.clock24)
                     Toggle("Compact rows", isOn: $model.compactRows)
@@ -248,17 +284,18 @@ struct SettingsSheet: View {
                 Section("Tips") {
                     tip("hand.tap", "Tap a program to select it. Tap it again to watch, or to see details.")
                     tip("hand.point.up.left", "Touch and hold a channel to add it to favorites.")
-                    tip("arrow.up.arrow.down", "In full screen, swipe up or down to change channel.")
+                    tip("arrow.up.arrow.down", "In full screen, swipe up or down to change channel, or swipe right for the channel list.")
+                    tip("ellipsis.circle", "In full screen, the … button has channel options: favorite, hide, audio track and more.")
                     tip("airplayvideo", "Use AirPlay or Picture in Picture from the full-screen controls.")
                 }
                 .listRowBackground(Theme.cell)
             }
             .scrollContentBackground(.hidden)
-            .background(Theme.panel)
+            .background(Theme.menu)
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { DoneButton { model.sheet = nil } }
-            .confirmationDialog("Remove this playlist from Tuner?", isPresented: $confirmRemove, titleVisibility: .visible) {
+            .confirmationDialog("Remove this playlist from Nightdial?", isPresented: $confirmRemove, titleVisibility: .visible) {
                 Button("Remove playlist", role: .destructive) { model.removeCurrentPlaylist() }
             }
         }
@@ -275,7 +312,7 @@ struct SettingsSheet: View {
 
     private func tip(_ icon: String, _ text: String) -> some View {
         Label {
-            Text(text).foregroundStyle(Theme.fg2).font(.system(size: 14))
+            Text(text).foregroundStyle(Theme.fg2).font(.ui(14))
         } icon: {
             Image(systemName: icon).foregroundStyle(Theme.accent)
         }
@@ -310,15 +347,15 @@ struct DetailsSheet: View {
                 }
                 Text(p.title).font(.cond(30, .semibold)).foregroundStyle(Theme.fg)
                 Text("\(Fmt.day(p.start)) · \(Fmt.time(p.start, model.clock24)) – \(Fmt.time(p.end, model.clock24)) · \(Fmt.duration(p.end.timeIntervalSince(p.start)))")
-                    .font(.system(size: 15))
+                    .font(.ui(15))
                     .foregroundStyle(Theme.fg2)
                 MetaLine(channel: ch, program: p)
                 if !p.desc.isEmpty {
-                    Text(p.desc).font(.system(size: 16)).foregroundStyle(Theme.fg2)
+                    Text(p.desc).font(.ui(16)).foregroundStyle(Theme.fg2)
                 }
                 if p.end <= now && !catchup {
                     Text(ch.archive ? "This program is older than the catch-up window." : "This program has ended and this channel has no catch-up.")
-                        .font(.system(size: 14))
+                        .font(.ui(14))
                         .foregroundStyle(Theme.fg3)
                 }
                 VStack(spacing: 10) {
@@ -340,14 +377,353 @@ struct DetailsSheet: View {
                     Button { model.toggleFavorite(ch) } label: {
                         Label(favorite ? "Remove favorite" : "Add to favorites", systemImage: favorite ? "star.fill" : "star").secondaryButton()
                     }
+                    Button {
+                        model.sheet = nil
+                        model.setHidden(ch, true, announce: true)
+                    } label: {
+                        Label("Hide channel", systemImage: "eye.slash").secondaryButton()
+                    }
                 }
                 .buttonStyle(.plain)
                 .padding(.top, 6)
             }
             .padding(22)
         }
-        .background(Theme.panel.ignoresSafeArea())
+        .background(Theme.menu.ignoresSafeArea())
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+    }
+}
+
+
+// MARK: - Edit channels: favorites order, hidden channels and groups, sorting
+
+@MainActor
+struct ChannelsSheet: View {
+    @EnvironmentObject var model: AppModel
+    @State private var tab = 0
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    Picker("Show", selection: $tab) {
+                        Text("Favorites").tag(0)
+                        Text("Groups & channels").tag(1)
+                    }
+                    .pickerStyle(.segmented)
+                }
+                .listRowBackground(Color.clear)
+                if tab == 0 { favoritesSection } else { groupsSection }
+            }
+            .environment(\.editMode, .constant(tab == 0 ? .active : .inactive))
+            .scrollContentBackground(.hidden)
+            .background(Theme.menu)
+            .navigationTitle("Edit channels")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { DoneButton { model.sheet = nil } }
+            .onAppear { tab = model.favorites.isEmpty ? 1 : 0 }
+        }
+    }
+
+    @ViewBuilder private var favoritesSection: some View {
+        let favs = model.favoriteChannels
+        Section {
+            if favs.isEmpty {
+                Text("No favorites yet. Open Groups & channels and tap the star next to a channel.")
+                    .font(.ui(14)).foregroundStyle(Theme.fg3)
+                    .listRowBackground(Color.clear)
+            }
+            ForEach(favs) { ch in
+                HStack(spacing: 12) {
+                    LogoBadge(channel: ch, size: 34)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(ch.num) · \(ch.name)").foregroundStyle(Theme.fg).lineLimit(1)
+                        Text(model.groupLabel(ch.groupId) + (model.hiddenChannels.contains(ch.id) ? " · hidden" : ""))
+                            .font(.ui(12.5)).foregroundStyle(Theme.fg3).lineLimit(1)
+                    }
+                }
+                .listRowBackground(Theme.cell)
+            }
+            .onMove { model.moveFavorites(from: $0, to: $1) }
+            .onDelete { model.removeFavorites(at: $0) }
+        } footer: {
+            if !favs.isEmpty { Text("Drag to set the order your favorites appear in. Swipe or tap − to remove one.") }
+        }
+    }
+
+    @ViewBuilder private var groupsSection: some View {
+        Section {
+            Picker("Sort channels", selection: $model.sortMode) {
+                Text("Provider order").tag("provider")
+                Text("Number").tag("number")
+                Text("A–Z").tag("name")
+            }
+            .listRowBackground(Theme.cell)
+        }
+        Section {
+            ForEach(model.groups) { g in
+                let hidden = model.hiddenGroups.contains(g.id)
+                HStack(spacing: 12) {
+                    NavigationLink {
+                        GroupChannelsView(group: g)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(g.name).foregroundStyle(hidden ? Theme.fg3 : Theme.fg).lineLimit(1)
+                            Text(hidden ? "\(g.count) channels · hidden from the guide" : "\(g.count) channels")
+                                .font(.ui(12.5)).foregroundStyle(Theme.fg3)
+                        }
+                    }
+                    Button { model.setGroupHidden(g.id, !hidden) } label: {
+                        Image(systemName: hidden ? "eye.slash" : "eye")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(hidden ? Theme.live : Theme.fg2)
+                            .frame(width: 40, height: 34)
+                            .background(Capsule().fill(Theme.cellHover))
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel(hidden ? "Show \(g.name)" : "Hide \(g.name)")
+                }
+                .listRowBackground(Theme.cell)
+            }
+        } header: {
+            Text("Groups")
+        } footer: {
+            Text("The eye hides a whole group. Open a group to pick favorites or hide single channels.")
+        }
+    }
+}
+
+@MainActor
+struct GroupChannelsView: View {
+    @EnvironmentObject var model: AppModel
+    let group: ChannelGroup
+
+    var body: some View {
+        List {
+            ForEach(model.channels(inGroup: group.id)) { ch in
+                let fav = model.favorites.contains(ch.id)
+                let hidden = model.hiddenChannels.contains(ch.id)
+                HStack(spacing: 12) {
+                    LogoBadge(channel: ch, size: 34).opacity(hidden ? 0.45 : 1)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(ch.num) · \(ch.name)").foregroundStyle(hidden ? Theme.fg3 : Theme.fg).lineLimit(1)
+                        if hidden { Text("Hidden").font(.ui(12.5)).foregroundStyle(Theme.fg3) }
+                    }
+                    Spacer()
+                    Button { model.toggleFavorite(ch, quiet: true) } label: {
+                        Image(systemName: fav ? "star.fill" : "star")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(fav ? Theme.warn : Theme.fg2)
+                            .frame(width: 40, height: 34)
+                            .background(Capsule().fill(Theme.cellHover))
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel(fav ? "Remove \(ch.name) from favorites" : "Add \(ch.name) to favorites")
+                    Button { model.setHidden(ch, !hidden) } label: {
+                        Image(systemName: hidden ? "eye.slash" : "eye")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(hidden ? Theme.live : Theme.fg2)
+                            .frame(width: 40, height: 34)
+                            .background(Capsule().fill(Theme.cellHover))
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel(hidden ? "Show \(ch.name)" : "Hide \(ch.name)")
+                }
+                .listRowBackground(Theme.cell)
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(Theme.menu)
+        .navigationTitle(group.name)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - Themes & look
+
+@MainActor
+struct ThemesSheet: View {
+    @EnvironmentObject var model: AppModel
+    @ObservedObject private var look = Look.shared
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    section("Size") {
+                        Picker("Size", selection: $look.size) {
+                            ForEach(Look.sizes.indices, id: \.self) { i in Text(Look.sizes[i].1).tag(Look.sizes[i].0) }
+                        }
+                        .pickerStyle(.segmented)
+                        hint("Smaller fits more channels and more hours of the guide on screen.")
+                    }
+                    section("Theme") {
+                        tiles(Themes.all.filter { !$0.season })
+                    }
+                    section("Holidays") {
+                        tiles(Themes.all.filter { $0.season })
+                        Toggle("Switch to holiday themes automatically", isOn: $look.autoSeason)
+                            .tint(Theme.accent)
+                            .font(.ui(15))
+                            .foregroundStyle(Theme.fg)
+                        hint(seasonHint)
+                    }
+                    section("Highlight color") {
+                        swatches(Themes.highlightColors, selection: $look.highlight)
+                        hint("Marks what's selected: the program you're on, menu items and buttons.")
+                    }
+                    section("Menu color") {
+                        swatches(Themes.menuColors, selection: $look.menu)
+                        hint("Colors the side menu and the panels that slide up.")
+                    }
+                    section("Font") {
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 10)], spacing: 10) {
+                            ForEach(Fonts.all) { f in
+                                let on = look.font == f.id
+                                Button { look.font = f.id } label: {
+                                    Text(f.name)
+                                        .font(fontPreview(f))
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 44)
+                                        .foregroundStyle(on ? Theme.hlInk : Theme.fg)
+                                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(on ? Theme.hl : Theme.cell))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                    section("Effects") {
+                        Toggle("Holiday decorations (snow, bats, hearts and more)", isOn: $look.decorations).tint(Theme.accent)
+                        Toggle("Background glow", isOn: $look.glow).tint(Theme.accent)
+                        Button { look.resetLook() } label: {
+                            Label("Reset to the default look", systemImage: "arrow.counterclockwise").secondaryButton()
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.top, 6)
+                    }
+                    .font(.ui(15))
+                    .foregroundStyle(Theme.fg)
+                }
+                .padding(20)
+            }
+            .background(Theme.menu.ignoresSafeArea())
+            .navigationTitle("Themes & look")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { DoneButton { model.sheet = nil } }
+        }
+        .tint(Theme.accent)
+    }
+
+    private var seasonHint: String {
+        if let h = Holidays.active() {
+            return "\(Themes.find(h.id).name) is on until \(Fmt.shortDate(h.until)). Your own theme comes back after each holiday."
+        }
+        if let n = Holidays.next() {
+            return "Next up: \(Themes.find(n.id).name) from \(Fmt.shortDate(n.from)). Your own theme comes back after each holiday."
+        }
+        return "Each holiday theme turns on in its season."
+    }
+
+    private func fontPreview(_ f: FontChoice) -> Font {
+        if f.faces.count == 4, let ui = UIFont(name: f.faces[2], size: 16) { return Font(ui as CTFont) }
+        return .system(size: 16, weight: .semibold)
+    }
+
+    private func section<Content: View>(_ title: String, @ViewBuilder _ content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title.uppercased()).font(.cond(11.5, .semibold)).tracking(1).foregroundStyle(Theme.fg3)
+            content()
+        }
+    }
+
+    private func hint(_ text: String) -> some View {
+        Text(text).font(.ui(12.5)).foregroundStyle(Theme.fg3)
+    }
+
+    private func tiles(_ list: [ThemeDef]) -> some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 10)], spacing: 10) {
+            ForEach(list) { t in
+                let on = look.theme.id == t.id
+                Button {
+                    if look.autoSeason, let h = Holidays.active(), h.id != t.id {
+                        look.autoSeason = false
+                        model.showToast("Automatic holiday themes turned off")
+                    }
+                    look.themeId = t.id
+                } label: {
+                    VStack(alignment: .leading, spacing: 7) {
+                        ThemePreview(theme: t).frame(height: 58)
+                        Text(t.name).font(.cond(12.5, .medium)).lineLimit(1)
+                    }
+                    .padding(8)
+                    .foregroundStyle(on ? Theme.hlInk : Theme.fg2)
+                    .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(on ? Theme.hl : Theme.cell))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(t.name + (on ? ", selected" : ""))
+            }
+        }
+    }
+
+    private func swatches(_ list: [(String, String)], selection: Binding<String>) -> some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 42), spacing: 12)], spacing: 12) {
+            ForEach(list.indices, id: \.self) { i in
+                let item = list[i]
+                let on = selection.wrappedValue == item.0
+                Button { selection.wrappedValue = item.0 } label: {
+                    ZStack {
+                        if let hex = Hex.parse(item.0) {
+                            Circle().fill(Color(uiColor: UIColor(hex: hex)))
+                            Image(systemName: "checkmark").font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(Color(uiColor: UIColor(hex: Hex.ink(hex, dark: 0x151821))))
+                                .opacity(on ? 1 : 0)
+                        } else {
+                            Circle().fill(AngularGradient(colors: [Theme.accent, Theme.accent2, Theme.hl, Theme.accent], center: .center))
+                            Text("A").font(.cond(13, .bold)).foregroundStyle(Color(uiColor: UIColor(hex: 0x151821)))
+                        }
+                    }
+                    .frame(width: 38, height: 38)
+                    .overlay(Circle().stroke(Color.white.opacity(0.18), lineWidth: 1))
+                    .padding(3)
+                    .overlay(Circle().stroke(on ? Theme.fg : Color.clear, lineWidth: 2))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(item.1 + (on ? ", selected" : ""))
+            }
+        }
+    }
+}
+
+/// A tiny drawing of a theme: its room, side menu, highlight pill and accent.
+struct ThemePreview: View {
+    let theme: ThemeDef
+
+    var body: some View {
+        let c = { (h: UInt32) in Color(uiColor: UIColor(hex: h)) }
+        ZStack(alignment: .topLeading) {
+            c(theme.bg)
+            if let a = theme.glowA { RadialGradient(colors: [Color(uiColor: UIColor(hex: a, alpha: 0.5)), .clear], center: .topLeading, startRadius: 0, endRadius: 70) }
+            if let b = theme.glowB { RadialGradient(colors: [Color(uiColor: UIColor(hex: b, alpha: 0.4)), .clear], center: .bottomTrailing, startRadius: 0, endRadius: 70) }
+            GeometryReader { g in
+                let side = g.size.width * 0.15
+                RoundedRectangle(cornerRadius: 5).fill(c(Hex.mix(theme.panel, 0xFFFFFF, 0.07)))
+                    .frame(width: side, height: g.size.height - 14).offset(x: 7, y: 7)
+                RoundedRectangle(cornerRadius: 5).fill(c(theme.hl ?? 0xFFFFFF))
+                    .frame(width: g.size.width - side - 20, height: 10).offset(x: side + 13, y: 7)
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 5).fill(c(Hex.mix(theme.panel, 0xFFFFFF, 0.07)))
+                    RoundedRectangle(cornerRadius: 5).fill(LinearGradient(colors: [c(theme.accent).opacity(0), c(theme.accent).opacity(0.6)], startPoint: .leading, endPoint: .trailing))
+                        .frame(width: (g.size.width - side - 20) * 0.62)
+                }
+                .frame(width: g.size.width - side - 20, height: 18).offset(x: side + 13, y: g.size.height - 25)
+                if let glyph = theme.glyph {
+                    Image(glyph).renderingMode(.template).resizable().scaledToFit()
+                        .foregroundStyle(c(theme.glyphColor ?? theme.accent))
+                        .frame(width: 15, height: 15).offset(x: g.size.width - 21, y: 22)
+                }
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }

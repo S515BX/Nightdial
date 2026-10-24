@@ -8,7 +8,7 @@ struct DetailsTarget: Identifiable {
 }
 
 enum ActiveSheet: Identifiable {
-    case groups, search, playlists, settings
+    case groups, search, playlists, settings, channels, themes
     case details(DetailsTarget)
 
     var id: String {
@@ -17,9 +17,17 @@ enum ActiveSheet: Identifiable {
         case .search: return "search"
         case .playlists: return "playlists"
         case .settings: return "settings"
+        case .channels: return "channels"
+        case .themes: return "themes"
         case .details(let d): return "details-" + d.id
         }
     }
+}
+
+struct VisibleGroup: Identifiable {
+    let id: String
+    let name: String
+    let count: Int
 }
 
 struct LoginPrefill {
@@ -65,6 +73,16 @@ final class AppModel: ObservableObject {
     @Published private(set) var playingId: String?
     @Published private(set) var catchup: Program?
     @Published private(set) var favorites: Set<String> = []
+    /// Favorites in the order you arranged them.
+    @Published private(set) var favoriteOrder: [String] = []
+    @Published private(set) var hiddenChannels: Set<String> = []
+    @Published private(set) var hiddenGroups: Set<String> = []
+    @Published var sortMode = "provider" {
+        didSet {
+            store.setString(sortMode, "sort")
+            if oldValue != sortMode { refreshList() }
+        }
+    }
     @Published private(set) var recents: [String] = []
 
     @Published var isFullScreen = false
@@ -100,6 +118,7 @@ final class AppModel: ObservableObject {
         compactRows = store.bool("compact", default: false)
         useXMLTV = store.bool("xmltv", default: false)
         xmltvURL = store.string("xmltvURL") ?? ""
+        sortMode = store.string("sort") ?? "provider"
         computeRange()
         timer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in self?.tick() }
@@ -140,6 +159,7 @@ final class AppModel: ObservableObject {
         }
         if focusFollowsNow { focusTime = n }
         now = n
+        Look.shared.checkSeason()
     }
 
     // MARK: Providers
@@ -156,6 +176,26 @@ final class AppModel: ObservableObject {
         epgRevision += 1
         if !backdrop { store.setString("demo", "last") }
         startUp()
+        runDebugHooks()
+    }
+
+    /// Launch arguments used to take screenshots of particular screens (e.g. -tuner.debug.sheet themes).
+    private func runDebugHooks() {
+        let d = UserDefaults.standard
+        let sheetName = d.string(forKey: "tuner.debug.sheet")
+        let full = d.bool(forKey: "tuner.debug.full")
+        guard sheetName != nil || full else { return }
+        Task {
+            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            if full { self.isFullScreen = true }
+            switch sheetName {
+            case "themes": self.sheet = .themes
+            case "channels": self.sheet = .channels
+            case "settings": self.sheet = .settings
+            case "groups": self.sheet = .groups
+            default: break
+            }
+        }
     }
 
     func openDemo() {
@@ -179,10 +219,13 @@ final class AppModel: ObservableObject {
         epgState = [:]
         epgQueue = []
         epgRevision += 1
-        favorites = Set(store.strings("fav." + p.id))
+        favoriteOrder = store.strings("fav." + p.id)
+        favorites = Set(favoriteOrder)
+        hiddenChannels = Set(store.strings("hide." + p.id))
+        hiddenGroups = Set(store.strings("hideg." + p.id))
         recents = store.strings("recent." + p.id).filter { byId[$0] != nil }
         var g = store.string("group." + p.id) ?? "all"
-        if !["all", "fav", "recent"].contains(g) && !newGroups.contains(where: { $0.id == g }) { g = "all" }
+        if !["all", "fav", "recent"].contains(g) && (!newGroups.contains(where: { $0.id == g }) || hiddenGroups.contains(g)) { g = "all" }
         groupId = g
         playingId = nil
         catchup = nil
@@ -281,13 +324,86 @@ final class AppModel: ObservableObject {
 
     // MARK: Groups
 
+    /// Favorites keep your order; hidden channels and groups stay out of the guide; the rest follow the sort setting.
     func channelsFor(_ id: String) -> [Channel] {
         switch id {
-        case "all": return channels
-        case "fav": return channels.filter { favorites.contains($0.id) }
-        case "recent": return recents.compactMap { byId[$0] }
-        default: return channels.filter { $0.groupId == id }
+        case "all": return sorted(channels.filter { isVisible($0) })
+        case "fav": return favoriteOrder.compactMap { byId[$0] }.filter { !hiddenChannels.contains($0.id) }
+        case "recent": return recents.compactMap { byId[$0] }.filter { isVisible($0) }
+        default: return sorted(channels.filter { $0.groupId == id && !hiddenChannels.contains($0.id) })
         }
+    }
+
+    func isVisible(_ c: Channel) -> Bool { !hiddenChannels.contains(c.id) && !hiddenGroups.contains(c.groupId) }
+
+    func sorted(_ list: [Channel]) -> [Channel] {
+        switch sortMode {
+        case "number": return list.sorted { ($0.num == 0 ? Int.max : $0.num) < ($1.num == 0 ? Int.max : $1.num) }
+        case "name": return list.sorted { Channel.sortName($0.name).localizedStandardCompare(Channel.sortName($1.name)) == .orderedAscending }
+        default: return list
+        }
+    }
+
+    var visibleGroups: [VisibleGroup] {
+        var counts: [String: Int] = [:]
+        for c in channels where !hiddenChannels.contains(c.id) { counts[c.groupId, default: 0] += 1 }
+        return groups.filter { !hiddenGroups.contains($0.id) }.map { VisibleGroup(id: $0.id, name: $0.name, count: counts[$0.id] ?? 0) }
+    }
+
+    var visibleChannelCount: Int { channels.filter { isVisible($0) }.count }
+
+    func channels(inGroup id: String) -> [Channel] { sorted(channels.filter { $0.groupId == id }) }
+
+    var favoriteChannels: [Channel] { favoriteOrder.compactMap { byId[$0] } }
+
+    func channel(_ id: String) -> Channel? { byId[id] }
+
+    /// Re-applies filters and sorting after favorites, hiding or sort order change.
+    func refreshList() {
+        guard provider != nil else { return }
+        let special = ["all", "fav", "recent"].contains(groupId)
+        applyGroup(!special && hiddenGroups.contains(groupId) ? "all" : groupId)
+    }
+
+    private func saveFavorites() {
+        guard let p = provider else { return }
+        favorites = Set(favoriteOrder)
+        store.setStrings(favoriteOrder, "fav." + p.id)
+    }
+
+    private func saveHidden() {
+        guard let p = provider else { return }
+        store.setStrings(Array(hiddenChannels), "hide." + p.id)
+        store.setStrings(Array(hiddenGroups), "hideg." + p.id)
+    }
+
+    func moveFavorites(from source: IndexSet, to destination: Int) {
+        var order = favoriteChannels.map { $0.id }
+        order.move(fromOffsets: source, toOffset: destination)
+        favoriteOrder = order
+        saveFavorites()
+        refreshList()
+    }
+
+    func removeFavorites(at offsets: IndexSet) {
+        var order = favoriteChannels.map { $0.id }
+        order.remove(atOffsets: offsets)
+        favoriteOrder = order
+        saveFavorites()
+        refreshList()
+    }
+
+    func setHidden(_ ch: Channel, _ hidden: Bool, announce: Bool = false) {
+        if hidden { hiddenChannels.insert(ch.id) } else { hiddenChannels.remove(ch.id) }
+        saveHidden()
+        refreshList()
+        if announce && hidden { showToast("\(ch.name) is hidden. Bring it back in Edit channels.", seconds: 4) }
+    }
+
+    func setGroupHidden(_ id: String, _ hidden: Bool) {
+        if hidden { hiddenGroups.insert(id) } else { hiddenGroups.remove(id) }
+        saveHidden()
+        refreshList()
     }
 
     func groupLabel(_ id: String) -> String {
@@ -330,7 +446,7 @@ final class AppModel: ObservableObject {
 
     var emptyText: String {
         switch groupId {
-        case "fav": return "No favorites yet.\nTouch and hold a channel, or open a program and choose Add to favorites."
+        case "fav": return "No favorites yet.\nTouch and hold a channel, or use Edit channels to pick some."
         case "recent": return "Nothing watched yet.\nChannels you watch show up here."
         default: return "No channels in this group."
         }
@@ -482,6 +598,25 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// Channel list in full screen: switch channel and keep the guide's selection in step.
+    func playFromList(_ ch: Channel) {
+        if let i = list.firstIndex(where: { $0.id == ch.id }) {
+            focusIndex = i
+            focusTime = Date()
+            focusFollowsNow = true
+            scrollToken += 1
+        }
+        if ch.id != playingId || catchup != nil { play(ch) }
+    }
+
+    func detailsFromFullScreen(_ ch: Channel, _ p: Program) {
+        isFullScreen = false
+        Task {
+            try? await Task.sleep(nanoseconds: 450_000_000)
+            self.sheet = .details(DetailsTarget(channel: ch, program: p))
+        }
+    }
+
     func openFullScreen() {
         if playingId != nil { isFullScreen = true }
     }
@@ -501,16 +636,16 @@ final class AppModel: ObservableObject {
         play(ch)
     }
 
-    func toggleFavorite(_ ch: Channel) {
-        guard let p = provider else { return }
+    func toggleFavorite(_ ch: Channel, quiet: Bool = false) {
+        guard provider != nil else { return }
         if favorites.contains(ch.id) {
-            favorites.remove(ch.id)
-            showToast("Removed \(ch.name) from favorites")
+            favoriteOrder.removeAll { $0 == ch.id }
+            if !quiet { showToast("Removed \(ch.name) from favorites") }
         } else {
-            favorites.insert(ch.id)
-            showToast("Added \(ch.name) to favorites")
+            favoriteOrder.append(ch.id)
+            if !quiet { showToast("Added \(ch.name) to favorites") }
         }
-        store.setStrings(Array(favorites), "fav." + p.id)
+        saveFavorites()
         if groupId == "fav" { applyGroup("fav") }
     }
 
@@ -645,7 +780,8 @@ final class AppModel: ObservableObject {
             scrollToken: scrollToken,
             jumpNowToken: jumpNowToken,
             groupTitle: "\(groupLabel(groupId)) · \(list.count)",
-            emptyText: emptyText
+            emptyText: emptyText,
+            scale: Look.shared.sizeScale
         )
     }
 }

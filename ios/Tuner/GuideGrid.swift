@@ -22,6 +22,7 @@ struct GuideSnapshot {
     var jumpNowToken: Int
     var groupTitle: String
     var emptyText: String
+    var scale: CGFloat = 1
 }
 
 struct GuideGrid: UIViewRepresentable {
@@ -66,16 +67,15 @@ final class GuideGridView: UIView, UICollectionViewDataSource, UICollectionViewD
     override init(frame: CGRect) {
         super.init(frame: frame)
         backgroundColor = Palette.panel
-        layer.cornerRadius = 12
+        layer.cornerRadius = 22
         layer.cornerCurve = .continuous
-        layer.borderWidth = 1
-        layer.borderColor = Palette.line.cgColor
         clipsToBounds = true
 
         layout.grid = self
         collection = UICollectionView(frame: bounds, collectionViewLayout: layout)
-        collection.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         collection.backgroundColor = .clear
+        collection.layer.cornerRadius = 16
+        collection.layer.cornerCurve = .continuous
         collection.dataSource = self
         collection.delegate = self
         collection.showsHorizontalScrollIndicator = false
@@ -100,6 +100,8 @@ final class GuideGridView: UIView, UICollectionViewDataSource, UICollectionViewD
 
     override func layoutSubviews() {
         super.layoutSubviews()
+        let inner = bounds.insetBy(dx: 6, dy: 6)
+        if collection.frame != inner { collection.frame = inner }
         updateMetrics()
         emptyLabel.frame = bounds.insetBy(dx: 24, dy: 24)
         guard bounds.width > 0, let s = snap, !s.channels.isEmpty else { return }
@@ -118,10 +120,11 @@ final class GuideGridView: UIView, UICollectionViewDataSource, UICollectionViewD
         guard bounds.width > 0 else { return }
         let wide = bounds.width >= 600
         let compact = snap?.compact ?? false
-        let chanW: CGFloat = wide ? 220 : 112
-        let ppm: CGFloat = wide ? 6 : 3.6
-        let rowH: CGFloat = wide ? (compact ? 52 : 64) : (compact ? 48 : 58)
-        let headH: CGFloat = wide ? 40 : 36
+        let sc = snap?.scale ?? 1
+        let chanW: CGFloat = ((wide ? 224 : 112) * sc).rounded()
+        let ppm: CGFloat = (wide ? 6 : 3.6) * sc
+        let rowH: CGFloat = ((wide ? (compact ? 52 : 64) : (compact ? 48 : 58)) * sc).rounded()
+        let headH: CGFloat = ((wide ? 42 : 36) * sc).rounded()
         guard layout.chanW != chanW || layout.ppm != ppm || layout.rowH != rowH || layout.headH != headH else { return }
         let leftTime = time(atX: collection.contentOffset.x)
         let topRow = collection.contentOffset.y / max(1, layout.rowH)
@@ -141,7 +144,7 @@ final class GuideGridView: UIView, UICollectionViewDataSource, UICollectionViewD
         let old = snap
         var needsReload = true
         if let old, old.listRevision == s.listRevision, old.epgRevision == s.epgRevision,
-           old.rangeStart == s.rangeStart, old.compact == s.compact {
+           old.rangeStart == s.rangeStart, old.compact == s.compact, old.scale == s.scale {
             // Keep the data the collection view already knows about until a revision says otherwise.
             s.channels = old.channels
             s.epg = old.epg
@@ -531,6 +534,7 @@ final class ProgramCell: UICollectionViewCell {
     private let titleLabel = UILabel()
     private let timeLabel = UILabel()
     private let bar = UIView()
+    private let elapsed = CAGradientLayer()
     private let liveTag = UILabel()
     private let replayIcon = UIImageView(image: UIImage(systemName: "gobackward"))
     private var textOffset: CGFloat = 0
@@ -541,18 +545,21 @@ final class ProgramCell: UICollectionViewCell {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        box.layer.cornerRadius = 7
+        box.layer.cornerRadius = 12
         box.layer.cornerCurve = .continuous
         box.clipsToBounds = true
         contentView.addSubview(box)
+        elapsed.startPoint = CGPoint(x: 0, y: 0.5)
+        elapsed.endPoint = CGPoint(x: 1, y: 0.5)
+        box.layer.addSublayer(elapsed)
         titleLabel.font = TFont.cond(15, .medium)
         timeLabel.font = TFont.digits(11.5, .regular)
         liveTag.text = "LIVE"
-        liveTag.font = TFont.cond(10, .bold)
+        liveTag.font = TFont.cond(9.5, .bold)
         liveTag.textColor = .white
         liveTag.backgroundColor = Palette.live
         liveTag.textAlignment = .center
-        liveTag.layer.cornerRadius = 3
+        liveTag.layer.cornerRadius = 7
         liveTag.clipsToBounds = true
         replayIcon.contentMode = .scaleAspectFit
         replayIcon.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 11, weight: .semibold)
@@ -580,14 +587,14 @@ final class ProgramCell: UICollectionViewCell {
         timeLabel.isHidden = tiny || isPlaceholder
         liveTag.isHidden = tiny || !showLive
         replayIcon.isHidden = tiny || !showReplay
-        let left = 10 + textOffset
+        let left = 12 + textOffset
         var x = left
-        let titleH: CGFloat = 19, timeH: CGFloat = 14
+        let titleH: CGFloat = ceil(titleLabel.font.lineHeight), timeH: CGFloat = ceil(timeLabel.font.lineHeight)
         let block = isPlaceholder ? titleH : titleH + 3 + timeH
         let top = (h - block) / 2
         if !liveTag.isHidden {
-            liveTag.frame = CGRect(x: x, y: top + 2.5, width: 30, height: 14)
-            x += 35
+            liveTag.frame = CGRect(x: x, y: top + (titleH - 14) / 2, width: 32, height: 14)
+            x += 37
         }
         if !replayIcon.isHidden {
             replayIcon.frame = CGRect(x: x, y: top + 3, width: 13, height: 13)
@@ -596,6 +603,10 @@ final class ProgramCell: UICollectionViewCell {
         titleLabel.frame = CGRect(x: x, y: top, width: max(0, w - x - 8), height: titleH)
         timeLabel.frame = CGRect(x: left, y: top + titleH + 3, width: max(0, w - left - 8), height: timeH)
         bar.frame = CGRect(x: 0, y: h - 3, width: w * progress, height: 3)
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        elapsed.frame = CGRect(x: 0, y: 0, width: w * progress, height: h)
+        CATransaction.commit()
     }
 
     func configure(title: String, time: String, isNow: Bool, isPast: Bool, live: Bool, catchup: Bool, focused: Bool, progress p: CGFloat) {
@@ -607,17 +618,19 @@ final class ProgramCell: UICollectionViewCell {
         progress = isNow ? max(0, min(1, p)) : 0
         box.layer.borderWidth = 0
         if focused {
-            box.backgroundColor = Palette.accent
-            titleLabel.textColor = Palette.accentInk
-            timeLabel.textColor = Palette.accentInk.withAlphaComponent(0.75)
-            replayIcon.tintColor = Palette.accentInk
-            bar.backgroundColor = Palette.accentInk.withAlphaComponent(0.35)
+            box.backgroundColor = Palette.hl
+            titleLabel.textColor = Palette.hlInk
+            timeLabel.textColor = Palette.hlInk.withAlphaComponent(0.7)
+            replayIcon.tintColor = Palette.hlInk
+            bar.backgroundColor = Palette.accent
+            elapsed.colors = [UIColor.black.withAlphaComponent(0).cgColor, UIColor.black.withAlphaComponent(0.07).cgColor]
         } else {
             box.backgroundColor = isNow ? Palette.cellNow : Palette.cell
             titleLabel.textColor = isPast ? Palette.fg2 : Palette.fg
             timeLabel.textColor = Palette.fg3
             replayIcon.tintColor = Palette.fg2
             bar.backgroundColor = Palette.accent
+            elapsed.colors = [Palette.accent.withAlphaComponent(0).cgColor, Palette.accent.withAlphaComponent(0.18).cgColor]
         }
         accessibilityLabel = "\(title), \(time)\(live ? ", live" : "")"
         setNeedsLayout()
@@ -631,6 +644,7 @@ final class ProgramCell: UICollectionViewCell {
         titleLabel.text = text
         timeLabel.text = nil
         box.backgroundColor = focused ? Palette.accent.withAlphaComponent(0.16) : .clear
+        elapsed.colors = nil
         box.layer.borderWidth = 1
         box.layer.borderColor = (focused ? Palette.accent : Palette.line).cgColor
         titleLabel.textColor = focused ? Palette.fg : Palette.fg3
@@ -647,10 +661,10 @@ final class LogoView: UIView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        layer.cornerRadius = 9
+        layer.cornerRadius = 11
         layer.cornerCurve = .continuous
         clipsToBounds = true
-        initialsLabel.font = TFont.cond(14, .bold)
+        initialsLabel.font = TFont.cond(13, .bold)
         initialsLabel.textColor = .white
         initialsLabel.textAlignment = .center
         imageView.contentMode = .scaleAspectFit
@@ -707,6 +721,8 @@ final class ImageCache {
 }
 
 final class ChannelHeaderView: UICollectionReusableView {
+    private let tile = UIView()
+    private let marker = UIView()
     private let numberLabel = UILabel()
     private let nameLabel = UILabel()
     private let logo = LogoView()
@@ -719,15 +735,19 @@ final class ChannelHeaderView: UICollectionReusableView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         backgroundColor = Palette.panel
-        numberLabel.font = TFont.digits(13, .semibold)
-        nameLabel.font = TFont.cond(15, .medium)
+        tile.layer.cornerRadius = 12
+        tile.layer.cornerCurve = .continuous
+        tile.clipsToBounds = true
+        marker.backgroundColor = Palette.accent
+        tile.addSubview(marker)
+        numberLabel.font = TFont.digits(12.5, .semibold)
+        nameLabel.font = TFont.cond(14.5, .medium)
         nameLabel.textColor = Palette.fg
         nameLabel.numberOfLines = 2
-        badge.tintColor = Palette.accent
         badge.contentMode = .scaleAspectFit
-        divider.backgroundColor = Palette.line
-        bottomLine.backgroundColor = Palette.lineSoft
-        for v in [numberLabel, logo, nameLabel, badge, divider, bottomLine] as [UIView] { addSubview(v) }
+        divider.isHidden = true
+        bottomLine.isHidden = true
+        for v in [tile, numberLabel, logo, nameLabel, badge, divider, bottomLine] as [UIView] { addSubview(v) }
         let long = UILongPressGestureRecognizer(target: self, action: #selector(longPressed(_:)))
         let tap = UITapGestureRecognizer(target: self, action: #selector(tapped))
         tap.require(toFail: long)
@@ -750,33 +770,41 @@ final class ChannelHeaderView: UICollectionReusableView {
     override func layoutSubviews() {
         super.layoutSubviews()
         let w = bounds.width, h = bounds.height
-        divider.frame = CGRect(x: w - 1, y: 0, width: 1, height: h)
-        bottomLine.frame = CGRect(x: 0, y: h - 1, width: w, height: 1)
-        badge.frame = CGRect(x: w - 22, y: 8, width: 14, height: 14)
-        if w >= 180 {
+        tile.frame = CGRect(x: 0, y: 2, width: max(0, w - 6), height: max(0, h - 4))
+        marker.frame = CGRect(x: 0, y: 0, width: 3, height: tile.bounds.height)
+        let tw = tile.frame.width
+        if w >= 170 {
+            let logoS = min(40, max(24, h - 20))
             logo.isHidden = false
             numberLabel.textAlignment = .right
-            numberLabel.frame = CGRect(x: 6, y: 0, width: 38, height: h)
-            logo.frame = CGRect(x: 52, y: (h - 40) / 2, width: 40, height: 40)
-            nameLabel.frame = CGRect(x: 102, y: 0, width: max(0, w - 102 - 26), height: h)
+            numberLabel.frame = CGRect(x: 4, y: 0, width: 34, height: h)
+            logo.frame = CGRect(x: 46, y: (h - logoS) / 2, width: logoS, height: logoS)
+            let nx = 46 + logoS + 10
+            nameLabel.frame = CGRect(x: nx, y: 0, width: max(0, tw - nx - 22), height: h)
+            badge.frame = CGRect(x: tw - 20, y: (h - 13) / 2, width: 13, height: 13)
         } else {
             logo.isHidden = true
             numberLabel.textAlignment = .left
-            numberLabel.frame = CGRect(x: 8, y: 6, width: max(0, w - 34), height: 15)
-            nameLabel.frame = CGRect(x: 8, y: 21, width: max(0, w - 16), height: max(0, h - 25))
+            numberLabel.frame = CGRect(x: 10, y: 6, width: max(0, tw - 34), height: 15)
+            nameLabel.frame = CGRect(x: 10, y: 21, width: max(0, tw - 16), height: max(0, h - 25))
+            badge.frame = CGRect(x: tw - 20, y: 8, width: 12, height: 12)
         }
     }
 
     func configure(_ ch: Channel, focused: Bool, playing: Bool, favorite: Bool) {
         numberLabel.text = String(ch.num)
-        numberLabel.textColor = focused ? Palette.accent : Palette.fg3
+        numberLabel.textColor = focused || playing ? Palette.accent : Palette.fg3
         nameLabel.text = ch.name
-        backgroundColor = focused ? Palette.cellNow : Palette.panel
+        backgroundColor = Palette.panel
+        tile.backgroundColor = focused ? Palette.cellHover : Palette.cell
+        marker.isHidden = !focused
         logo.set(ch)
         if playing {
             badge.image = UIImage(systemName: "speaker.wave.2.fill")
+            badge.tintColor = Palette.accent
         } else if favorite {
             badge.image = UIImage(systemName: "star.fill")
+            badge.tintColor = Palette.warn
         } else {
             badge.image = nil
         }
@@ -793,9 +821,9 @@ final class TimeHeaderView: UICollectionReusableView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         backgroundColor = Palette.panel
-        label.font = TFont.digits(13, .medium)
+        label.font = TFont.digits(12.5, .medium)
         tick.backgroundColor = Palette.line
-        bottomLine.backgroundColor = Palette.line
+        bottomLine.isHidden = true
         addSubview(tick)
         addSubview(label)
         addSubview(bottomLine)
@@ -806,8 +834,8 @@ final class TimeHeaderView: UICollectionReusableView {
     override func layoutSubviews() {
         super.layoutSubviews()
         let w = bounds.width, h = bounds.height
-        tick.frame = CGRect(x: 0, y: 0, width: 1, height: h)
-        label.frame = CGRect(x: 8, y: 5, width: max(0, w - 10), height: 16)
+        tick.frame = CGRect(x: 0, y: (h - 12) / 2, width: 1, height: 12)
+        label.frame = CGRect(x: 9, y: (h - 16) / 2, width: max(0, w - 10), height: 16)
         bottomLine.frame = CGRect(x: 0, y: h - 1, width: w, height: 1)
     }
 
@@ -815,7 +843,7 @@ final class TimeHeaderView: UICollectionReusableView {
         let c = Calendar.current.dateComponents([.hour, .minute], from: t)
         let midnight = c.hour == 0 && c.minute == 0
         label.text = midnight ? "\(Fmt.day(t, now: now).uppercased()) · \(Fmt.time(t, clock24))" : Fmt.time(t, clock24)
-        label.textColor = midnight ? Palette.accent : Palette.fg2
+        label.textColor = midnight ? Palette.accent : Palette.fg3
     }
 }
 
@@ -832,13 +860,13 @@ final class CornerView: UICollectionReusableView {
         backgroundColor = Palette.panel
         titleLabel.font = TFont.cond(14, .semibold)
         titleLabel.textColor = Palette.fg
-        dateLabel.font = TFont.cond(10.5, .semibold)
+        dateLabel.font = TFont.cond(10.5, .medium)
         dateLabel.textColor = Palette.fg3
         chevron.tintColor = Palette.fg3
         chevron.contentMode = .scaleAspectFit
         chevron.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 10, weight: .bold)
-        divider.backgroundColor = Palette.line
-        bottomLine.backgroundColor = Palette.line
+        divider.isHidden = true
+        bottomLine.isHidden = true
         for v in [titleLabel, dateLabel, chevron, divider, bottomLine] as [UIView] { addSubview(v) }
         addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(tapped)))
         isAccessibilityElement = true
@@ -862,7 +890,7 @@ final class CornerView: UICollectionReusableView {
 
     func configure(title: String, date: String) {
         titleLabel.text = title
-        dateLabel.text = date.uppercased()
+        dateLabel.text = date
         accessibilityLabel = "\(title). \(date)"
     }
 }
@@ -877,8 +905,11 @@ final class NowLineView: UICollectionReusableView {
         super.init(frame: frame)
         isUserInteractionEnabled = false
         pill.backgroundColor = Palette.accent
-        pill.layer.cornerRadius = 4
-        pill.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        pill.layer.cornerRadius = 8
+        pill.layer.shadowColor = Palette.accent.cgColor
+        pill.layer.shadowOpacity = 0.55
+        pill.layer.shadowRadius = 6
+        pill.layer.shadowOffset = .zero
         label.font = TFont.digits(10.5, .bold)
         label.textColor = Palette.accentInk
         label.textAlignment = .center
@@ -905,8 +936,8 @@ final class NowLineView: UICollectionReusableView {
     override func layoutSubviews() {
         super.layoutSubviews()
         let w = bounds.width, h = bounds.height
-        let pillW = min(w, label.intrinsicContentSize.width + 10)
-        pill.frame = CGRect(x: (w - pillW) / 2, y: headH - 15, width: pillW, height: 15)
+        let pillW = min(w, label.intrinsicContentSize.width + 14)
+        pill.frame = CGRect(x: (w - pillW) / 2, y: (headH - 16) / 2, width: pillW, height: 16)
         label.frame = pill.bounds
         line.frame = CGRect(x: w / 2 - 1, y: headH, width: 2, height: max(0, h - headH))
     }

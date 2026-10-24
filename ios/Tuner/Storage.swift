@@ -77,7 +77,7 @@ final class Store {
     func removePlaylist(_ id: String) {
         playlists = playlists.filter { $0.id != id }
         Keychain.delete("playlist." + id)
-        for prefix in ["fav.", "recent.", "group.", "lastch."] { defaults.removeObject(forKey: key(prefix + id)) }
+        for prefix in ["fav.", "recent.", "group.", "lastch.", "hide.", "hideg."] { defaults.removeObject(forKey: key(prefix + id)) }
         if string("last") == id { setString(nil, "last") }
     }
 }

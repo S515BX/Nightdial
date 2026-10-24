@@ -1,5 +1,7 @@
-# Builds Tuner-FireTV.apk and puts it on the "firetv" release, so the newest build always has the same link:
-#   https://github.com/<you>/<repo>/releases/download/firetv/Tuner-FireTV.apk
+# Builds the Fire TV app. On the main branch it also puts it on the "firetv" release, so the newest build always has the same link:
+#   https://github.com/<you>/<repo>/releases/download/firetv/Nightdial-FireTV.apk
+# (Tuner-FireTV.apk is uploaded too, so older links and Downloader codes keep working.)
+# Builds on other branches (for example "dev") only keep the APK as a workflow artifact, for testing before release.
 name: Build Fire TV APK
 
 on:
@@ -30,23 +32,25 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon assembleRelease
-          cp app/build/outputs/apk/release/app-release.apk Tuner-FireTV.apk
-          ls -lh Tuner-FireTV.apk
+          cp app/build/outputs/apk/release/app-release.apk Nightdial-FireTV.apk
+          ls -lh Nightdial-FireTV.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Tuner-FireTV-apk
-          path: firetv/Tuner-FireTV.apk
+          name: Nightdial-FireTV-apk
+          path: firetv/Nightdial-FireTV.apk
           if-no-files-found: error
 
       - name: Publish to Releases
+        if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          gh release view firetv >/dev/null 2>&1 || \
-            gh release create firetv --target "$GITHUB_SHA" --title "Tuner for Fire TV" \
-              --notes "Newest Fire TV build. Install it with the Downloader app on your Fire Stick, or with adb. A new build installs over the old one and keeps your playlists."
-          gh release upload firetv Tuner-FireTV.apk --clobber
-          echo "### Download Tuner-FireTV.apk" >> "$GITHUB_STEP_SUMMARY"
-          echo "https://github.com/${GH_REPO}/releases/download/firetv/Tuner-FireTV.apk" >> "$GITHUB_STEP_SUMMARY"
+          NOTES="Newest Nightdial build for Fire TV. Install it with the Downloader app on your Fire Stick, or with adb. A new build installs over the old one and keeps your playlists."
+          gh release view firetv >/dev/null 2>&1 || gh release create firetv --target "$GITHUB_SHA" --title "Nightdial for Fire TV" --notes "$NOTES"
+          gh release edit firetv --title "Nightdial for Fire TV" --notes "$NOTES"
+          cp Nightdial-FireTV.apk Tuner-FireTV.apk
+          gh release upload firetv Nightdial-FireTV.apk Tuner-FireTV.apk --clobber
+          echo "### Download Nightdial-FireTV.apk" >> "$GITHUB_STEP_SUMMARY"
+          echo "https://github.com/${GH_REPO}/releases/download/firetv/Nightdial-FireTV.apk" >> "$GITHUB_STEP_SUMMARY"

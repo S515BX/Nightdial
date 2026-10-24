@@ -31,28 +31,27 @@ struct LoginView: View {
                 }
                 Toggle("Remember this playlist on this device", isOn: $remember)
                     .tint(Theme.accent)
-                    .font(.system(size: 15))
+                    .font(.ui(15))
                     .foregroundStyle(Theme.fg2)
                 if let infoText {
-                    Text(infoText).font(.system(size: 14)).foregroundStyle(Theme.ok)
+                    Text(infoText).font(.ui(14)).foregroundStyle(Theme.ok)
                 }
                 if let errorText {
                     Text(errorText)
-                        .font(.system(size: 14))
+                        .font(.ui(14))
                         .foregroundStyle(Color(uiColor: UIColor(hex: 0xFFC0BA)))
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(Theme.live.opacity(0.12)))
-                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.live.opacity(0.4), lineWidth: 1))
+                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Theme.live.opacity(0.13)))
                 }
                 actions
                 Text("Your details stay on this device and are only sent to your provider.")
-                    .font(.system(size: 13))
+                    .font(.ui(13))
                     .foregroundStyle(Theme.fg3)
             }
-            .padding(24)
-            .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Theme.panel))
-            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(Theme.line, lineWidth: 1))
+            .padding(26)
+            .background(RoundedRectangle(cornerRadius: 28, style: .continuous).fill(Theme.panel))
+            .shadow(color: .black.opacity(0.5), radius: 40, y: 20)
             .frame(maxWidth: 480)
             .padding(.horizontal, 16)
             .padding(.vertical, 24)
@@ -67,18 +66,18 @@ struct LoginView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
-                BrandMark(size: 38)
-                Text("Tuner").font(.cond(26, .bold)).foregroundStyle(Theme.fg)
+                BrandMark(size: 42)
+                Text("Nightdial").font(.cond(24, .semibold)).foregroundStyle(Theme.fg)
             }
             Label("XTREAM CODES", systemImage: "dot.radiowaves.left.and.right")
-                .font(.cond(12, .semibold))
+                .font(.cond(11.5, .semibold))
                 .foregroundStyle(Theme.accent)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(RoundedRectangle(cornerRadius: 8).fill(Theme.accent.opacity(0.16)))
-            Text("Add a playlist").font(.cond(30, .semibold)).foregroundStyle(Theme.fg)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(Capsule().fill(Theme.accentSoft))
+            Text("Add a playlist").font(.cond(28, .semibold)).foregroundStyle(Theme.fg)
             Text("Enter the server address, username and password from your IPTV provider. You can also paste your full M3U link into Server URL.")
-                .font(.system(size: 15))
+                .font(.ui(15))
                 .foregroundStyle(Theme.fg2)
         }
     }
@@ -101,7 +100,7 @@ struct LoginView: View {
             .disabled(busy)
             if model.canCancelLogin {
                 Button("Cancel") { model.showLogin = false }
-                    .font(.system(size: 15))
+                    .font(.ui(15))
                     .foregroundStyle(Theme.fg2)
                     .frame(maxWidth: .infinity)
                     .padding(.top, 4)
@@ -111,17 +110,16 @@ struct LoginView: View {
     }
 
     private func label(_ text: String) -> some View {
-        Text(text.uppercased())
-            .font(.cond(12, .semibold))
-            .tracking(0.9)
-            .foregroundStyle(Theme.fg3)
+        Text(text)
+            .font(.ui(12.5, .medium))
+            .foregroundStyle(Theme.fg2)
     }
 
     private func field(_ title: String, text: Binding<String>, prompt: String, field f: Field,
                        keyboard: UIKeyboardType = .default, content: UITextContentType? = nil, capitalize: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             label(title)
-            TextField("", text: text, prompt: Text(prompt).foregroundColor(Color(uiColor: UIColor(hex: 0x4F6072))))
+            TextField("", text: text, prompt: Text(prompt).foregroundColor(Theme.fg3))
                 .keyboardType(keyboard)
                 .textContentType(content)
                 .textInputAutocapitalization(capitalize ? TextInputAutocapitalization.words : TextInputAutocapitalization.never)

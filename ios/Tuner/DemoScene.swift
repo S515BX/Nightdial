@@ -21,7 +21,7 @@ struct DemoScene: View {
     }
 
     nonisolated private static func face(_ size: CGFloat, _ weight: UIFont.Weight) -> Font {
-        Font(TFont.cond(max(8, size), weight) as CTFont)
+        Font(TFont.broadcast(max(8, size), weight) as CTFont)
     }
 
     nonisolated private static func draw(_ g: inout GraphicsContext, size: CGSize, t: Double, channel: Channel, program: Program?) {
