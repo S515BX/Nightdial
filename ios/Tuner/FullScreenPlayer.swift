@@ -14,7 +14,7 @@ struct FullScreenPlayer: View {
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            VideoSurface(player: player.player, onLayer: { layer in pip.attach(layer) })
+            VideoSurface(player: player.player, aspect: player.aspect, onLayer: { layer in pip.attach(layer) })
                 .ignoresSafeArea()
             PlaybackOverlay(compact: false)
             if showControls && !showChannels {
@@ -165,9 +165,7 @@ struct FullScreenPlayer: View {
                         .foregroundStyle(Theme.fg2)
                         .monospacedDigit()
                 }
-                if let p = program, model.catchup == nil, p.isNow(model.now) {
-                    ProgressBar(value: model.progress(p))
-                }
+                ScrubBar(onActivity: { poke() })
                 liveLine
                 if let ch, let p = program, model.catchup == nil, let n = model.next(after: p, on: ch) {
                     Text("Next  \(Fmt.time(n.start, model.clock24))  \(n.title)")
@@ -233,6 +231,16 @@ struct FullScreenPlayer: View {
                 Button { model.goLive() } label: {
                     Label("Back to live", systemImage: "dot.radiowaves.left.and.right")
                 }
+            }
+            Menu {
+                ForEach(PlayerController.aspects.indices, id: \.self) { i in
+                    let a = PlayerController.aspects[i]
+                    Button { player.aspect = a.0 } label: {
+                        if a.0 == player.aspect { Label(a.1, systemImage: "checkmark") } else { Text(a.1) }
+                    }
+                }
+            } label: {
+                Label("Picture shape · \(PlayerController.aspectName(player.aspect))", systemImage: "aspectratio")
             }
             if player.audioOptions.count > 1 {
                 Menu {
@@ -370,5 +378,62 @@ extension View {
             .font(.system(size: 16, weight: .semibold))
             .frame(width: 44, height: 42)
             .background(Capsule().fill(Color.white.opacity(0.12)))
+    }
+}
+
+/// Timeline under the program title: drag to scrub through the program (catch-up channels can go back through it;
+/// other channels within what the stream keeps). Shows plain progress when the channel can't be rewound.
+@MainActor
+struct ScrubBar: View {
+    @EnvironmentObject var model: AppModel
+    let onActivity: () -> Void
+    @State private var dragging = false
+    @State private var value: Double = 0
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { _ in
+            if let tl = model.liveTimeline() {
+                let ws = tl.programStart.timeIntervalSince1970
+                let we = max(tl.programEnd.timeIntervalSince1970, ws + 60)
+                let lo = max(ws, tl.min.timeIntervalSince1970), hi = min(we, tl.max.timeIntervalSince1970)
+                let pos = tl.pos.timeIntervalSince1970
+                VStack(spacing: 4) {
+                    if tl.canScrub && hi > lo + 5 {
+                        Slider(value: Binding(get: { dragging ? value : min(max(pos, lo), hi) }, set: { value = $0 }), in: lo...hi, onEditingChanged: { editing in
+                            if editing {
+                                dragging = true
+                                value = min(max(pos, lo), hi)
+                            } else {
+                                dragging = false
+                                model.seekLive(to: Date(timeIntervalSince1970: value))
+                            }
+                            onActivity()
+                        })
+                        .tint(Theme.accent)
+                        .accessibilityLabel("Timeline")
+                    } else {
+                        ProgressBar(value: max(0, min(1, (pos - ws) / (we - ws))))
+                    }
+                    HStack {
+                        Text(Fmt.time(tl.programStart, model.clock24))
+                        Spacer()
+                        if dragging {
+                            Text(headLabel(value, tl)).font(.ui(13, .semibold)).foregroundStyle(Theme.fg)
+                        }
+                        Spacer()
+                        Text(Fmt.time(tl.programEnd, model.clock24))
+                    }
+                    .font(.ui(12))
+                    .foregroundStyle(Theme.fg3)
+                    .monospacedDigit()
+                }
+            }
+        }
+    }
+
+    private func headLabel(_ t: Double, _ tl: AppModel.LiveTimeline) -> String {
+        if tl.catchupProgram { return Fmt.clock(t - tl.programStart.timeIntervalSince1970) }
+        let behind = Date().timeIntervalSince1970 - t
+        return Fmt.time(Date(timeIntervalSince1970: t), model.clock24) + (behind >= 15 ? "  −" + Fmt.clock(behind) : "  live")
     }
 }

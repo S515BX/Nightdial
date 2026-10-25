@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-V4zHrbYrvR4s8yes4VSZDFAusfenb9zvn8Jhc+3lGIo=' 'sha256-FVcDI9llRvpHwU5AwzhP+0BbjdjKQj9JTkHndmHW0Xw=' 'sha256-bCp6LL2n2zsyrMhiZkCUfmpMPp7uCgjg8sZR0JSvM7I='; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src * data: blob:; media-src * data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-V4zHrbYrvR4s8yes4VSZDFAusfenb9zvn8Jhc+3lGIo=' 'sha256-xJ6hZv1VqXvxMD11xMPedmVWYoTRTT40uZFWR56letY=' 'sha256-bCp6LL2n2zsyrMhiZkCUfmpMPp7uCgjg8sZR0JSvM7I='; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src * data: blob:; media-src * data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#161922">
 <title>Nightdial</title>
@@ -716,6 +716,44 @@ html.tv .drawer,html.tv .tvnav,html.tv .tvopts,html.tv .tvchans,html.tv .modal-c
 html.tv .osd,html.tv .vosd{box-shadow:0 12px 32px rgba(0,0,0,.45)}
 html.tv .prog.focus,html.tv .prog.focus:hover{box-shadow:none}
 html.layer-open .deco i,html.layer-open .deco i svg{animation-play-state:paused}
+/* TV player panel (OK while watching): program, timeline to scrub, and the player buttons — like TiviMate */
+.tvbar{position:absolute;left:var(--safe-x);right:var(--safe-x);bottom:var(--safe-y);z-index:4;display:flex;flex-direction:column;gap:calc(var(--vh)*1.1);padding:calc(var(--vh)*2.8) calc(var(--vh)*3.4) calc(var(--vh)*2.4);border-radius:var(--r-xl);background:var(--glass);box-shadow:0 14px 40px rgba(0,0,0,.45);animation:tbIn .14s ease-out;will-change:transform,opacity}
+@keyframes tbIn{from{transform:translateY(calc(var(--vh)*2));opacity:0}}
+.tb-top{display:flex;align-items:center;gap:calc(var(--vh)*1.6);font:600 var(--t-m) var(--font-display);min-width:0}
+.tb-top .logo{flex:none;width:calc(var(--vh)*6);height:calc(var(--vh)*6);font-size:var(--t-s);border-radius:calc(var(--vh)*1.6)}
+.tb-top .num{color:var(--accent);font-variant-numeric:tabular-nums}
+.tb-top .name{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-flag{flex:none;padding:calc(var(--vh)*.5) calc(var(--vh)*1.3);border-radius:99px;font:700 var(--t-xs) var(--font-display);letter-spacing:.06em;background:var(--cell);color:var(--fg-2);font-variant-numeric:tabular-nums}
+.tb-flag.live{background:#e5383b;color:#fff}
+.tb-flag.cu{background:var(--accent-soft);color:var(--accent)}
+.tb-top .clock{margin-left:auto;flex:none;font-size:var(--t-xl);font-variant-numeric:tabular-nums}
+.tb-title{font:600 var(--t-xxl)/1.12 var(--font-display);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-sub{font-size:var(--t-s);color:var(--fg-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-sub b{color:var(--fg-3);font:600 var(--t-xs) var(--font-display);letter-spacing:.08em;text-transform:uppercase;margin:0 calc(var(--vh)*.8) 0 calc(var(--vh)*2)}
+.tb-line{display:flex;align-items:center;gap:calc(var(--vh)*1.8);margin-top:calc(var(--vh)*2.4)}
+.tb-t{flex:none;min-width:calc(var(--vh)*10);font:500 var(--t-xs) var(--font-display);color:var(--fg-2);font-variant-numeric:tabular-nums}
+.tb-end{text-align:right}
+.tb-scrub{position:relative;flex:1;height:calc(var(--vh)*1.1);border-radius:99px;background:rgba(255,255,255,.1);outline:none}
+.tb-avail{position:absolute;top:0;bottom:0;border-radius:99px;background:rgba(255,255,255,.2)}
+.tb-played{position:absolute;top:0;bottom:0;left:0;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+.tb-now{position:absolute;top:calc(var(--vh)*-.9);bottom:calc(var(--vh)*-.9);width:calc(var(--vh)*.4);margin-left:calc(var(--vh)*-.2);border-radius:99px;background:#e5383b}
+.tb-head{position:absolute;top:50%;width:calc(var(--vh)*2.4);height:calc(var(--vh)*2.4);margin:calc(var(--vh)*-1.2) 0 0 calc(var(--vh)*-1.2);border-radius:50%;background:var(--fg);box-shadow:0 0 0 calc(var(--vh)*.45) rgba(0,0,0,.4)}
+.tb-scrub:focus{box-shadow:0 0 0 calc(var(--vh)*.35) rgba(255,255,255,.25)}
+.tb-scrub:focus .tb-head{width:calc(var(--vh)*3);height:calc(var(--vh)*3);margin:calc(var(--vh)*-1.5) 0 0 calc(var(--vh)*-1.5);background:var(--hl);box-shadow:0 0 0 calc(var(--vh)*.5) rgba(0,0,0,.45),0 0 calc(var(--vh)*2) var(--hl)}
+.tb-head span{position:absolute;bottom:calc(100% + var(--vh)*1.2);left:50%;transform:translateX(-50%);padding:calc(var(--vh)*.6) calc(var(--vh)*1.3);border-radius:calc(var(--vh)*1);background:var(--hl);color:var(--hl-ink);font:600 var(--t-xs) var(--font-display);white-space:nowrap;font-variant-numeric:tabular-nums;display:none}
+.tvbar.scrubbing .tb-head span,.tb-scrub:focus .tb-head span{display:block}
+.tb-btns{display:flex;flex-wrap:wrap;gap:calc(var(--vh)*1);margin-top:calc(var(--vh)*1)}
+.tb-btn{display:inline-flex;align-items:center;gap:calc(var(--vh)*1);height:calc(var(--vh)*5.8);padding:0 calc(var(--vh)*2.1);border-radius:99px;background:rgba(255,255,255,.08);font:500 var(--t-s) var(--font-display);color:var(--fg);transition:none}
+.tb-btn .i{width:var(--t-m);height:var(--t-m)}
+.tb-btn:focus{outline:none;background:var(--hl);color:var(--hl-ink)}
+.tb-btn.dim{opacity:.5}
+.tb-btn.on .i{color:var(--warn,#f6c453)}
+.tb-btn.on:focus .i{color:inherit}
+.tb-hint{font-size:var(--t-xs);color:var(--fg-3)}
+/* aspect ratio for the browser's video element (the Fire TV app sizes its own player) */
+.screen[data-ar="zoom"] video{object-fit:cover}
+.screen[data-ar="stretch"] video{object-fit:fill}
+.screen[data-ar="16:9"] video,.screen[data-ar="4:3"] video{object-fit:fill;top:50%;left:50%;right:auto;bottom:auto;width:var(--arw,100%);height:var(--arh,100%);transform:translate(-50%,-50%)}
 /* TV: snappy and light. Highlights switch instantly, shadows stay small, sliding panels get their own GPU layer. */
 html.tv .item,html.tv .tvnav-item,html.tv .rail-btn,html.tv .mini,html.tv .poster,html.tv .btn,html.tv .chan,html.tv .prog,html.tv .tvch,html.tv .icon-btn{transition:none}
 html.tv .drawer,html.tv .tvnav,html.tv .tvopts,html.tv .tvchans,html.tv .modal-card{will-change:transform,opacity;box-shadow:0 14px 40px rgba(0,0,0,.5)}
@@ -842,6 +880,14 @@ html.native-video .screen video{display:none!important}
           <div class="vosd-hint" id="vosdHint">◀ ▶ skip 10 s · ◀◀ ▶▶ skip 30 s · OK pause · Back to stop</div>
         </div>
         <div class="tvopts" id="tvOpts" hidden role="dialog" aria-label="Channel options"><div class="tvopts-head" id="tvOptsHead"></div><div class="tvopts-list" id="tvOptsList"></div></div>
+        <div class="tvbar" id="tvBar" hidden role="dialog" aria-label="Player">
+          <div class="tb-top"><span class="logo" id="tbLogo"></span><span class="num" id="tbNum"></span><span class="name" id="tbName"></span><span class="tb-flag" id="tbFlag"></span><span class="clock" id="tbClock"></span></div>
+          <div class="tb-title" id="tbTitle"></div>
+          <div class="tb-sub" id="tbSub"></div>
+          <div class="tb-line"><span class="tb-t" id="tbStart"></span><div class="tb-scrub" id="tbScrub" tabindex="0" role="slider" aria-label="Timeline"><i class="tb-avail" id="tbAvail"></i><i class="tb-played" id="tbPlayed"></i><i class="tb-now" id="tbNow"></i><b class="tb-head" id="tbHead"><span id="tbHeadTime"></span></b></div><span class="tb-t tb-end" id="tbEnd"></span></div>
+          <div class="tb-btns" id="tbBtns"></div>
+          <div class="tb-hint" id="tbHint"></div>
+        </div>
         <div class="tvchans" id="tvChans" hidden><div class="tvchans-head"><span id="tvChansGroup"></span><span id="tvChansClock"></span></div><div class="tvchans-list" id="tvChansList"></div></div>
       </div>
       <div class="info" id="info" aria-live="polite">
@@ -1038,8 +1084,12 @@ const LOOK_DEFAULTS = { theme: 'midnight', hl: 'auto', menu: 'auto', font: 'popp
 /* Interface size: [id, label, TV scale, browser scale]. "Smaller" is the default so the guide shows more channels and more hours. */
 const SIZES = [['xs', 'Smallest', .74, .82], ['s', 'Smaller', .86, .9], ['m', 'Standard', 1, 1], ['l', 'Larger', 1.14, 1.1]];
 const uiScale = () => { const z = SIZES.find(x => x[0] === prefs.size) || SIZES[1]; return TV_MODE ? z[2] : z[3]; };
-const prefs = Object.assign({ clock24: defaultClock24, rows: 'comfortable', format: 'm3u8', epgSource: 'provider', xmltvUrl: '', sort: 'provider' }, LOOK_DEFAULTS, store.get('prefs', {}));
+const prefs = Object.assign({ clock24: defaultClock24, rows: 'comfortable', format: 'auto', aspect: '16:9', epgSource: 'provider', xmltvUrl: '', sort: 'provider' }, LOOK_DEFAULTS, store.get('prefs', {}));
 const savePrefs = () => store.set('prefs', prefs);
+// Stream format now defaults to "Best": the provider's original stream when the device can play it.
+if (!prefs.fmtV2) { prefs.format = 'auto'; prefs.fmtV2 = true; savePrefs(); }
+const ASPECTS = [['16:9', '16:9'], ['fit', 'Fit'], ['zoom', 'Zoom'], ['stretch', 'Stretch'], ['4:3', '4:3']];
+const aspectLabel = () => (ASPECTS.find(a => a[0] === prefs.aspect) || ASPECTS[0])[1];
 
 /* ================= look: themes, highlight + menu colors, fonts, holiday decorations ================= */
 const THEMES = [
@@ -1738,6 +1788,7 @@ function updateHero() {
 let osdTimer = 0;
 function showOsd() {
   if (!app.classList.contains('is-full')) return;
+  if (TV_MODE && tvBarOpen()) { renderTvBar(); return; }
   if (S.vodPlaying) { showVodOsd(); return; }
   updateLiveLine();
   osd.classList.remove('hide');
@@ -1770,6 +1821,7 @@ function updateOsd() {
   flag.style.display = S.catchup && app.classList.contains('is-full') ? 'inline-flex' : 'none';
   if (S.catchup) flag.lastElementChild.textContent = `Catch-up · aired ${fmtTime(S.catchup.start)}`;
   updateMuteUi();
+  if (TV_MODE && tvBarOpen()) renderTvBar();
 }
 
 /* ================= playback ================= */
@@ -1792,9 +1844,17 @@ function teardownStream() {
   if (mts) { try { mts.pause(); mts.unload(); mts.detachMediaElement(); mts.destroy(); } catch (e) {} mts = null; }
   try { video.pause(); video.removeAttribute('src'); video.load(); } catch (e) {}
 }
+/* "Best": on Fire TV the original MPEG-TS stream (Android's player handles it natively, like TiviMate) when the account allows it;
+   in a browser, HLS. Or the format chosen in Settings. */
+function streamExt() {
+  if (prefs.format === 'ts' || prefs.format === 'm3u8') return prefs.format;
+  const allowed = (S.provider && S.provider.info && S.provider.info.formats) || [];
+  return NATIVE && (!allowed.length || allowed.indexOf('ts') >= 0) ? 'ts' : 'm3u8';
+}
+const formatLabel = () => prefs.format === 'auto' ? `Best (${streamExt() === 'ts' ? 'MPEG-TS' : 'HLS'})` : prefs.format === 'ts' ? 'MPEG-TS' : 'HLS';
 function liveUrl(ch) {
   const p = S.provider;
-  return `${p.server}/live/${enc(p.user)}/${enc(p.pass)}/${ch.id}.${prefs.format === 'ts' ? 'ts' : 'm3u8'}`;
+  return `${p.server}/live/${enc(p.user)}/${enc(p.pass)}/${ch.id}.${streamExt()}`;
 }
 function tzStamp(ms, tz) {
   try {
@@ -1805,7 +1865,7 @@ function tzStamp(ms, tz) {
 }
 function catchupUrl(ch, p) {
   const pr = S.provider, dur = Math.ceil((p.end - p.start) / MIN);
-  return `${pr.server}/timeshift/${enc(pr.user)}/${enc(pr.pass)}/${dur}/${tzStamp(p.start, pr.info && pr.info.tz)}/${ch.id}.${prefs.format === 'ts' ? 'ts' : 'm3u8'}`;
+  return `${pr.server}/timeshift/${enc(pr.user)}/${enc(pr.pass)}/${dur}/${tzStamp(p.start, pr.info && pr.info.tz)}/${ch.id}.${streamExt()}`;
 }
 async function play(ch, opts = {}) {
   const token = ++playToken;
@@ -1829,7 +1889,7 @@ async function play(ch, opts = {}) {
   demoCanvas.hidden = true; video.hidden = NATIVE; spinner.hidden = false;
   const m3u = S.provider.type === 'm3u';
   const raw = S.catchup ? catchupUrl(ch, S.catchup) : m3u ? ch.url : liveUrl(ch);
-  const kind = m3u ? (/m3u8?(\?|$)/i.test(ch.url) ? 'hls' : 'ts') : prefs.format === 'ts' ? 'ts' : 'hls';
+  const kind = m3u ? (/m3u8?(\?|$)/i.test(ch.url) ? 'hls' : 'ts') : streamExt() === 'ts' ? 'ts' : 'hls';
   L.pausedAt = 0;
   try {
     if (NATIVE) await nativeStream(raw, !S.catchup);
@@ -1865,8 +1925,25 @@ function waitPlaying() {
 }
 /* ---- Android player (Fire TV app) ---- */
 let streamOk = null, nativeDetail = '';
+/* Picture shape. The Fire TV app sizes its own player; in a browser the video element is sized here. */
+function applyAspect() {
+  if (NATIVE) { try { if (window.TunerNative.setAspect) window.TunerNative.setAspect(prefs.aspect); } catch (e) {} return; }
+  const a = prefs.aspect;
+  screenEl.dataset.ar = a;
+  if (a === '16:9' || a === '4:3') {
+    const r = a === '4:3' ? 4 / 3 : 16 / 9, W = screenEl.clientWidth || 1, H = screenEl.clientHeight || 1;
+    screenEl.style.setProperty('--arw', (W / H > r ? H * r : W).toFixed(1) + 'px');
+    screenEl.style.setProperty('--arh', (W / H > r ? H : W / r).toFixed(1) + 'px');
+  }
+}
+function cycleAspect() {
+  const i = ASPECTS.findIndex(a => a[0] === prefs.aspect);
+  prefs.aspect = ASPECTS[(i + 1) % ASPECTS.length][0];
+  savePrefs(); applyAspect();
+  toast('Picture shape: ' + aspectLabel(), 1600);
+}
 function syncVideoRect() {
-  if (!NATIVE) return;
+  if (!NATIVE) { applyAspect(); return; }
   const r = app.classList.contains('is-full')
     ? { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight }
     : screenEl.getBoundingClientRect();
@@ -1960,7 +2037,7 @@ function mediaSeekBy(sec) {
     video.currentTime = Math.max(0, t);
   } catch (e) {}
 }
-const canTimeshift = ch => !!(ch && S.provider && S.provider.type === 'xtream' && ch.archive);
+const canTimeshift = ch => !!(ch && S.provider && ((S.provider.type === 'xtream' && ch.archive) || S.provider.type === 'demo'));
 function liveBehindText() {
   if (S.catchup && S.catchup.ts) { const m = Math.round((S.catchup.playedAt - S.catchup.start) / MIN); return m > 0 ? m + ' min behind' : ''; }
   const st = mediaState();
@@ -2018,6 +2095,7 @@ function updateLiveLine() {
 }
 function showOsdFor(ms) {
   if (!app.classList.contains('is-full')) return;
+  if (TV_MODE && tvBarOpen()) { renderTvBar(); return; }
   osd.classList.remove('hide');
   clearTimeout(osdTimer);
   if (ms) osdTimer = setTimeout(() => osd.classList.add('hide'), ms);
@@ -2054,7 +2132,7 @@ async function startStream(url, kind, live, token) {
       else throw new Error('hls-unsupported');
     } else {
       let netRetry = 0, mediaRetry = 0;
-      hls = new Hls({ enableWorker: true, lowLatencyMode: false, backBufferLength: 30, manifestLoadingMaxRetry: 2, levelLoadingMaxRetry: 3 });
+      hls = new Hls({ enableWorker: true, lowLatencyMode: false, backBufferLength: 30, manifestLoadingMaxRetry: 2, levelLoadingMaxRetry: 3, abrEwmaDefaultEstimate: 20000000, capLevelToPlayerSize: false });
       hls.on(Hls.Events.ERROR, (e, data) => {
         if (!data.fatal) return;
         if (data.type === Hls.ErrorTypes.NETWORK_ERROR && netRetry++ < 1) { hls.startLoad(); return; }
@@ -2119,6 +2197,7 @@ function enterFull() {
 }
 function exitFull() {
   if (!app.classList.contains('is-full')) return;
+  closeTvBar();
   closeTvChans();
   closeTvOpts();
   app.classList.remove('is-full');
@@ -2448,7 +2527,7 @@ async function xtreamConnect(v, step) {
   const si = auth.server_info || {};
   return {
     playlist: { id: 'x' + hash(server + '|' + user).toString(36), type: 'xtream', name: v.name || hostOf(server), server, user, pass,
-      info: { status: ui.status || 'Active', exp: ui.exp_date ? Number(ui.exp_date) * 1000 : null, max: ui.max_connections, active: ui.active_cons, trial: String(ui.is_trial) === '1', tz: si.timezone || '' } },
+      info: { status: ui.status || 'Active', exp: ui.exp_date ? Number(ui.exp_date) * 1000 : null, max: ui.max_connections, active: ui.active_cons, trial: String(ui.is_trial) === '1', tz: si.timezone || '', formats: Array.isArray(ui.allowed_output_formats) ? ui.allowed_output_formats.map(String) : [] } },
     channels, groups
   };
 }
@@ -2843,7 +2922,8 @@ function renderTvOpts(keep) {
   if (live) opts.push(['details', 'guide', 'Program details', '']);
   const audio = audioTracksInfo();
   if (audio) opts.push(['audio', 'vol', 'Audio track', audio.label]);
-  if (S.provider.type === 'xtream') opts.push(['fmt', 'settings', 'Stream format', prefs.format === 'ts' ? 'MPEG-TS' : 'HLS']);
+  opts.push(['aspect', 'expand', 'Picture shape', aspectLabel()]);
+  if (S.provider.type === 'xtream') opts.push(['fmt', 'settings', 'Stream format', formatLabel()]);
   opts.push(['hide', 'eyeoff', 'Hide channel', ''], ['reload', 'replay', 'Reload channel', ''], ['guide', 'back', 'Back to guide', '']);
   el('tvOptsList').innerHTML = opts.map(([a, ic, label, val]) => `<button class="item" data-opt="${a}">${icon(ic)}<span class="lbl"><span>${esc(label)}</span></span>${val ? `<span class="n">${esc(val)}</span>` : ''}</button>`).join('');
   if (keep) { const b = el('tvOptsList').querySelector(`[data-opt="${keep}"]`); if (b) b.focus(); }
@@ -2858,10 +2938,191 @@ el('tvOptsList').addEventListener('click', e => {
   else if (a === 'fav') { toggleFav(ch); renderTvOpts('fav'); }
   else if (a === 'details') { const p = S.catchup || progAt(ch, Date.now()); closeTvOpts(); if (p) openDetails(ch, p); }
   else if (a === 'audio') { nextAudioTrack(); setTimeout(() => renderTvOpts('audio'), 300); }
-  else if (a === 'fmt') { prefs.format = prefs.format === 'ts' ? 'm3u8' : 'ts'; savePrefs(); play(ch, { quiet: true, catchup: S.catchup }); renderTvOpts('fmt'); }
+  else if (a === 'fmt') { prefs.format = { auto: 'ts', ts: 'm3u8', m3u8: 'auto' }[prefs.format] || 'auto'; savePrefs(); play(ch, { quiet: true, catchup: S.catchup }); renderTvOpts('fmt'); }
+  else if (a === 'aspect') { cycleAspect(); renderTvOpts('aspect'); }
   else if (a === 'reload') { closeTvOpts(); play(ch, { quiet: true, catchup: S.catchup }); showOsd(); }
   else if (a === 'hide') { hiddenCh.add(ch.id); saveHidden(); closeTvOpts(); channelsChanged(); toast(`${ch.name} is hidden from the guide. Bring it back in Edit channels.`, 4500); }
   else if (a === 'guide') { closeTvOpts(); exitFull(); }
+});
+
+/* ================= player panel (OK while watching, like TiviMate) =================
+   The timeline shows the program at the scrub point. ◀ ▶ move the scrub point (faster the longer you hold),
+   OK or a short pause jumps there: within what the stream keeps, or with the provider's catch-up for channels that have it. */
+const SC = { active: false, target: 0, streak: 0, lastAt: 0, timer: 0 };
+let tbTick = 0, tbHide = 0;
+const tvBarOpen = () => !el('tvBar').hidden;
+const TB_BTNS = [['rew', '', '−30 s'], ['pause', 'pause', 'Pause'], ['ff', '', '+30 s'], ['live', 'signal', 'Live'], ['aspect', 'expand', '16:9'], ['audio', 'vol', 'Audio'], ['fav', 'star', 'Favorite'], ['list', 'playlist', 'Channels'], ['more', 'settings', 'Options']];
+
+/* Where playback is on the clock, and how far back and forward it can go. */
+function timeline() {
+  const ch = S.byId.get(S.playingId), now = Date.now();
+  const demo = demoVod(), st = demo ? { pos: 0, dur: 0, paused: !!L.pausedAt, seekable: false, behind: null } : mediaState();
+  if (S.catchup && !S.catchup.ts) {        // a recorded program: the whole program can be scrubbed
+    const p = S.catchup, len = p.end - p.start;
+    const pos = demo ? Math.min(p.end, p.start + (now - p.playedAt)) : p.start + Math.min(len, st.pos * 1000);
+    return { kind: 'catchup', min: p.start, max: p.end - 5000, pos, behind: 0, paused: st.paused, can: true };
+  }
+  let pos;
+  if (S.catchup && S.catchup.ts) pos = Math.min(now, demo ? S.catchup.start + (now - S.catchup.playedAt) : S.catchup.start + st.pos * 1000);
+  else if (st.behind != null) pos = now - st.behind * 1000;
+  else pos = L.pausedAt || now;
+  const dvr = !S.catchup && st.seekable && st.dur > 30 ? now - st.dur * 1000 : null;
+  let min = now;
+  if (ch && canTimeshift(ch)) min = now - (ch.archiveDays || 1) * DAY + HOUR;
+  else if (dvr) min = dvr;
+  else if (S.catchup && st.seekable) min = S.catchup.start;
+  return { kind: S.catchup ? 'timeshift' : 'live', min: Math.min(min, pos), max: now, pos, dvr, behind: Math.max(0, (now - pos) / 1000), paused: st.paused || !!L.pausedAt, can: min < now - 20000 };
+}
+function openTvBar() {
+  if (!S.playingId) return;
+  closeTvChans();
+  if (tvOptsOpen()) el('tvOpts').hidden = true;
+  osd.classList.add('hide');
+  const bar = el('tvBar');
+  if (bar.hidden) {
+    el('tbBtns').innerHTML = TB_BTNS.map(([a, ic, label]) => `<button class="tb-btn" data-tb="${a}">${ic ? icon(ic) : ''}<span>${label}</span></button>`).join('');
+    bar.hidden = false;
+  }
+  SC.active = false;
+  renderTvBar();
+  el('tbScrub').focus({ preventScroll: true });
+  clearInterval(tbTick); tbTick = setInterval(renderTvBar, 1000);
+  pokeTvBar();
+}
+function closeTvBar() {
+  if (!tvBarOpen()) return;
+  cancelScrub();
+  el('tvBar').hidden = true;
+  clearInterval(tbTick); clearTimeout(tbHide);
+  guideScroll.focus({ preventScroll: true });
+}
+/* Stays up while you use it, while paused and while scrubbing; otherwise hides after 8 seconds. */
+function pokeTvBar() {
+  clearTimeout(tbHide);
+  tbHide = setTimeout(() => { if (SC.active || timeline().paused) pokeTvBar(); else closeTvBar(); }, 8000);
+}
+function renderTvBar() {
+  if (!tvBarOpen()) return;
+  const ch = S.byId.get(S.playingId); if (!ch) { closeTvBar(); return; }
+  const now = Date.now(), tl = timeline(), head = SC.active ? SC.target : tl.pos;
+  const p = (S.catchup && !S.catchup.ts) ? S.catchup : (progAt(ch, head) || null);
+  const ws = p ? p.start : head - 30 * MIN, we = p ? Math.max(p.end, ws + MIN) : head + 30 * MIN;
+  const X = t => Math.max(0, Math.min(100, (t - ws) / (we - ws) * 100));
+  const logo = el('tbLogo');
+  logo.style.setProperty('--h', ch.hue);
+  const lk = ch.id + '|' + (ch.logo || '');
+  if (logo.dataset.k !== lk) { logo.dataset.k = lk; logo.innerHTML = esc(initials(ch.name)) + (ch.logo ? `<img src="${esc(ch.logo)}" alt="" referrerpolicy="no-referrer">` : ''); }
+  el('tbNum').textContent = ch.num;
+  el('tbName').textContent = ch.name;
+  el('tbClock').textContent = fmtTime(now);
+  el('tbTitle').textContent = p ? p.title : ch.name;
+  const n = p && !(S.catchup && !S.catchup.ts) ? neighbor(ch, p, 1) : null;
+  el('tbSub').innerHTML = p ? `${fmtTime(p.start)} – ${fmtTime(p.end)}${S.catchup && !S.catchup.ts ? ' · catch-up' : ''}${n ? `<b>Next</b>${fmtTime(n.start)}  ${esc(n.title)}` : ''}` : 'No program information';
+  const flag = el('tbFlag'), atLive = tl.kind === 'live' && tl.behind < 15 && !tl.paused;
+  const behindHead = (now - head) / 1000;
+  flag.className = 'tb-flag' + (SC.active ? (behindHead < 15 ? ' live' : '') : tl.kind === 'catchup' ? ' cu' : atLive ? ' live' : '');
+  flag.textContent = SC.active ? (behindHead < 15 && tl.kind !== 'catchup' ? 'LIVE' : tl.kind === 'catchup' ? fmtClock((head - tl.min) / 1000) : '−' + fmtClock(behindHead))
+    : tl.kind === 'catchup' ? 'CATCH-UP' : tl.paused ? 'PAUSED' : atLive ? 'LIVE' : '−' + fmtClock(tl.behind);
+  const aL = X(Math.max(tl.min, ws)), aR = X(Math.min(tl.max, we));
+  el('tbAvail').style.cssText = `left:${aL.toFixed(2)}%;width:${Math.max(0, aR - aL).toFixed(2)}%`;
+  el('tbPlayed').style.width = X(tl.pos).toFixed(2) + '%';
+  const nowEl = el('tbNow'); nowEl.hidden = tl.kind === 'catchup' || now < ws || now > we; nowEl.style.left = X(now).toFixed(2) + '%';
+  el('tbHead').style.left = X(head).toFixed(2) + '%';
+  el('tbHeadTime').textContent = tl.kind === 'catchup' ? fmtClock((head - tl.min) / 1000) + ' / ' + fmtClock((tl.max + 5000 - tl.min) / 1000) : fmtTime(head) + (behindHead >= 15 ? '  −' + fmtClock(behindHead) : '  live');
+  el('tbStart').textContent = fmtTime(ws);
+  el('tbEnd').textContent = fmtTime(we);
+  el('tvBar').classList.toggle('scrubbing', SC.active);
+  const btn = a => el('tbBtns').querySelector(`[data-tb="${a}"]`);
+  const pb = btn('pause');
+  if (pb) { const use = pb.querySelector('use'); if (use) use.setAttribute('href', tl.paused ? '#i-play' : '#i-pause'); pb.lastChild.textContent = tl.paused ? 'Play' : 'Pause'; }
+  const lv = btn('live'); if (lv) lv.classList.toggle('dim', atLive);
+  const as = btn('aspect'); if (as) as.lastChild.textContent = aspectLabel();
+  const au = btn('audio'), audio = audioTracksInfo();
+  if (au) { au.hidden = !audio; if (audio) au.lastChild.textContent = audio.label; }
+  const fv = btn('fav'); if (fv) { fv.classList.toggle('on', favs.has(ch.id)); fv.lastChild.textContent = favs.has(ch.id) ? 'Favorite' : 'Add favorite'; }
+  el('tbHint').textContent = tl.can ? '◀ ▶ move through the program · OK to jump there · ▼ more' : (tl.kind === 'live' ? "This channel can't be rewound · ▼ more" : '▼ more');
+}
+/* ◀ ▶ on the timeline: steps grow while you hold the button (10 s up to 5 min). */
+function scrubStep(dir, fixed) {
+  const tl = timeline();
+  if (!tl.can && tl.kind === 'live') { if (dir < 0) toast("This channel can't be rewound", 2000); else toast("You're watching live", 1600); return; }
+  const now = Date.now();
+  if (!SC.active) { SC.active = true; SC.target = tl.pos; SC.streak = 0; }
+  SC.streak = now - SC.lastAt < 450 ? SC.streak + 1 : 0;
+  SC.lastAt = now;
+  const step = (fixed || [10, 10, 10, 15, 15, 30, 30, 30, 60, 60, 60, 120, 120, 300][Math.min(SC.streak, 13)]) * 1000;
+  SC.target = Math.max(tl.min, Math.min(tl.max, SC.target + dir * step));
+  renderTvBar(); pokeTvBar();
+  clearTimeout(SC.timer); SC.timer = setTimeout(commitScrub, 1200);
+}
+function cancelScrub() { clearTimeout(SC.timer); SC.active = false; }
+function commitScrub() {
+  clearTimeout(SC.timer);
+  if (!SC.active) return;
+  SC.active = false;
+  const ch = S.byId.get(S.playingId); if (!ch) return;
+  seekTo(ch, timeline(), SC.target);
+  setTimeout(renderTvBar, 450);
+}
+/* Jump to a moment on the clock: inside the stream when it allows, otherwise with catch-up; near now means live. */
+function seekTo(ch, tl, target) {
+  const now = Date.now(), delta = (target - tl.pos) / 1000;
+  if (Math.abs(delta) < 2) return;
+  if (tl.kind === 'catchup') { if (demoVod()) S.catchup.playedAt -= delta * 1000; else mediaSeekBy(delta); return; }
+  if (target >= now - 15000) { goLive(ch, tl); return; }
+  if (demoVod()) { playTimeshift(ch, target); return; }
+  const st = mediaState();
+  if (tl.kind === 'timeshift' && st.seekable && target >= S.catchup.start) { mediaSeekBy(delta); return; }
+  if (tl.kind === 'live' && tl.dvr && target >= tl.dvr) { mediaSeekBy(delta); return; }
+  if (canTimeshift(ch)) { playTimeshift(ch, target); return; }
+  toast("This channel can't go back that far", 2200);
+}
+function goLive(ch, tl) {
+  const wasPaused = !!L.pausedAt; L.pausedAt = 0;
+  if (S.catchup) { play(ch, { quiet: true }); toast('Back to live', 1500); return; }
+  if (demoVod()) { if (wasPaused) demoSet(ch, null); return; }
+  if (NATIVE) { try { window.TunerNative.seekToLive(); if (tl && tl.paused) window.TunerNative.setPaused(false); } catch (e) {} }
+  else { try { const r = video.seekable; if (r && r.length) video.currentTime = Math.max(0, r.end(r.length - 1) - 1); if (video.paused) { const pr = video.play(); if (pr && pr.catch) pr.catch(() => {}); } } catch (e) {} }
+  toast('Back to live', 1500);
+}
+function tvBarKey(k, e) {
+  pokeTvBar();
+  const a = document.activeElement, onScrub = a === el('tbScrub');
+  if (k === 'playpause') { e.preventDefault(); liveTogglePause(); setTimeout(renderTvBar, 300); return; }
+  if (k === 'rew' || k === 'ff') { e.preventDefault(); if (!onScrub) el('tbScrub').focus({ preventScroll: true }); scrubStep(k === 'rew' ? -1 : 1, 30); return; }
+  if (k === 'pgup' || k === 'pgdn') { e.preventDefault(); cancelScrub(); stepChannel(k === 'pgup' ? -1 : 1); setTimeout(renderTvBar, 50); return; }
+  if (k === 'info') { e.preventDefault(); closeTvBar(); openTvOpts(); return; }
+  if (k === 'digit') { e.preventDefault(); closeTvBar(); numKey(e.key); return; }
+  if (onScrub) {
+    if (k === 'left' || k === 'right') { e.preventDefault(); scrubStep(k === 'left' ? -1 : 1); }
+    else if (k === 'ok') { e.preventDefault(); if (SC.active) commitScrub(); else { liveTogglePause(); setTimeout(renderTvBar, 300); } }
+    else if (k === 'down') { e.preventDefault(); commitScrub(); const b = el('tbBtns').querySelector('[data-tb="pause"]'); if (b) b.focus(); }
+    else if (k === 'up') e.preventDefault();
+    return;
+  }
+  if (k === 'left' || k === 'right') {
+    e.preventDefault();
+    const btns = [...el('tbBtns').querySelectorAll('.tb-btn')].filter(b => !b.hidden);
+    const i = btns.indexOf(a), next = btns[Math.max(0, Math.min(btns.length - 1, (i < 0 ? 0 : i) + (k === 'right' ? 1 : -1)))];
+    if (next) next.focus();
+  } else if (k === 'up') { e.preventDefault(); el('tbScrub').focus({ preventScroll: true }); }
+  else if (k === 'down') e.preventDefault();
+  else if (k === 'ok') { e.preventDefault(); if (a && a.dataset && a.dataset.tb) a.click(); }
+}
+el('tbBtns').addEventListener('click', e => {
+  const b = e.target.closest('[data-tb]'); if (!b) return;
+  e.stopPropagation();
+  const a = b.dataset.tb, ch = S.byId.get(S.playingId); if (!ch) return;
+  pokeTvBar();
+  if (a === 'rew' || a === 'ff') liveSeek(a === 'rew' ? -30 : 30);
+  else if (a === 'pause') liveTogglePause();
+  else if (a === 'live') { const tl = timeline(); if (tl.kind === 'live' && tl.behind < 15 && !tl.paused) toast("You're watching live", 1500); else goLive(ch, tl); }
+  else if (a === 'aspect') cycleAspect();
+  else if (a === 'audio') nextAudioTrack();
+  else if (a === 'fav') toggleFav(ch);
+  else if (a === 'list') { closeTvBar(); openTvChans(); return; }
+  else if (a === 'more') { closeTvBar(); openTvOpts(); return; }
+  setTimeout(renderTvBar, a === 'audio' ? 350 : 120);
 });
 
 /* Channel list over full-screen video: Left (or Channel list in the options) opens it, Up/Down browse, OK switches. */
@@ -3663,7 +3924,8 @@ function openSettings() {
     ${demo ? '' : '<div class="btns"><button class="btn ghost" data-s="reload">Reload guide</button></div>'}
   </section>
   <section><h3>Playback</h3>
-    ${m3u ? '<p class="hint">Channels play in the format your M3U playlist gives.</p>' : `<div class="setting"><span>Stream format</span>${seg('fmt', [['m3u8', 'HLS (.m3u8)'], ['ts', 'MPEG-TS (.ts)']], prefs.format, demo)}<p class="hint">If a channel won't start, try the other format.</p></div>`}
+    <div class="setting"><span>Picture shape</span>${seg('aspect', ASPECTS, prefs.aspect)}<p class="hint">16:9 fills a TV screen. Fit keeps each channel's own shape; Zoom fills the screen by trimming the edges.</p></div>
+    ${m3u ? '<p class="hint">Channels play in the format your M3U playlist gives.</p>' : `<div class="setting"><span>Stream format</span>${seg('fmt', [['auto', 'Best'], ['m3u8', 'HLS (.m3u8)'], ['ts', 'MPEG-TS (.ts)']], prefs.format, demo)}<p class="hint">Best plays your provider's original stream when it can. If a channel won't start, try another format.</p></div>`}
   </section>
   <section><h3>${TV_MODE ? 'Remote' : 'Remote and keyboard'}</h3>
     <div class="keys">${TV_MODE ? `
@@ -3696,6 +3958,7 @@ el('settingsBody').addEventListener('change', e => {
   if (t.name === 'uisize') { prefs.size = t.value; savePrefs(); applySizeChange(); }
   if (t.name === 'rows') { prefs.rows = t.value; savePrefs(); applyRowSize(); layoutGuide(); ensureVisible(); renderGuide(); }
   if (t.name === 'fmt') { prefs.format = t.value; savePrefs(); const ch = S.byId.get(S.playingId); if (ch && S.provider.type === 'xtream') play(ch, { quiet: true }); }
+  if (t.name === 'aspect') { prefs.aspect = t.value; savePrefs(); applyAspect(); }
   if (t.name === 'epg') { prefs.epgSource = t.value; savePrefs(); reloadGuide(); openSettingsKeep(); }
   if (t.id === 'm3uEpg') { S.provider.epgUrl = t.value.trim(); secrets.set(S.provider.id, { url: S.provider.url, epgUrl: S.provider.epgUrl }); reloadGuide(); }
   if (t.id === 'xmltvUrl') { prefs.xmltvUrl = t.value.trim(); savePrefs(); if (prefs.epgSource === 'xmltv') reloadGuide(); }
@@ -3895,7 +4158,15 @@ function handleBack() {
     if (mgr.moving) { const id = mgr.moving; mgr.moving = null; renderMgr({ key: id, col: 0 }); return true; }
     if (mgr.group) { const g = mgr.group; mgr.group = null; renderMgr({ key: g, col: 0 }); return true; }
   }
+  // Back twice from the guide closes the app: the first press opens the menu, a second one within 2 seconds exits.
+  if (TV_MODE && backArmed && Date.now() - backArmed < 2000 && layers.length === 1 && layers[0].id === 'tvNav') {
+    backArmed = 0;
+    if (window.TunerNative && window.TunerNative.exit) { try { window.TunerNative.exit(); } catch (e) {} }
+    else toast('On your Fire TV this closes Nightdial');
+    return true;
+  }
   if (layers.length) { closeLayer(); return true; }
+  if (tvBarOpen()) { if (SC.active) { cancelScrub(); renderTvBar(); } else closeTvBar(); return true; }
   if (tvOptsOpen()) { closeTvOpts(); return true; }
   if (tvChansOpen()) { closeTvChans(); return true; }
   if (S.vodPlaying) { stopVod(); return true; }
@@ -3906,13 +4177,14 @@ function handleBack() {
     closeVod(); return true;
   }
   if (a && a.closest && a.closest('#rail')) return false;
-  if (TV_MODE) { openTvNav(true); return true; }
+  if (TV_MODE) { openTvNav(true); backArmed = Date.now(); toast('Press Back again to exit', 2000); return true; }
   const p = focusedProg();
   if (p && !isNowProg(p)) { jumpToNow(false); guideScroll.focus({ preventScroll: true }); return true; }
   const b = document.querySelector('.rail-btn.active') || document.querySelector('.rail-btn');
   if (b && b.offsetParent) { b.focus(); return true; }
   return false;
 }
+let backArmed = 0;
 window.tunerBack = handleBack;
 /* Remote buttons sent by the Fire TV app (play/pause, menu, channel up/down, rewind, fast-forward).
    Sent to the focused control like a real key; OK on a control that nothing else handled activates it. */
@@ -3926,6 +4198,7 @@ window.tunerKey = function (key) {
 document.addEventListener('keydown', e => {
   firstGesture();
   let k = keyName(e); if (!k) return;
+  if (k !== 'back') backArmed = 0;
   const a = document.activeElement;
   const inField = !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
   if (k === 'backspace') { if (inField) return; k = 'back'; }
@@ -3936,7 +4209,8 @@ document.addEventListener('keydown', e => {
   }
   if (app.classList.contains('is-full') && !layers.length && S.vodPlaying) { vodPlayerKey(k, e); return; }
   if (app.classList.contains('is-full') && !layers.length) {
-    if (k === 'playpause') { e.preventDefault(); if (tvOptsOpen()) closeTvOpts(); liveTogglePause(); return; }
+    if (TV_MODE && tvBarOpen()) { tvBarKey(k, e); return; }
+    if (k === 'playpause') { e.preventDefault(); if (tvOptsOpen()) closeTvOpts(); liveTogglePause(); if (TV_MODE) openTvBar(); return; }
     if (TV_MODE && tvOptsOpen()) {
       if (k === 'up' || k === 'down') { e.preventDefault(); moveFormFocus(el('tvOptsList'), k === 'down' ? 1 : -1); }
       else if (k === 'ok') { e.preventDefault(); if (a && a.closest && a.closest('#tvOpts')) a.click(); }
@@ -3951,7 +4225,9 @@ document.addEventListener('keydown', e => {
       else if (k === 'digit') { e.preventDefault(); numKey(e.key); }
       return;
     }
-    if (TV_MODE && k === 'ok') { e.preventDefault(); openTvOpts(); return; }
+    if (TV_MODE && k === 'ok') { e.preventDefault(); openTvBar(); return; }
+    if (TV_MODE && k === 'info') { e.preventDefault(); openTvOpts(); return; }
+    if (TV_MODE && (k === 'rew' || k === 'ff')) { e.preventDefault(); openTvBar(); scrubStep(k === 'rew' ? -1 : 1, 30); return; }
     if (TV_MODE && k === 'left') { e.preventDefault(); openTvChans(); return; }
     const map = { up: () => stepChannel(-1), down: () => stepChannel(1), pgup: () => stepChannel(-1), pgdn: () => stepChannel(1), left: showOsd, right: showOsd, rew: () => liveSeek(-30), ff: () => liveSeek(30), ok: () => osd.classList.contains('hide') ? showOsd() : osd.classList.add('hide'), info: showOsd, fav: () => { toggleFav(S.byId.get(S.playingId)); showOsd(); }, mute: () => { toggleMute(); showOsd(); } };
     if (k === 'digit') { e.preventDefault(); numKey(e.key); return; }
@@ -4044,7 +4320,7 @@ window.addEventListener('resize', () => {
     const oldPpm = ppm, centerT = rangeStart + (guideScroll.scrollLeft / oldPpm) * MIN;
     layoutGuide();
     guideScroll.scrollLeft = Math.max(0, x(centerT));
-    ensureVisible(); renderGuide(); sizeCanvas();
+    ensureVisible(); renderGuide(); sizeCanvas(); applyAspect();
   }, 120);
 });
 
@@ -4052,6 +4328,7 @@ window.addEventListener('resize', () => {
 function boot() {
   migrateSecrets();
   applyLook();
+  applyAspect();
   computeRange(); applyRowSize(); readMetrics();
   const saved = savedPlaylists(), last = store.get('last', null);
   if (last === 'demo' && DEMO_OK) loadDemo(false);

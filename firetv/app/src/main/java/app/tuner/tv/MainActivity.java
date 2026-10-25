@@ -37,6 +37,7 @@ import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
+import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter;
 import androidx.media3.ui.AspectRatioFrameLayout;
 import androidx.media3.ui.PlayerView;
 
@@ -76,6 +77,9 @@ public class MainActivity extends Activity {
         }
     };
     private volatile String audioTracksJson = "[]";
+    /** Where the page wants the video (device pixels) and how to fit the picture into it. */
+    private int rectX, rectY, rectW = 1, rectH = 1;
+    private String aspect = "16:9";
     private final List<int[]> audioTrackIndex = new ArrayList<>();
 
     @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
@@ -86,7 +90,7 @@ public class MainActivity extends Activity {
         secrets = new Secrets(this);
 
         FrameLayout root = new FrameLayout(this);
-        root.setBackgroundColor(Color.rgb(10, 15, 21));
+        root.setBackgroundColor(Color.BLACK);   // shows as black bars around 4:3 / 16:9 pictures
 
         playerView = new PlayerView(this);
         playerView.setUseController(false);
@@ -206,7 +210,15 @@ public class MainActivity extends Activity {
                 .setReadTimeoutMs(30000);
         DefaultMediaSourceFactory sources = new DefaultMediaSourceFactory(new DefaultDataSource.Factory(this, http));
         DefaultRenderersFactory renderers = new DefaultRenderersFactory(this).setEnableDecoderFallback(true);
-        player = new ExoPlayer.Builder(this, renderers).setMediaSourceFactory(sources).build();
+        // Start by assuming a fast connection, so streams with several qualities open at the best one instead of working up to it.
+        DefaultBandwidthMeter meter = new DefaultBandwidthMeter.Builder(this).setInitialBitrateEstimate(40_000_000L).build();
+        player = new ExoPlayer.Builder(this, renderers).setMediaSourceFactory(sources).setBandwidthMeter(meter).build();
+        // Always the highest quality the Fire TV can decode; never capped to the size of the small preview window.
+        player.setTrackSelectionParameters(player.getTrackSelectionParameters().buildUpon()
+                .setForceHighestSupportedBitrate(true)
+                .clearVideoSizeConstraints()
+                .clearViewportSizeConstraints()
+                .build());
         player.setAudioAttributes(new AudioAttributes.Builder()
                 .setUsage(C.USAGE_MEDIA)
                 .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
@@ -251,6 +263,31 @@ public class MainActivity extends Activity {
         playerView.setPlayer(player);
         ui.removeCallbacks(stateTicker);
         ui.post(stateTicker);
+    }
+
+    /** Sizes the player inside the page's video box for the chosen aspect ratio. */
+    private void layoutVideo() {
+        int x = rectX, y = rectY, w = rectW, h = rectH;
+        int mode;
+        float ratio = 0f;
+        switch (aspect) {
+            case "4:3": ratio = 4f / 3f; mode = AspectRatioFrameLayout.RESIZE_MODE_FILL; break;
+            case "fit": mode = AspectRatioFrameLayout.RESIZE_MODE_FIT; break;
+            case "zoom": mode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM; break;
+            case "stretch": mode = AspectRatioFrameLayout.RESIZE_MODE_FILL; break;
+            default: ratio = 16f / 9f; mode = AspectRatioFrameLayout.RESIZE_MODE_FILL; break;
+        }
+        if (ratio > 0f) {
+            if ((float) w / h > ratio) { int nw = Math.round(h * ratio); x += (w - nw) / 2; w = nw; }
+            else { int nh = Math.round(w / ratio); y += (h - nh) / 2; h = nh; }
+        }
+        playerView.setResizeMode(mode);
+        FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) playerView.getLayoutParams();
+        lp.leftMargin = x;
+        lp.topMargin = y;
+        lp.width = Math.max(1, w);
+        lp.height = Math.max(1, h);
+        playerView.setLayoutParams(lp);
     }
 
     private void updatePlayerState() {
@@ -501,12 +538,20 @@ public class MainActivity extends Activity {
         public void setVideoRect(double x, double y, double w, double h) {
             runOnUiThread(() -> {
                 float d = getResources().getDisplayMetrics().density;
-                FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) playerView.getLayoutParams();
-                lp.leftMargin = (int) Math.round(x * d);
-                lp.topMargin = (int) Math.round(y * d);
-                lp.width = Math.max(1, (int) Math.round(w * d));
-                lp.height = Math.max(1, (int) Math.round(h * d));
-                playerView.setLayoutParams(lp);
+                rectX = (int) Math.round(x * d);
+                rectY = (int) Math.round(y * d);
+                rectW = Math.max(1, (int) Math.round(w * d));
+                rectH = Math.max(1, (int) Math.round(h * d));
+                layoutVideo();
+            });
+        }
+
+        /** Picture shape: "16:9", "4:3" (forced shapes), "fit" (original shape), "zoom" (fill, cropping), "stretch". */
+        @JavascriptInterface
+        public void setAspect(String mode) {
+            runOnUiThread(() -> {
+                aspect = mode == null ? "16:9" : mode;
+                layoutVideo();
             });
         }
 

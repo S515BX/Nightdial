@@ -38,7 +38,9 @@
 - **Two ways to sign in**: Xtream Codes (server, username, password) or an M3U playlist link with an optional XMLTV guide link. Compressed `.xml.gz` guides work, and a `get.php` M3U link signs in with Xtream Codes automatically. The app starts empty, with no demo.
 - **Full TV guide (EPG)**: a scrolling grid of what's on now and next, catch-up for channels whose provider keeps recordings, search across channels and programs, and jumping to a channel by number.
 - **Movies & Series**: shows up when your subscription includes them. Browse by category, search, see details, seasons and episodes, and pick up where you left off.
-- **Pause and rewind live TV**: channels whose stream keeps a buffer rewind instantly; channels with catch-up can go back further, 5 minutes at a time. **Back to live** jumps to now.
+- **Pause, rewind and scrub live TV**: press OK while watching for the player panel, like TiviMate: program info, a timeline to scrub with ◀ ▶ (faster the longer you hold), and buttons for pause, ±30 s, back to live, picture shape, audio track and favorites. Channels with catch-up can scrub back through the program; others within what their stream keeps.
+- **Picture shape**: 16:9 (default), Fit, Zoom, Stretch or 4:3, from the player panel or Settings.
+- **Best picture**: the player opens every stream at its highest quality instead of working up to it, and on Fire TV Xtream channels play the provider's original MPEG-TS stream when the account allows it (Settings → Stream format → Best).
 - **Your channels, your way**: favorites in your own order, hide channels or whole groups, and sort by provider order, number or A–Z.
 - **Themes**: everyday themes plus holiday themes that can switch on by themselves in season. Each one has its own scenery (a moonlit graveyard for Halloween, snowy pines and string lights for Christmas, fireworks over the skyline for New Year and the 4th of July...) and particles with depth: snow, bats, falling leaves, petals, fireworks. Highlight and menu colors, six fonts and interface size are yours to pick.
 - **Smooth on every screen**: menus and highlights respond instantly on Fire TV, decorations pause while a menu is open, and animations run at the screen's full refresh rate (120 Hz ProMotion on iPhone and iPad).
@@ -85,13 +87,13 @@ New builds install over the old one and keep your playlists and favorites.
 | --- | --- | --- |
 | ↑ ↓ | Move between channels | Change channel |
 | ← → | Earlier and later programs (← from what's on now opens the menu) | ← channel list |
-| OK | Watch, or open program details | Channel options: favorite, pause, back to live, hide, audio track, stream format |
+| OK | Watch, or open program details | Player panel: timeline (◀ ▶ to scrub, OK to jump) and buttons (▼) |
 | ▶❚❚ | Watch the selected channel | Pause and play |
-| ◀◀ ▶▶ | Earlier programs and catch-up, later programs | Rewind and fast-forward |
-| Back | Back to now, then the menu | Back to the guide |
-| ☰ | Program details | Channel options |
+| ◀◀ ▶▶ | Earlier programs and catch-up, later programs | Rewind and fast-forward 30 s |
+| Back | The menu; **press Back twice to exit** | Closes the panel, then back to the guide |
+| ☰ | Program details | Channel options (favorite, hide, picture shape, audio, stream format) |
 
-**Exit Nightdial** is at the bottom of the menu.
+**Exit Nightdial** is also at the bottom of the menu.
 
 ## Look and channels
 

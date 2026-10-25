@@ -768,6 +768,52 @@ final class AppModel: ObservableObject {
         showToast("Back to live")
     }
 
+    /// Where playback is on the clock and how far it can be scrubbed (the full-screen timeline).
+    struct LiveTimeline {
+        let catchupProgram: Bool
+        let min: Date
+        let max: Date
+        let pos: Date
+        let canScrub: Bool
+        let programStart: Date
+        let programEnd: Date
+    }
+
+    func liveTimeline() -> LiveTimeline? {
+        guard let ch = playingChannel else { return nil }
+        let now = Date(), info = player.timeInfo
+        if let cu = catchup, timeshift == nil {
+            let pos = cu.start.addingTimeInterval(Swift.min(cu.end.timeIntervalSince(cu.start), info.position))
+            return LiveTimeline(catchupProgram: true, min: cu.start, max: cu.end.addingTimeInterval(-5), pos: pos, canScrub: true,
+                                programStart: cu.start, programEnd: cu.end)
+        }
+        var pos = now
+        if let ts = timeshift { pos = Swift.min(now, ts.addingTimeInterval(info.position)) }
+        else if info.seekable { pos = now.addingTimeInterval(-info.behind) }
+        else if let p = pausedAt { pos = p }
+        var lo = now
+        if canTimeshift(ch) { lo = now.addingTimeInterval(-Double(Swift.max(1, ch.archiveDays)) * 86400 + 3600) }
+        else if info.seekable { lo = timeshift ?? now.addingTimeInterval(-info.window) }
+        lo = Swift.min(lo, pos)
+        let p = program(for: ch, at: pos)
+        return LiveTimeline(catchupProgram: false, min: lo, max: now, pos: pos, canScrub: lo < now.addingTimeInterval(-20),
+                            programStart: p?.start ?? pos.addingTimeInterval(-1800), programEnd: p?.end ?? pos.addingTimeInterval(1800))
+    }
+
+    /// Jump to a moment: inside the stream when it allows, otherwise with the provider's catch-up; near now means live.
+    func seekLive(to target: Date) {
+        guard let ch = playingChannel, let tl = liveTimeline() else { return }
+        let now = Date(), delta = target.timeIntervalSince(tl.pos)
+        guard abs(delta) >= 2 else { return }
+        if tl.catchupProgram { player.skip(by: delta); return }
+        if target >= now.addingTimeInterval(-15) { goLive(); return }
+        let info = player.timeInfo
+        if let ts = timeshift, info.seekable, target >= ts { player.skip(by: delta); return }
+        if timeshift == nil, info.seekable, target >= now.addingTimeInterval(-info.window) { player.skip(by: delta); return }
+        if canTimeshift(ch) { playTimeshift(ch, from: target); return }
+        showToast("This channel can't go back that far")
+    }
+
     /// "4:12 behind" while paused or rewound on a live channel.
     func behindLiveText() -> String {
         guard let p = provider, p.kind != .demo else { return "" }

@@ -203,6 +203,7 @@ struct PlaylistsSheet: View {
 @MainActor
 struct SettingsSheet: View {
     @EnvironmentObject var model: AppModel
+    @EnvironmentObject var player: PlayerController
     @State private var confirmRemove = false
     @State private var m3uGuide = ""
 
@@ -261,6 +262,16 @@ struct SettingsSheet: View {
                             Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.fg3)
                         }
                     }
+                }
+                .listRowBackground(Theme.cell)
+                Section {
+                    Picker("Picture shape", selection: $player.aspect) {
+                        ForEach(PlayerController.aspects.indices, id: \.self) { i in Text(PlayerController.aspects[i].1).tag(PlayerController.aspects[i].0) }
+                    }
+                } header: {
+                    Text("Playback")
+                } footer: {
+                    Text("16:9 fills a TV-shaped picture. Fit keeps each channel's own shape; Zoom fills the screen by trimming the edges.")
                 }
                 .listRowBackground(Theme.cell)
                 Section("TV guide") {

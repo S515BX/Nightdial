@@ -310,7 +310,7 @@ struct PreviewPlayer: View {
     var body: some View {
         ZStack {
             Color.black
-            VideoSurface(player: model.isFullScreen ? nil : player.player)
+            VideoSurface(player: model.isFullScreen ? nil : player.player, aspect: player.aspect)
             PlaybackOverlay(compact: true)
         }
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))

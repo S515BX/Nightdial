@@ -16,6 +16,12 @@ final class PlayerController: ObservableObject {
     @Published private(set) var audioIndex = 0
     /// Paused by you (or by the system, e.g. headphones unplugged).
     @Published private(set) var isPaused = false
+    /// Picture shape: "16:9" (default), "fit", "zoom", "stretch", "4:3".
+    @Published var aspect: String = UserDefaults.standard.string(forKey: "tuner.aspect") ?? "16:9" {
+        didSet { UserDefaults.standard.set(aspect, forKey: "tuner.aspect") }
+    }
+    static let aspects: [(String, String)] = [("16:9", "16:9"), ("fit", "Fit"), ("zoom", "Zoom"), ("stretch", "Stretch"), ("4:3", "4:3")]
+    static func aspectName(_ id: String) -> String { aspects.first { $0.0 == id }?.1 ?? "16:9" }
     private var audioGroup: AVMediaSelectionGroup?
 
     private var statusObservation: NSKeyValueObservation?
@@ -99,6 +105,8 @@ final class PlayerController: ObservableObject {
         var seekable = false
         /// Seconds behind the newest point of the stream.
         var behind: Double = 0
+        /// How many seconds the stream keeps (its seekable window).
+        var window: Double = 0
         var position: Double = 0
         var duration: Double = 0
     }
@@ -114,6 +122,7 @@ final class PlayerController: ObservableObject {
             if start.isFinite, end.isFinite, end - start > 60 {
                 info.seekable = true
                 info.behind = max(0, end - pos)
+                info.window = end - start
             }
         }
         return info
@@ -198,20 +207,55 @@ enum PlaybackMessage {
     }
 }
 
+/// Video layer sized for the chosen picture shape: 16:9 and 4:3 are drawn into a box of that shape (stretching the
+/// picture to it), Fit keeps the channel's own shape, Zoom fills by trimming the edges, Stretch fills everything.
 final class PlayerLayerView: UIView {
-    override class var layerClass: AnyClass { AVPlayerLayer.self }
-    var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
+    let playerLayer = AVPlayerLayer()
+    var aspect = "16:9" { didSet { if aspect != oldValue { setNeedsLayout() } } }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        layer.addSublayer(playerLayer)
+        clipsToBounds = true
+    }
+
+    required init?(coder: NSCoder) { fatalError("not used") }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        var r = bounds
+        switch aspect {
+        case "fit": playerLayer.videoGravity = .resizeAspect
+        case "zoom": playerLayer.videoGravity = .resizeAspectFill
+        case "stretch": playerLayer.videoGravity = .resize
+        default:
+            let ratio: CGFloat = aspect == "4:3" ? 4.0 / 3.0 : 16.0 / 9.0
+            if r.width / max(1, r.height) > ratio {
+                let w = r.height * ratio
+                r = CGRect(x: (r.width - w) / 2, y: 0, width: w, height: r.height)
+            } else {
+                let h = r.width / ratio
+                r = CGRect(x: 0, y: (r.height - h) / 2, width: r.width, height: h)
+            }
+            playerLayer.videoGravity = .resize
+        }
+        playerLayer.frame = r
+        CATransaction.commit()
+    }
 }
 
 /// Shows an AVPlayer. Only one surface holds the player at a time (preview or full screen).
 struct VideoSurface: UIViewRepresentable {
     let player: AVPlayer?
+    var aspect: String = "16:9"
     var onLayer: ((AVPlayerLayer) -> Void)? = nil
 
     func makeUIView(context: Context) -> PlayerLayerView {
         let view = PlayerLayerView()
         view.backgroundColor = .black
-        view.playerLayer.videoGravity = .resizeAspect
+        view.aspect = aspect
         view.playerLayer.player = player
         onLayer?(view.playerLayer)
         return view
@@ -219,6 +263,7 @@ struct VideoSurface: UIViewRepresentable {
 
     func updateUIView(_ view: PlayerLayerView, context: Context) {
         if view.playerLayer.player !== player { view.playerLayer.player = player }
+        view.aspect = aspect
     }
 }
 
