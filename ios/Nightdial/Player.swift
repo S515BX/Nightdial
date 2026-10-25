@@ -23,6 +23,8 @@ final class PlayerController: ObservableObject {
     static let aspects: [(String, String)] = [("16:9", "16:9"), ("fit", "Fit"), ("zoom", "Zoom"), ("stretch", "Stretch"), ("4:3", "4:3")]
     static func aspectName(_ id: String) -> String { aspects.first { $0.0 == id }?.1 ?? "16:9" }
     private var audioGroup: AVMediaSelectionGroup?
+    /// Resolution, frame rate, codecs and audio of what's playing (badges in full screen).
+    @Published private(set) var streamBadges: [String] = []
 
     private var statusObservation: NSKeyValueObservation?
     private var controlObservation: NSKeyValueObservation?
@@ -47,6 +49,10 @@ final class PlayerController: ObservableObject {
         isPaused = false
         let asset = AVURLAsset(url: url, options: ["AVURLAssetHTTPHeaderFieldsKey": ["User-Agent": Net.userAgent]])
         let item = AVPlayerItem(asset: asset)
+        // best picture: no resolution or bit-rate cap, and start on the best variant the connection allows
+        item.preferredPeakBitRate = 0
+        item.preferredMaximumResolution = .zero
+        item.startsOnFirstEligibleVariant = false
         statusObservation = item.observe(\.status, options: [.new]) { [weak self] observed, _ in
             let failed = observed.status == .failed
             Task { @MainActor [weak self] in
@@ -90,6 +96,7 @@ final class PlayerController: ObservableObject {
     }
 
     func stop() {
+        streamBadges = []
         clearObservers()
         player.pause()
         player.replaceCurrentItem(with: nil)
@@ -157,7 +164,68 @@ final class PlayerController: ObservableObject {
         timeoutTask?.cancel()
         let first = state != .playing
         state = .playing
-        if first, let item = player.currentItem { loadAudioOptions(item) }
+        if first, let item = player.currentItem {
+            loadAudioOptions(item)
+            refreshStreamInfo()
+            Task { @MainActor [weak self] in
+                for delay in [1.5, 5.0] {
+                    try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                    guard let self, self.player.currentItem === item else { return }
+                    self.refreshStreamInfo()
+                }
+            }
+        }
+    }
+
+    func refreshStreamInfo() {
+        guard let item = player.currentItem else { streamBadges = []; return }
+        var out: [String] = []
+        let size = item.presentationSize
+        if size.height > 0 {
+            let v = max(size.height, (size.width * 9 / 16).rounded())
+            out.append(v >= 2000 ? "4K" : v >= 1400 ? "1440p" : v >= 1000 ? "1080p" : v >= 700 ? "720p" : "SD \(Int(size.height))p")
+        }
+        var fps: Float = 0
+        var vcodec = "", audio = ""
+        for t in item.tracks {
+            guard let at = t.assetTrack else { continue }
+            if at.mediaType == .video {
+                let r = t.currentVideoFrameRate > 0 ? t.currentVideoFrameRate : at.nominalFrameRate
+                if r > fps { fps = r }
+                if let any = at.formatDescriptions.first {
+                    vcodec = Self.videoCodec(CMFormatDescriptionGetMediaSubType(any as! CMFormatDescription))
+                }
+            } else if at.mediaType == .audio, let any = at.formatDescriptions.first,
+                      let asbd = CMAudioFormatDescriptionGetStreamBasicDescription(any as! CMFormatDescription)?.pointee {
+                let n = Int(asbd.mChannelsPerFrame)
+                let layout = n == 1 ? "Mono" : n == 2 ? "Stereo" : n == 6 ? "5.1" : n == 8 ? "7.1" : n > 0 ? "\(n) ch" : ""
+                audio = [Self.audioCodec(asbd.mFormatID), layout].filter { !$0.isEmpty }.joined(separator: " ")
+            }
+        }
+        if fps > 0 { out.append("\(Int(fps.rounded())) fps") }
+        if !vcodec.isEmpty { out.append(vcodec) }
+        if !audio.isEmpty { out.append(audio) }
+        streamBadges = out
+    }
+
+    static func videoCodec(_ t: FourCharCode) -> String {
+        switch t {
+        case kCMVideoCodecType_H264: return "H.264"
+        case kCMVideoCodecType_HEVC: return "HEVC"
+        case kCMVideoCodecType_MPEG2Video: return "MPEG-2"
+        default: return ""
+        }
+    }
+
+    static func audioCodec(_ id: AudioFormatID) -> String {
+        switch id {
+        case kAudioFormatMPEG4AAC, kAudioFormatMPEG4AAC_HE, kAudioFormatMPEG4AAC_HE_V2: return "AAC"
+        case kAudioFormatAC3: return "Dolby Digital"
+        case kAudioFormatEnhancedAC3: return "Dolby Digital+"
+        case kAudioFormatMPEGLayer2: return "MP2"
+        case kAudioFormatMPEGLayer3: return "MP3"
+        default: return ""
+        }
     }
 
     private func loadAudioOptions(_ item: AVPlayerItem) {

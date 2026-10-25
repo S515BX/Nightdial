@@ -203,16 +203,53 @@ struct MainView: View {
 @MainActor
 struct GuideHost: View {
     @EnvironmentObject var model: AppModel
+    @State private var renaming: Channel?
+    @State private var renumbering: Channel?
+    @State private var text = ""
 
     var body: some View {
         GuideGrid(
             snapshot: model.guideSnapshot,
             onTapProgram: { index, program in model.tapProgram(index, program) },
             onTapChannel: { index in model.tapChannel(index) },
-            onLongPressChannel: { index in model.toggleFavorite(at: index) },
+            onLongPressChannel: { index in model.openChannelMenu(at: index) },
             onVisibleChannels: { ids in model.requestEPG(ids) },
             onTapCorner: { model.sheet = .groups }
         )
+        // touch and hold a channel: its options, like TiviMate
+        .confirmationDialog(model.channelMenu.map { "\($0.num)  \($0.name)" } ?? "", isPresented: Binding(get: { model.channelMenu != nil }, set: { if !$0 { model.channelMenu = nil } }), titleVisibility: .visible, presenting: model.channelMenu) { ch in
+            let now = model.program(for: ch, at: Date())
+            Button("Watch") { model.play(ch, fullScreen: true) }
+            Button(model.favorites.contains(ch.id) ? "Remove from favorites" : "Add to favorites") { model.toggleFavorite(ch) }
+            if let p = now {
+                Button("Program details") { model.sheet = .details(DetailsTarget(channel: ch, program: p)) }
+            }
+            ForEach(ExternalPlayer.allCases.filter { $0 != .builtin }) { p in
+                Button("Open in \(p.name)") { model.openExternally(ch, with: p) }
+            }
+            Button("Rename channel") { text = ch.name; renaming = ch }
+            Button("Change channel number") { text = String(ch.num); renumbering = ch }
+            if model.hasEdits(ch) {
+                Button("Restore name and number") { model.restoreChannel(ch) }
+            }
+            Button("Hide channel", role: .destructive) { model.setHidden(ch, true, announce: true) }
+            Button("Hide group \(model.groupLabel(ch.groupId))", role: .destructive) { model.hideGroup(of: ch) }
+            Button("Cancel", role: .cancel) {}
+        }
+        .alert("Rename channel", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
+            TextField("Name", text: $text)
+            Button("Save") { if let ch = renaming { model.renameChannel(ch, to: text) }; renaming = nil }
+            Button("Cancel", role: .cancel) { renaming = nil }
+        } message: {
+            Text("Leave it empty to use the playlist's name.")
+        }
+        .alert("Channel number", isPresented: Binding(get: { renumbering != nil }, set: { if !$0 { renumbering = nil } })) {
+            TextField("Number", text: $text).keyboardType(.numberPad)
+            Button("Save") { if let ch = renumbering { model.renumberChannel(ch, to: text) }; renumbering = nil }
+            Button("Cancel", role: .cancel) { renumbering = nil }
+        } message: {
+            Text("Leave it empty for the original number.")
+        }
     }
 }
 

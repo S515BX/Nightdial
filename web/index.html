@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-ahNqvbjjJNoEbjYa4MAY/+4SgqjT+ujRne5N7wYaSOY=' 'sha256-X/Lawiua1HPg46/6WFTYkASVngRdlEnru6vC9Sgh5H0=' https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.js; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src * data: blob:; media-src * data: blob:; connect-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-KEENyDaZ0i0U9OfFdbBOIMN3MqdUrQbfzip1IgVcaGs=' 'sha256-X/Lawiua1HPg46/6WFTYkASVngRdlEnru6vC9Sgh5H0=' https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.js; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src * data: blob:; media-src * data: blob:; connect-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#161922">
 <title>Nightdial</title>
@@ -184,7 +184,7 @@ html.menu-tint .rail{padding:14px 12px}
 .chan::before{content:"";position:absolute;top:3px;right:6px;bottom:3px;left:0;z-index:-1;border-radius:var(--r-md);background:var(--cell)}
 .chan:hover::before{background:var(--cell-hover)}
 .chan.cur::before{background:var(--cell-hover);box-shadow:inset 3px 0 0 var(--accent)}
-.cnum{width:32px;flex:none;text-align:right;font:600 13px/1 var(--font-display);font-variant-numeric:tabular-nums;color:var(--fg-3)}
+.cnum{width:calc(var(--nd, 3) * 1ch + 1px);flex:none;text-align:right;white-space:nowrap;font:600 13px/1 var(--font-display);font-variant-numeric:tabular-nums;color:var(--fg-3)}
 .chan.cur .cnum,.chan.playing .cnum{color:var(--accent)}
 .cname{flex:1;min-width:0;font:500 14px/1.2 var(--font-display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chan .star{width:14px;height:14px;color:var(--warn);flex:none}
@@ -273,6 +273,31 @@ html.tv .item:focus .n,html.tv .item:focus .sub,html.tv .item:focus .i{color:var
 .share-url{padding:14px 16px;border-radius:var(--r-md);background:var(--bg);font:600 var(--t-l,22px)/1.2 ui-monospace,Menlo,Consolas,monospace;color:var(--accent);word-break:break-all}
 .share-code{font:700 calc(var(--t-l,22px) * 1.6)/1 var(--font-display);letter-spacing:.12em;color:var(--fg)}
 .pl-row{display:flex;align-items:center;gap:6px}
+/* stream details: resolution, frame rate, codecs, audio */
+.stream-info{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.stream-info span{padding:3px 8px;border-radius:7px;background:rgba(255,255,255,.1);font:600 11.5px/1.3 var(--font-display);letter-spacing:.02em;color:var(--fg);white-space:nowrap}
+.stream-info span.q{background:var(--accent);color:#0b1020}
+html.tv .stream-info{gap:calc(var(--vh)*.8)}
+html.tv .stream-info span{padding:calc(var(--vh)*.4) calc(var(--vh)*1.1);border-radius:calc(var(--vh)*.9);font-size:calc(var(--vh)*1.9)}
+.tb-top .stream-info{margin-left:2px}
+.osd .stream-info{margin-top:2px}
+/* channel options (hold OK on a channel) */
+.ch-menu{gap:0;padding:0;overflow:hidden;width:min(560px,100%)}
+.ch-menu .cm-head{display:flex;align-items:center;gap:12px;padding:20px 22px 14px}
+.ch-menu .cm-head .num{color:var(--accent);font:600 15px var(--font-display);font-variant-numeric:tabular-nums}
+.ch-menu .cm-head b{display:block;font:600 18px/1.2 var(--font-display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch-menu .cm-head small{display:block;color:var(--fg-2);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch-menu .cm-head > span:last-child{min-width:0;flex:1}
+.ch-menu .list{max-height:min(70vh,560px);padding-top:4px}
+html.tv .ch-menu{width:min(calc(var(--vh)*96),100%)}
+html.tv .ch-menu .cm-head{gap:calc(var(--vh)*1.6);padding:calc(var(--vh)*3.4) calc(var(--vh)*3.6) calc(var(--vh)*1.6)}
+html.tv .ch-menu .cm-head .logo{width:calc(var(--vh)*6.4);height:calc(var(--vh)*6.4);border-radius:calc(var(--vh)*1.7);font-size:var(--t-xs)}
+html.tv .ch-menu .cm-head .num{font-size:var(--t-s)}
+html.tv .ch-menu .cm-head b{font-size:var(--t-l)}
+html.tv .ch-menu .cm-head small{font-size:var(--t-xs)}
+html.tv .ch-menu .list{max-height:calc(var(--vh)*66)}
+.ask-card h2{margin:0;font:600 20px var(--font-display)}
+html.tv .ask-card h2{font-size:var(--t-l)}
 .pl-row .item{flex:1;min-width:0}
 .pl-row .icon-btn{flex:none}
 .search{position:fixed;left:50%;top:max(24px,env(safe-area-inset-top,0px));z-index:61;width:min(700px,calc(100% - 32px));max-height:calc(100% - 48px);transform:translateX(-50%);display:flex;flex-direction:column;background:var(--menu);border-radius:var(--r-xl);overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.05)}
@@ -524,11 +549,11 @@ html.tv .corner .d{font-size:var(--t-xs)}
 html.tv .tick{font-size:var(--t-xs);padding-left:calc(var(--vh)*1.3)}
 html.tv .tick::before{height:calc(var(--vh)*1.8);margin-top:calc(var(--vh)*-.9)}
 html.tv .now-tick{font-size:calc(var(--vh)*2);padding:calc(var(--vh)*.8) calc(var(--vh)*1.4)}
-html.tv .chan{gap:calc(var(--vh)*1.4);padding:0 calc(var(--vh)*1.8) 0 calc(var(--vh)*1)}
+html.tv .chan{gap:calc(var(--vh)*1.2);padding:0 calc(var(--vh)*1.8) 0 calc(var(--vh)*1.6)}
 html.tv .chan::before{top:calc(var(--vh)*.45);right:calc(var(--vh)*.7);bottom:calc(var(--vh)*.45);left:0}
 html.tv .chan:hover::before{background:var(--cell)}
 html.tv .chan.cur::before{background:var(--cell-hover);box-shadow:inset calc(var(--vh)*.5) 0 0 var(--accent)}
-html.tv .cnum{font-size:var(--t-xs);width:calc(var(--vh)*5)}
+html.tv .cnum{font-size:var(--t-xs);width:calc(var(--nd, 3) * 1ch + 1px)}
 html.tv .chan .logo{width:calc(var(--vh)*5.2);height:calc(var(--vh)*5.2);border-radius:calc(var(--vh)*1.4);font-size:var(--t-xs)}
 html.tv .cname{font-size:var(--t-s)}
 html.tv .chan .star{width:var(--t-s);height:var(--t-s)}
@@ -542,7 +567,9 @@ html.tv .prog .ps{display:none}
 html.tv .prog .lv{font-size:calc(var(--vh)*1.7);padding:calc(var(--vh)*.5) calc(var(--vh)*.9) calc(var(--vh)*.4);vertical-align:calc(var(--vh)*.3)}
 html.tv .prog .cu{width:var(--t-s);height:var(--t-s)}
 html.tv .prog .pb{box-shadow:inset 0 calc(var(--vh)*-.6) 0 var(--accent)}
-html.tv .nowline{width:3px;margin-left:-1.5px}
+html.tv .nowline{width:2px;margin-left:-1px;opacity:.9}
+/* one close button in the search bar (the browser's own clear button is hidden) */
+input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-search-decoration{-webkit-appearance:none;appearance:none;display:none}
 html.tv .guide-empty{font-size:var(--t-m)}
 html.tv .guide-empty b{font-size:var(--t-xl)}
 /* full screen: floating info card, no buttons */
@@ -559,11 +586,11 @@ html.tv .cu-flag{font-size:var(--t-xs);top:var(--safe-y);left:var(--safe-x);padd
 .tvchans{position:absolute;top:var(--safe-y);bottom:var(--safe-y);left:var(--safe-x);z-index:3;width:calc(var(--vh)*76);max-width:64%;display:flex;flex-direction:column;padding:calc(var(--vh)*3);border-radius:var(--r-xl);background:var(--glass);box-shadow:0 30px 90px rgba(0,0,0,.5);animation:inL .18s ease-out}
 .tvchans-head{display:flex;justify-content:space-between;align-items:baseline;margin:0 calc(var(--vh)*1) calc(var(--vh)*2);font:600 var(--t-l) var(--font-display)}
 .tvchans-head span:last-child{color:var(--fg-2);font-variant-numeric:tabular-nums}
-.tvchans-list{position:relative;flex:1;min-height:0;overflow:hidden}
-.tvch-track{position:relative}
+.tvchans-list{position:relative;flex:1;min-height:0;overflow:hidden;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 calc(var(--vh)*1.6),#000 calc(100% - var(--vh)*3),transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 calc(var(--vh)*1.6),#000 calc(100% - var(--vh)*3),transparent 100%)}
+.tvch-track{position:relative;margin:calc(var(--vh)*1.6) 0 calc(var(--vh)*3)}
 .tvch-track .tvch{position:absolute;left:0;right:0}
-.tvch{display:grid;grid-template-columns:calc(var(--vh)*5) calc(var(--vh)*6.4) minmax(0,1fr);align-items:center;gap:calc(var(--vh)*1.6);height:calc(var(--vh)*9.4);padding:0 calc(var(--vh)*1.6);border-radius:var(--r-lg);cursor:pointer}
-.tvch .n{font:600 var(--t-xs) var(--font-display);color:var(--fg-3);text-align:right;font-variant-numeric:tabular-nums}
+.tvch{display:grid;grid-template-columns:auto calc(var(--vh)*6.4) minmax(0,1fr);align-items:center;gap:calc(var(--vh)*1.6);height:calc(var(--vh)*9.4);padding:0 calc(var(--vh)*1.6);border-radius:var(--r-lg);cursor:pointer}
+.tvch .n{width:calc(var(--nd, 3) * 1ch + 1px);font:600 var(--t-xs) var(--font-display);color:var(--fg-3);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .tvch .logo{width:calc(var(--vh)*6.4);height:calc(var(--vh)*6.4);font-size:var(--t-xs);border-radius:calc(var(--vh)*1.7)}
 .tvch .t{min-width:0;display:flex;flex-direction:column;gap:calc(var(--vh)*.5)}
 .tvch .t b{font:500 var(--t-s) var(--font-display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -728,7 +755,7 @@ html.tv .vosd-hint{font-size:var(--t-xs)}
    Highlights switch instantly, panels slide on their own compositor layer with short, cheap shadows,
    and holiday decorations hold still while a menu is open. */
 html.tv .item,html.tv .tvnav-item,html.tv .rail-btn,html.tv .mini,html.tv .poster,html.tv .btn,html.tv .icon-btn,html.tv .chip,html.tv .seg label,html.tv .tile,html.tv .sw,html.tv .tvch,html.tv .osd,html.tv .vosd{transition:none}
-html.tv .drawer,html.tv .tvnav,html.tv .tvopts,html.tv .tvchans,html.tv .modal-card{will-change:transform;box-shadow:0 16px 40px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.05);animation-duration:.14s;animation-timing-function:cubic-bezier(.2,.8,.2,1)}
+html.tv .drawer,html.tv .tvnav,html.tv .tvopts,html.tv .tvchans,html.tv .modal-card{box-shadow:0 16px 40px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.05);animation-duration:.14s;animation-timing-function:cubic-bezier(.2,.8,.2,1)}
 html.tv .osd,html.tv .vosd{box-shadow:0 12px 32px rgba(0,0,0,.45)}
 html.tv .prog.focus,html.tv .prog.focus:hover{box-shadow:none}
 html.layer-open .deco i,html.layer-open .deco i svg{animation-play-state:paused}
@@ -772,7 +799,7 @@ html.layer-open .deco i,html.layer-open .deco i svg{animation-play-state:paused}
 .screen[data-ar="16:9"] video,.screen[data-ar="4:3"] video{object-fit:fill;top:50%;left:50%;right:auto;bottom:auto;width:var(--arw,100%);height:var(--arh,100%);transform:translate(-50%,-50%)}
 /* TV: snappy and light. Highlights switch instantly, shadows stay small, sliding panels get their own GPU layer. */
 html.tv .item,html.tv .tvnav-item,html.tv .rail-btn,html.tv .mini,html.tv .poster,html.tv .btn,html.tv .chan,html.tv .prog,html.tv .tvch,html.tv .icon-btn{transition:none}
-html.tv .drawer,html.tv .tvnav,html.tv .tvopts,html.tv .tvchans,html.tv .modal-card{will-change:transform,opacity;box-shadow:0 14px 40px rgba(0,0,0,.5)}
+html.tv .drawer,html.tv .tvnav,html.tv .tvopts,html.tv .tvchans,html.tv .modal-card{box-shadow:0 14px 40px rgba(0,0,0,.5)}
 html.tv .drawer,html.tv .tvnav{animation-duration:.14s}
 html.tv .tvopts,html.tv .tvchans{animation-duration:.12s}
 html.tv .osd,html.tv .vosd{box-shadow:0 14px 40px rgba(0,0,0,.45)}
@@ -875,6 +902,7 @@ html.native-video .screen video{display:none!important}
         <div class="osd hide" id="osd">
           <div class="osd-top"><span class="logo" id="osdLogo"></span><span class="num" id="osdNum"></span><span class="name" id="osdName"></span><span class="clock" id="osdClock"></span></div>
           <div class="osd-now"><span class="osd-title" id="osdTitle"></span><span class="osd-time" id="osdTime"></span></div>
+          <div class="stream-info" id="osdInfo" hidden></div>
           <div class="progress" id="osdProg"><i></i></div>
           <div class="osd-next" id="osdNext"></div>
           <div class="osd-live" id="osdLive" hidden></div>
@@ -898,7 +926,7 @@ html.native-video .screen video{display:none!important}
         </div>
         <div class="tvopts" id="tvOpts" hidden role="dialog" aria-label="Channel options"><div class="tvopts-head" id="tvOptsHead"></div><div class="tvopts-list" id="tvOptsList"></div></div>
         <div class="tvbar" id="tvBar" hidden role="dialog" aria-label="Player">
-          <div class="tb-top"><span class="logo" id="tbLogo"></span><span class="num" id="tbNum"></span><span class="name" id="tbName"></span><span class="tb-flag" id="tbFlag"></span><span class="clock" id="tbClock"></span></div>
+          <div class="tb-top"><span class="logo" id="tbLogo"></span><span class="num" id="tbNum"></span><span class="name" id="tbName"></span><span class="tb-flag" id="tbFlag"></span><span class="stream-info" id="tbInfo" hidden></span><span class="clock" id="tbClock"></span></div>
           <div class="tb-title" id="tbTitle"></div>
           <div class="tb-sub" id="tbSub"></div>
           <div class="tb-line"><span class="tb-t" id="tbStart"></span><div class="tb-scrub" id="tbScrub" tabindex="0" role="slider" aria-label="Timeline"><i class="tb-avail" id="tbAvail"></i><i class="tb-played" id="tbPlayed"></i><i class="tb-now" id="tbNow"></i><b class="tb-head" id="tbHead"><span id="tbHeadTime"></span></b></div><span class="tb-t tb-end" id="tbEnd"></span></div>
@@ -1009,6 +1037,8 @@ html.native-video .screen video{display:none!important}
 
 <div class="modal" id="vodModal" hidden role="dialog" aria-modal="true" aria-label="Movie or series details"><div class="modal-card vod-card" id="vodCard"></div></div>
 
+<div class="modal" id="chMenu" hidden role="dialog" aria-modal="true" aria-label="Channel options"><div class="modal-card ch-menu" id="chMenuCard"></div></div>
+<div class="modal" id="askModal" hidden role="dialog" aria-modal="true" aria-label="Edit"><form class="modal-card ask-card" id="askCard" autocomplete="off"></form></div>
 <div class="modal" id="vpnModal" hidden role="dialog" aria-modal="true" aria-label="Send a VPN config"><div class="modal-card" id="vpnCard"></div></div>
 <div class="modal" id="progModal" hidden role="dialog" aria-modal="true" aria-label="Program details"><div class="modal-card" id="progCard"></div></div>
 
@@ -1402,7 +1432,7 @@ let epgState = new Map();     // channelId -> 'queued'|'loading'|'done'|'error'
 let epgVer = new Map();
 let favs = new Set(), recents = [];
 let rangeStart = 0, rangeEnd = 0;
-let chanW = 232, rowH = 62, headH = 44, ppm = 6.4;
+let chanW = 232, rowH = 62, headH = 44, ppm = 6.4, numDigits = 3;
 const focus = { i: 0, t: Date.now(), follow: true };
 
 const el = id => document.getElementById(id);
@@ -1423,7 +1453,8 @@ function readMetrics() {
   if (TV_MODE) {
     const w = PREVIEW_TV ? 960 : window.innerWidth, h = PREVIEW_TV ? 540 : window.innerHeight;
     const sc = uiScale();
-    chanW = Math.round(Math.max(150, w * 0.2 * sc));
+    // wider when channel numbers run to 4–6 digits, so long numbers don't eat the name
+    chanW = Math.round(Math.max(150, w * 0.2 * sc) + Math.max(0, numDigits - 3) * h * 0.012 * sc);
     rowH = Math.round(h * (prefs.rows === 'compact' ? 0.068 : 0.08) * sc);
     headH = Math.round(h * 0.06 * sc);
     const rs = document.documentElement.style;
@@ -1499,7 +1530,14 @@ function loadBlank() {
 /* Guide time shift (Playlist options): moves every listing when a provider's guide is a few hours off. */
 const shiftList = list => { const d = (Number(PO.epgShift) || 0) * HOUR; return d ? list.map(q => Object.assign({}, q, { start: q.start + d, end: q.end + d })) : list; };
 /* Channel numbers: the provider's own, or 1, 2, 3… in the playlist's order. */
-function applyNumbering() { S.channels.forEach((c, k) => { if (c.pnum == null) c.pnum = c.num; c.num = PO.numbers === 'seq' ? k + 1 : c.pnum; }); }
+function applyNumbering() {
+  S.channels.forEach((c, k) => { if (c.pnum == null) c.pnum = c.num; c.num = PO.numbers === 'seq' ? k + 1 : c.pnum; });
+  applyChannelEdits();
+  // the number column is as wide as the longest channel number, so numbers never run into the logos
+  let nd = 1; for (const c of S.channels) { const l = String(c.num || '').length; if (l > nd) nd = l; }
+  numDigits = Math.min(6, nd);
+  document.documentElement.style.setProperty('--nd', numDigits);
+}
 /* "Hide adult groups": groups whose names say adult/XXX/18+ stay out of the guide. */
 const ADULT_RE = /\b(adult|xxx|18\s*\+|porn|erotic)/i;
 let adultGr = new Set();
@@ -1813,6 +1851,10 @@ function keepVisible(n, instant) {
   const padY = Math.max(0, Math.min(Math.max(er.height * .8, ch * .12), (ch - er.height) / 2)), padX = Math.max(0, Math.min(er.width * .5, (cw - er.width) / 2));
   let st = cur.top, sl = cur.left;
   if (top - padY < st) st = top - padY; else if (top + er.height + padY > st + ch) st = top + er.height + padY - ch;
+  // the first control in a list brings back everything above it (headings, account details); the last, everything below
+  const fl = formFocusables(box);
+  if (fl.length && (n === fl[0] || t === fl[0])) st = 0;
+  else if (fl.length && (n === fl[fl.length - 1] || t === fl[fl.length - 1])) st = box.scrollHeight;
   if (box.scrollWidth > cw + 1) { if (left - padX < sl) sl = left - padX; else if (left + er.width + padX > sl + cw) sl = left + er.width + padX - cw; }
   glideTo(box, st, sl, instant || performance.now() - layerOpenedAt < 250);
 }
@@ -1973,6 +2015,7 @@ function updateOsd() {
   logo.innerHTML = esc(initials(ch.name)) + (ch.logo ? `<img src="${esc(ch.logo)}" alt="" referrerpolicy="no-referrer">` : '');
   el('osdNum').textContent = ch.num;
   el('osdName').textContent = ch.name;
+  renderStreamInfo();
   el('osdClock').textContent = fmtTime(now);
   el('osdTitle').textContent = p ? p.title : 'No program information';
   el('osdTime').textContent = p ? `${fmtTime(p.start)} – ${fmtTime(p.end)}` : '';
@@ -2145,7 +2188,8 @@ function nativeStream(url, live) {
   return waiting;
 }
 window.nightdialPlayerEvent = function (type, detail) {
-  if (type === 'playing') { spinner.hidden = true; hideScreenMsg(); if (streamOk) streamOk(); }
+  if (type === 'playing') { spinner.hidden = true; hideScreenMsg(); if (streamOk) streamOk(); renderStreamInfo(); setTimeout(renderStreamInfo, 1500); }
+  else if (type === 'info') renderStreamInfo();
   else if (type === 'buffering') { if (screenMsg.hidden) spinner.hidden = false; }
   else if (type === 'error') {
     const parts = String(detail || 'network').split('|');
@@ -2157,7 +2201,7 @@ window.nightdialPlayerEvent = function (type, detail) {
     if (S.vodPlaying) stopVod(true);
     else if (S.catchup) { const ch = S.byId.get(S.playingId); toast('Caught up. Back to live.'); if (ch) play(ch, { quiet: true }); }
     else showScreenMsg('stopped');
-  } else if (type === 'tracks') { if (tvOptsOpen()) renderTvOpts(document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.opt : ''); }
+  } else if (type === 'tracks') { renderStreamInfo(); if (tvOptsOpen()) renderTvOpts(document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.opt : ''); }
 };
 function audioTracksInfo() {
   if (NATIVE) {
@@ -2933,7 +2977,7 @@ function migrateSecrets() {
 }
 function removePlaylist(id) {
   store.set('playlists', savedPlaylists().filter(q => q.id !== id));
-  ['fav:', 'recent:', 'group:', 'lastch:', 'hide:', 'hideg:', 'resume:', 'plopts:'].forEach(k => store.del(k + id));
+  ['fav:', 'recent:', 'group:', 'lastch:', 'hide:', 'hideg:', 'resume:', 'plopts:', 'chedits:'].forEach(k => store.del(k + id));
   secrets.del(id);
   if (store.get('last') === id) store.del('last');
 }
@@ -3216,6 +3260,7 @@ function renderTvBar() {
   el('tbNum').textContent = ch.num;
   el('tbName').textContent = ch.name;
   el('tbClock').textContent = fmtTime(now);
+  renderStreamInfo();
   el('tbTitle').textContent = p ? p.title : ch.name;
   const n = p && !(S.catchup && !S.catchup.ts) ? neighbor(ch, p, 1) : null;
   el('tbSub').innerHTML = p ? `${fmtTime(p.start)} – ${fmtTime(p.end)}${S.catchup && !S.catchup.ts ? ' · catch-up' : ''}${n ? `<b>Next</b>${fmtTime(n.start)}  ${esc(n.title)}` : ''}` : 'No program information';
@@ -3349,12 +3394,12 @@ function renderTvChans(instant) {
   if (!track || !track.classList.contains('tvch-track')) { box.innerHTML = '<div class="tvch-track"></div>'; track = box.firstElementChild; }
   const H = base.length * pitch;
   if (track.style.height !== H + 'px') track.style.height = H + 'px';
-  const ch = box.clientHeight || pitch * 7, top = tvChanIdx * pitch, pad = Math.min(pitch, Math.max(0, (ch - pitch) / 2));
+  const ch = box.clientHeight || pitch * 7, top = track.offsetTop + tvChanIdx * pitch, pad = Math.min(pitch, Math.max(0, (ch - pitch) / 2));
   let st = instant ? top - (ch - pitch) / 2 : glideTarget(box).top;   // opens with the playing channel in the middle
   if (top - pad < st) st = top - pad; else if (top + pitch + pad > st + ch) st = top + pitch + pad - ch;
   glideTo(box, st, null, instant);
   const t = glideTarget(box).top, a = Math.min(box.scrollTop, t), z = Math.max(box.scrollTop, t) + ch;
-  const from = Math.max(0, Math.floor(a / pitch) - 1), to = Math.min(base.length, Math.ceil(z / pitch) + 1);
+  const off = track.offsetTop, from = Math.max(0, Math.floor((a - off) / pitch) - 1), to = Math.min(base.length, Math.ceil((z - off) / pitch) + 1);
   let h = '';
   const need = [];
   for (let k = from; k < to; k++) {
@@ -4202,6 +4247,145 @@ async function vpnLoadUrl(url) {
 // Connect when Nightdial starts (Settings → VPN)
 setTimeout(() => { if (VPN_NATIVE && prefs.vpnAuto && vpnRead().configured && vpnInfo.state === 'off' && !vpnInfo.other) vpnCall('vpnConnect'); }, 300);
 
+/* ================= stream details ================= */
+function streamInfo() {
+  if (NATIVE) { try { const s = window.NightdialNative.streamInfo ? window.NightdialNative.streamInfo() : ''; return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+  if (video.hidden) return null;
+  const i = { w: video.videoWidth || 0, h: video.videoHeight || 0 };
+  try {
+    if (hls && hls.levels && hls.levels[hls.currentLevel]) { const l = hls.levels[hls.currentLevel]; i.vcodec = l.videoCodec; i.acodec = l.audioCodec; if (l.frameRate) i.fps = l.frameRate; if (l.bitrate) i.vbitrate = l.bitrate; }
+    if (mts && mts.mediaInfo) { const m = mts.mediaInfo; i.w = i.w || m.width; i.h = i.h || m.height; if (m.fps) i.fps = m.fps; if (m.videoCodec) i.vcodec = m.videoCodec; if (m.audioCodec) i.acodec = m.audioCodec; if (m.audioChannelCount) i.ach = m.audioChannelCount; }
+  } catch (e) {}
+  return i.w || i.h ? i : null;
+}
+const resLabel = (w, h) => { const v = Math.max(h || 0, Math.round((w || 0) * 9 / 16)); return v >= 2000 ? '4K' : v >= 1400 ? '1440p' : v >= 1000 ? '1080p' : v >= 700 ? '720p' : v ? 'SD ' + h + 'p' : ''; };
+function vcodecLabel(c) {
+  c = String(c || '').toLowerCase();
+  if (/hevc|hev1|hvc1|h265/.test(c)) return 'HEVC';
+  if (/avc|h264/.test(c)) return 'H.264';
+  if (/av01|av1/.test(c)) return 'AV1';
+  if (/vp9|vp09/.test(c)) return 'VP9';
+  if (/mpeg2|mp2v|mpeg-2/.test(c)) return 'MPEG-2';
+  return '';
+}
+function acodecLabel(c) {
+  c = String(c || '').toLowerCase();
+  if (/eac3-joc/.test(c)) return 'Dolby Atmos';
+  if (/eac3|ec-3/.test(c)) return 'Dolby Digital+';
+  if (/ac3|ac-3/.test(c)) return 'Dolby Digital';
+  if (/ac4|ac-4/.test(c)) return 'AC-4';
+  if (/true-?hd/.test(c)) return 'TrueHD';
+  if (/dts/.test(c)) return 'DTS';
+  if (/mp4a|aac/.test(c)) return 'AAC';
+  if (/mpeg-l2|mp4a\.6b|mp2/.test(c)) return 'MP2';
+  if (/mpeg|mp3/.test(c)) return 'MP3';
+  if (/opus/.test(c)) return 'Opus';
+  return '';
+}
+const chLabel = n => !n ? '' : n === 1 ? 'Mono' : n === 2 ? 'Stereo' : n === 6 ? '5.1' : n === 8 ? '7.1' : n + ' ch';
+function streamBadges(i) {
+  if (!i) return [];
+  const out = [], r = resLabel(i.w, i.h);
+  if (r) out.push([r, r === '4K' || r === '1080p' ? 'q' : '']);
+  if (i.fps > 0) out.push([Math.round(i.fps) + ' fps', '']);
+  if (i.hdr) out.push([i.hdr, 'q']);
+  const v = vcodecLabel(i.vcodec); if (v) out.push([v, '']);
+  const a = [acodecLabel(i.acodec), chLabel(i.ach)].filter(Boolean).join(' '); if (a) out.push([a, '']);
+  return out;
+}
+function renderStreamInfo() {
+  const b = S.playingId || S.vodPlaying ? streamBadges(streamInfo()) : [];
+  const html = b.map(([t, c]) => `<span${c ? ` class="${c}"` : ''}>${esc(t)}</span>`).join('');
+  for (const id of ['osdInfo', 'tbInfo']) { const n = el(id); if (!n) continue; if (n.innerHTML !== html) n.innerHTML = html; n.hidden = !html; }
+}
+const streamInfoText = () => streamBadges(streamInfo()).map(x => x[0]).join(' · ');
+
+/* ================= your own channel names and numbers (channel options → Rename / Change number) ================= */
+let chEdits = { names: {}, nums: {} };
+function applyChannelEdits() {
+  if (!S.provider) return;
+  const e = store.get('chedits:' + S.provider.id, null);
+  chEdits = { names: (e && e.names) || {}, nums: (e && e.nums) || {} };
+  for (const c of S.channels) {
+    if (c.pname == null) c.pname = c.name;
+    c.name = chEdits.names[c.id] || c.pname;
+    if (chEdits.nums[c.id]) c.num = chEdits.nums[c.id];
+  }
+}
+function saveChannelEdits() { store.set('chedits:' + S.provider.id, chEdits); applyNumbering(); invalidateRows(); channelsChanged(); updateHero(); updateOsd(); }
+
+/* A small dialog with one text box (rename a channel, set its number). */
+let askSave = null;
+function openAsk({ title, value = '', placeholder = '', numeric = false, hint = '', onSave }) {
+  askSave = onSave;
+  el('askCard').innerHTML = `<h2>${esc(title)}</h2><input class="text-in" id="askInput" ${numeric ? 'inputmode="numeric" pattern="[0-9]*" maxlength="6"' : 'maxlength="80"'} value="${esc(value)}" placeholder="${esc(placeholder)}">${hint ? `<p class="hint">${esc(hint)}</p>` : ''}<div class="btns"><button class="btn primary" type="submit">Save</button><button class="btn ghost" type="button" data-close>Cancel</button></div>`;
+  openLayer(el('askModal'), '#askInput');
+}
+el('askCard').addEventListener('submit', e => {
+  e.preventDefault();
+  const v = el('askInput').value.trim(), f = askSave;
+  askSave = null; closeLayer();
+  if (f) f(v);
+});
+
+/* ================= channel options: hold OK on a channel in the guide (right-click or touch and hold in a browser) ================= */
+let chMenuFor = null;
+function openChannelMenu(ch, p) {
+  if (!ch) return;
+  const now = Date.now();
+  chMenuFor = { id: ch.id, start: p ? p.start : null };
+  const live = p && isNowProg(p, now), cu = p && !live && canCatchup(ch, p, now), playing = S.playingId === ch.id;
+  const edited = !!(chEdits.names[ch.id] || chEdits.nums[ch.id]);
+  const items = [
+    ['watch', 'play', playing && !S.catchup ? 'Watch full screen' : 'Watch', ''],
+    cu ? ['catchup', 'replay', 'Watch from start', fmtTime(p.start)] : null,
+    ['fav', 'star', favs.has(ch.id) ? 'Remove from favorites' : 'Add to favorites', ''],
+    p ? ['details', 'guide', 'Program details', ''] : null,
+    p ? ['find', 'search', 'Find other airings', p.title] : null,
+    canHandOff() && externalPlayers().length && S.provider.type !== 'demo' ? ['ext', 'open', 'Open in another player', ''] : null,
+    playing ? ['info', 'signal', 'Stream info', streamInfoText() || 'Loading…'] : null,
+    ['rename', 'edit', 'Rename channel', ''],
+    ['number', 'edit', 'Change channel number', String(ch.num)],
+    edited ? ['restore', 'replay', 'Restore name and number', ch.pname || ''] : null,
+    S.groupId !== ch.groupId ? ['group', 'groups', 'Go to group', groupLabel(ch.groupId)] : null,
+    S.provider.type === 'xtream' || S.provider.type === 'm3u' ? ['reload', 'replay', 'Reload guide', ''] : null,
+    ['hide', 'eyeoff', 'Hide channel', ''],
+    ['hidegroup', 'eyeoff', 'Hide group', groupLabel(ch.groupId)],
+    ['edit', 'edit', 'Edit channels', '']
+  ].filter(Boolean);
+  el('chMenuCard').innerHTML = `<div class="cm-head">${logoHTML(ch)}<span class="num">${esc(ch.num)}</span><span><b>${esc(ch.name)}</b><small>${p ? esc(p.title) + ' · ' + fmtTime(p.start) + ' – ' + fmtTime(p.end) : esc(groupLabel(ch.groupId))}</small></span></div>
+    <div class="list">${items.map(([a, ic, label, val]) => `<button class="item" data-cm="${a}">${icon(ic)}<span class="lbl"><span>${esc(label)}</span></span>${val ? `<span class="n">${esc(val)}</span>` : ''}</button>`).join('')}</div>`;
+  openLayer(el('chMenu'), '.item');
+}
+el('chMenuCard').addEventListener('click', e => {
+  const b = e.target.closest('[data-cm]'); if (!b || !chMenuFor) return;
+  const ch = S.byId.get(chMenuFor.id); if (!ch) return;
+  const p = chMenuFor.start != null ? (epg.get(ch.id) || []).find(q => q.start === chMenuFor.start) : null;
+  const a = b.dataset.cm;
+  const keep = () => { closeLayer(); openChannelMenu(ch, p); const n = el('chMenuCard').querySelector(`[data-cm="${a}"]`); if (n) n.focus(); };
+  if (a === 'fav') { toggleFav(ch); keep(); return; }
+  if (a === 'info') { renderStreamInfo(); keep(); return; }
+  closeAllLayers();
+  const i = S.list.indexOf(ch);
+  if (a === 'watch') { if (i >= 0) { setFocusTo(i, null); focusChanged(false); } if (S.playingId === ch.id && !S.catchup && !playErrorShown()) enterFull(); else play(ch, { full: true }); }
+  else if (a === 'catchup' && p) play(ch, { full: true, catchup: p });
+  else if (a === 'details' && p) openDetails(ch, p);
+  else if (a === 'find' && p) { openSearch(); el('searchInput').value = p.title; runSearch(p.title); }
+  else if (a === 'ext') handOff(S.provider.type === 'm3u' ? ch.url : liveUrl(ch), ch.name, 'ask');
+  else if (a === 'rename') openAsk({ title: 'Rename channel', value: ch.name, placeholder: ch.pname || ch.name, hint: 'Leave it empty to use the playlist\'s name.', onSave: v => { if (v && v !== ch.pname) chEdits.names[ch.id] = v; else delete chEdits.names[ch.id]; saveChannelEdits(); toast('Renamed to ' + (v || ch.pname), 1800); } });
+  else if (a === 'number') openAsk({ title: 'Channel number', value: String(ch.num), numeric: true, hint: 'Type a number, then Save. Leave it empty for the original number.', onSave: v => { const n = parseInt(v, 10); if (n > 0) chEdits.nums[ch.id] = n; else delete chEdits.nums[ch.id]; saveChannelEdits(); toast(`${ch.name} is now channel ${ch.num}`, 2000); } });
+  else if (a === 'restore') { delete chEdits.names[ch.id]; delete chEdits.nums[ch.id]; saveChannelEdits(); toast('Back to the playlist\'s name and number', 2000); }
+  else if (a === 'group') { applyGroup(ch.groupId); const j = S.list.indexOf(ch); if (j >= 0) { setFocusTo(j, null); focusChanged('row'); } }
+  else if (a === 'reload') {
+    if (S.provider.type === 'xtream' && PO.epgSource !== 'xmltv') { epg.delete(ch.id); epgState.delete(ch.id); requestEpg([ch.id]); renderGuide(); toast('Reloading the guide for ' + ch.name, 1800); }
+    else { reloadGuide(); toast('Reloading the guide…', 1800); }
+  }
+  else if (a === 'hide') { hiddenCh.add(ch.id); saveHidden(); channelsChanged(); toast(`${ch.name} is hidden. Bring it back in Edit channels.`, 3500); }
+  else if (a === 'hidegroup') { hiddenGr.add(ch.groupId); saveHidden(); if (S.groupId === ch.groupId) applyGroup('all'); else channelsChanged(); toast(`${groupLabel(ch.groupId)} is hidden. Bring it back in Edit channels.`, 3500); }
+  else if (a === 'edit') { openMgr('groups'); mgr.group = ch.groupId; renderMgr(); }
+  if (S.view !== 'vod' && !layers.length) guideScroll.focus({ preventScroll: true });
+});
+
 /* ================= playlist options ================= */
 let plFor = '';
 function openPlOpts(id) {
@@ -4344,6 +4528,7 @@ function openSettings() {
       <span><kbd>←</kbd> <kbd>→</kbd></span><span>Earlier and later programs (back to 12 hours ago)</span>
       <span><kbd>◀◀</kbd> <kbd>▶▶</kbd></span><span>Jump a screen earlier or later in the guide</span>
       <span><kbd>OK</kbd></span><span>Watch, or open program details and catch-up</span>
+      <span><kbd>OK</kbd> <small>(hold)</small></span><span>Channel options: favorites, rename, number, hide, other player…</span>
       <span><kbd>Back</kbd></span><span>Back to the playing channel, then the menu; twice to exit</span>
       <span><kbd>OK</kbd> <small>(full screen)</small></span><span>Player panel: scrub, pause, picture shape, audio</span>
       <span><kbd>←</kbd> <small>(full screen)</small></span><span>Channel list</span>
@@ -4354,6 +4539,7 @@ function openSettings() {
       <span><kbd>↑</kbd> <kbd>↓</kbd></span><span>Move between channels</span>
       <span><kbd>←</kbd> <kbd>→</kbd></span><span>Move through programs and catch-up</span>
       <span><kbd>OK</kbd></span><span>Watch, or open program details</span>
+      <span><kbd>Right-click</kbd></span><span>Channel options (or hold Enter)</span>
       <span><kbd>Back</kbd></span><span>Back to the playing channel, then the menu</span>
       <span><kbd>0</kbd>–<kbd>9</kbd></span><span>Jump to a channel number</span>
       <span><kbd>F</kbd></span><span>Add or remove favorite</span>
@@ -4452,8 +4638,19 @@ rowsEl.addEventListener('click', e => {
     else if (S.playingId !== ch.id || S.catchup) play(ch);
   } else if (was) openDetails(ch, p);
 });
+rowsEl.addEventListener('contextmenu', e => {
+  const t = e.target.closest('.chan, .prog'); if (!t) return;
+  e.preventDefault();
+  const i = +t.dataset.i, ch = S.list[i]; if (!ch) return;
+  const p = t.classList.contains('prog') && t.dataset.s ? (epg.get(ch.id) || []).find(q => q.start === +t.dataset.s) : progAt(ch, Date.now());
+  setFocusTo(i, p); focusChanged(false);
+  openChannelMenu(ch, p);
+});
 rowsEl.addEventListener('dblclick', e => { if (e.target.closest('.prog.now, .prog.empty, .chan')) enterFull(); });
 guideScroll.addEventListener('scroll', scheduleRender, { passive: true });
+// browser player: the picture's size is known a moment after it starts
+video.addEventListener('resize', () => renderStreamInfo());
+video.addEventListener('loadedmetadata', () => renderStreamInfo());
 screenEl.addEventListener('click', e => {
   if (e.target.closest('[data-act="retry"]')) { e.stopPropagation(); retryPlayback(); return; }
   if (e.target.closest('#unmuteBtn')) { userMuted = false; video.muted = false; updateMuteUi(); return; }
@@ -4646,10 +4843,23 @@ window.nightdialKey = function (key) {
 };
 
 const REPEATING = new Set(['up', 'down', 'left', 'right', 'pgup', 'pgdn']);
-let keyFrame = 0;
+let keyFrame = 0, okHold = null;
+function guideOk() {
+  const ch = S.list[focus.i]; if (!ch) return;
+  const p = focusedProg();
+  if (!p || isNowProg(p)) { if (S.playingId === ch.id && !S.catchup && !playErrorShown()) enterFull(); else play(ch, { full: true }); }
+  else openDetails(ch, p);
+}
+document.addEventListener('keyup', e => {
+  if (keyName(e) !== 'ok' || !okHold) return;
+  const h = okHold; okHold = null; clearTimeout(h.timer);
+  if (!h.fired) { e.preventDefault(); guideOk(); }
+});
 document.addEventListener('keydown', e => {
   firstGesture();
   let k = keyName(e); if (!k) return;
+  // OK held down repeats: never press things again (and in the guide, the hold opens channel options)
+  if (k === 'ok' && e.repeat) { e.preventDefault(); return; }
   // Holding a button: at most one move per drawn frame, so a slow frame never queues up moves that carry on after you let go.
   if (REPEATING.has(k)) {
     if (e.repeat && keyFrame && !(document.activeElement && isTextInput(document.activeElement))) { e.preventDefault(); return; }
@@ -4723,10 +4933,10 @@ document.addEventListener('keydown', e => {
     case 'ok': {
       if (a && a.tagName === 'BUTTON') return;
       e.preventDefault();
-      const ch = S.list[focus.i]; if (!ch) return;
-      const p = focusedProg();
-      if (!p || isNowProg(p)) { if (S.playingId === ch.id && !S.catchup && !playErrorShown()) enterFull(); else play(ch, { full: true }); }
-      else openDetails(ch, p);
+      if (!S.list[focus.i]) return;
+      // short press: watch (on release); hold for half a second: channel options, like TiviMate
+      clearTimeout(okHold && okHold.timer);
+      okHold = { fired: false, timer: setTimeout(() => { if (okHold && !okHold.fired) { okHold.fired = true; openChannelMenu(S.list[focus.i], focusedProg()); } }, 550) };
       break;
     }
     case 'info': { e.preventDefault(); const ch = S.list[focus.i], p = focusedProg(); if (ch && p) openDetails(ch, p); break; }

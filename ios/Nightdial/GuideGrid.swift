@@ -731,6 +731,11 @@ final class ChannelHeaderView: UICollectionReusableView {
     private let bottomLine = UIView()
     var onTap: (@MainActor () -> Void)?
     var onLongPress: (@MainActor () -> Void)?
+    /// Digits in the longest channel number of the list, so numbers line up and never run into the logos.
+    static var maxDigits = 3
+    private static func numberWidth(_ font: UIFont) -> CGFloat {
+        ceil((String(repeating: "8", count: max(1, maxDigits)) as NSString).size(withAttributes: [.font: font]).width) + 2
+    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -777,9 +782,11 @@ final class ChannelHeaderView: UICollectionReusableView {
             let logoS = min(40, max(24, h - 20))
             logo.isHidden = false
             numberLabel.textAlignment = .right
-            numberLabel.frame = CGRect(x: 4, y: 0, width: 34, height: h)
-            logo.frame = CGRect(x: 46, y: (h - logoS) / 2, width: logoS, height: logoS)
-            let nx = 46 + logoS + 10
+            let nw = Self.numberWidth(numberLabel.font)
+            numberLabel.frame = CGRect(x: 8, y: 0, width: nw, height: h)
+            let lx = 8 + nw + 8
+            logo.frame = CGRect(x: lx, y: (h - logoS) / 2, width: logoS, height: logoS)
+            let nx = lx + logoS + 10
             nameLabel.frame = CGRect(x: nx, y: 0, width: max(0, tw - nx - 22), height: h)
             badge.frame = CGRect(x: tw - 20, y: (h - 13) / 2, width: 13, height: 13)
         } else {
@@ -809,7 +816,7 @@ final class ChannelHeaderView: UICollectionReusableView {
             badge.image = nil
         }
         accessibilityLabel = "Channel \(ch.num), \(ch.name)\(playing ? ", playing" : "")\(favorite ? ", favorite" : "")"
-        accessibilityHint = "Touch and hold to add or remove from favorites"
+        accessibilityHint = "Touch and hold for channel options"
     }
 }
 

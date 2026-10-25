@@ -36,6 +36,7 @@ import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
 import androidx.media3.common.TrackSelectionOverride;
 import androidx.media3.common.Tracks;
+import androidx.media3.common.VideoSize;
 import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
@@ -70,6 +71,8 @@ public class MainActivity extends Activity {
     private ExoPlayer player;
     private Secrets secrets;
     private Vpn vpn;
+    /** What's playing, for the page's resolution / frame rate / codec / audio badges. */
+    private volatile String streamInfoJson = "";
     private ShareServer share;
     private long lastBackPress;
     private int retries;
@@ -244,6 +247,7 @@ public class MainActivity extends Activity {
             public void onIsPlayingChanged(boolean isPlaying) {
                 if (isPlaying) {
                     retries = 0;
+                    updateStreamInfo();
                     send("playing", "");
                 }
             }
@@ -267,7 +271,14 @@ public class MainActivity extends Activity {
             @Override
             public void onTracksChanged(Tracks tracks) {
                 updateAudioTracks(tracks);
+                updateStreamInfo();
                 send("tracks", "");
+            }
+
+            @Override
+            public void onVideoSizeChanged(VideoSize size) {
+                updateStreamInfo();
+                send("info", "");
             }
         });
         playerView.setPlayer(player);
@@ -374,7 +385,37 @@ public class MainActivity extends Activity {
         web.evaluateJavascript("window.nightdialPlayerEvent&&window.nightdialPlayerEvent('" + type + "','" + detail.replace("'", "") + "')", null);
     }
 
+    private void updateStreamInfo() {
+        if (player == null) {
+            streamInfoJson = "";
+            return;
+        }
+        Format v = player.getVideoFormat(), a = player.getAudioFormat();
+        VideoSize vs = player.getVideoSize();
+        int w = vs.width > 0 ? vs.width : (v != null && v.width > 0 ? v.width : 0);
+        int h = vs.height > 0 ? vs.height : (v != null && v.height > 0 ? v.height : 0);
+        StringBuilder j = new StringBuilder("{\"w\":").append(w).append(",\"h\":").append(h);
+        if (v != null) {
+            if (v.frameRate > 0) j.append(",\"fps\":").append(v.frameRate);
+            if (v.sampleMimeType != null) j.append(",\"vcodec\":\"").append(jsonText(v.sampleMimeType)).append('"');
+            if (v.bitrate > 0) j.append(",\"vbitrate\":").append(v.bitrate);
+            if (v.colorInfo != null) {
+                int t = v.colorInfo.colorTransfer;
+                String hdr = t == C.COLOR_TRANSFER_ST2084 ? "HDR10" : t == C.COLOR_TRANSFER_HLG ? "HLG" : "";
+                if (!hdr.isEmpty()) j.append(",\"hdr\":\"").append(hdr).append('"');
+            }
+        }
+        if (a != null) {
+            if (a.sampleMimeType != null) j.append(",\"acodec\":\"").append(jsonText(a.sampleMimeType)).append('"');
+            if (a.channelCount > 0) j.append(",\"ach\":").append(a.channelCount);
+            if (a.sampleRate > 0) j.append(",\"arate\":").append(a.sampleRate);
+            if (a.language != null) j.append(",\"alang\":\"").append(jsonText(a.language)).append('"');
+        }
+        streamInfoJson = w > 0 || v != null || a != null ? j.append('}').toString() : "";
+    }
+
     private void stopPlayer() {
+        streamInfoJson = "";
         if (player != null) {
             player.stop();
             player.clearMediaItems();
@@ -574,6 +615,12 @@ public class MainActivity extends Activity {
                 aspect = mode == null ? "16:9" : mode;
                 layoutVideo();
             });
+        }
+
+        /** Resolution, frame rate, codecs and audio of what's playing, as JSON (empty when nothing is). */
+        @JavascriptInterface
+        public String streamInfo() {
+            return streamInfoJson;
         }
 
         @JavascriptInterface

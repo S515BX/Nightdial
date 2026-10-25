@@ -92,6 +92,7 @@ final class AppModel: ObservableObject {
     /// Options of the playlist that's open (Settings → Playlist options).
     @Published private(set) var options = PlaylistOptions()
     private var providerNums: [String: Int] = [:]
+    private var providerNames: [String: String] = [:]
     private var adultGroups: Set<String> = []
     /// Another player full screen opens in (VLC, Infuse, nPlayer), or the built-in one.
     @Published var externalPlayer: ExternalPlayer = .builtin { didSet { store.setString(externalPlayer.rawValue, "player") } }
@@ -263,6 +264,7 @@ final class AppModel: ObservableObject {
         options = p.kind == .demo ? PlaylistOptions() : store.options(p.id)
         Net.userAgent = options.userAgent.trimmed.nonEmpty ?? Net.defaultUA
         providerNums = Dictionary(newChannels.map { ($0.id, $0.num) }, uniquingKeysWith: { a, _ in a })
+        providerNames = Dictionary(newChannels.map { ($0.id, $0.name) }, uniquingKeysWith: { a, _ in a })
         applyNumbering()
         applyAdult()
         epg = [:]
@@ -416,12 +418,77 @@ final class AppModel: ObservableObject {
         return list.map { (p: Program) -> Program in var q = p; q.start = q.start.addingTimeInterval(d); q.end = q.end.addingTimeInterval(d); return q }
     }
 
-    /// Channel numbers from the provider, or 1, 2, 3… in the playlist's order.
+    /// Digits in the longest channel number: number columns are that wide, so numbers line up and never touch the logos.
+    @Published private(set) var numberDigits = 3
+
+    /// Channel numbers from the provider, or 1, 2, 3… in the playlist's order; then your own names and numbers.
     private func applyNumbering() {
+        let edits = provider.map { store.channelEdits($0.id) } ?? ChannelEdits()
         for i in channels.indices {
-            channels[i].num = options.numbers == "seq" ? i + 1 : (providerNums[channels[i].id] ?? channels[i].num)
+            let id = channels[i].id
+            if providerNames[id] == nil { providerNames[id] = channels[i].name }
+            channels[i].num = edits.nums[id] ?? (options.numbers == "seq" ? i + 1 : (providerNums[id] ?? channels[i].num))
+            channels[i].name = edits.names[id] ?? providerNames[id] ?? channels[i].name
         }
         byId = Dictionary(channels.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        numberDigits = min(6, channels.map { String($0.num).count }.max() ?? 3)
+        ChannelHeaderView.maxDigits = numberDigits
+    }
+
+    // MARK: Channel options (touch and hold a channel)
+
+    func originalName(_ ch: Channel) -> String { providerNames[ch.id] ?? ch.name }
+    func hasEdits(_ ch: Channel) -> Bool {
+        guard let p = provider else { return false }
+        let e = store.channelEdits(p.id)
+        return e.names[ch.id] != nil || e.nums[ch.id] != nil
+    }
+    func renameChannel(_ ch: Channel, to name: String) {
+        guard let p = provider else { return }
+        var e = store.channelEdits(p.id)
+        let n = name.trimmed
+        if n.isEmpty || n == providerNames[ch.id] { e.names[ch.id] = nil } else { e.names[ch.id] = n }
+        store.setChannelEdits(e, p.id)
+        applyNumbering(); refreshList()
+    }
+    func renumberChannel(_ ch: Channel, to text: String) {
+        guard let p = provider else { return }
+        var e = store.channelEdits(p.id)
+        if let n = Int(text.trimmed), n > 0 { e.nums[ch.id] = n } else { e.nums[ch.id] = nil }
+        store.setChannelEdits(e, p.id)
+        applyNumbering(); refreshList()
+    }
+    func restoreChannel(_ ch: Channel) {
+        guard let p = provider else { return }
+        var e = store.channelEdits(p.id)
+        e.names[ch.id] = nil; e.nums[ch.id] = nil
+        store.setChannelEdits(e, p.id)
+        applyNumbering(); refreshList()
+    }
+    func hideGroup(of ch: Channel) {
+        setGroupHidden(ch.groupId, true)
+        if groupId == ch.groupId { applyGroup("all", keepFocus: true) }
+        showToast("\(groupLabel(ch.groupId)) is hidden. Bring it back in Settings → Edit channels.", seconds: 4)
+    }
+    func openExternally(_ ch: Channel, with p: ExternalPlayer) {
+        guard let prov = provider, p != .builtin else { return }
+        var url: URL? = nil
+        switch prov.kind {
+        case .xtream: url = client?.liveURL(ch)
+        case .m3u: url = ch.streamURL
+        case .demo: url = nil
+        }
+        guard let stream = url, let link = p.link(for: stream) else { return }
+        player.stop()
+        UIApplication.shared.open(link, options: [:]) { [weak self] ok in
+            Task { @MainActor in if !ok { self?.showToast("\(p.name) isn't installed.") } }
+        }
+    }
+    /// Channel options for the channel at this row of the guide.
+    @Published var channelMenu: Channel?
+    func openChannelMenu(at index: Int) {
+        guard list.indices.contains(index) else { return }
+        channelMenu = list[index]
     }
 
     /// "Hide adult groups": groups named adult, XXX, 18+ and the like stay out of the guide.

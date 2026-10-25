@@ -24,7 +24,8 @@
 - **Other video players**: full screen, catch-up and movies can open in VLC or MX Player on Fire TV (or anything installed), and VLC, Infuse or nPlayer on iPhone and iPad.
 - **VPN**: on Fire TV, a built-in WireGuard VPN. Send the config from your phone: open the address the TV shows and paste it, with no typing on the remote. Optionally connect when Nightdial starts, or only play when a VPN is on. iPhone and iPad show when your VPN app is on and can hold playback until it is.
 - **Picture shape and best picture**: 16:9 (default), Fit, Zoom, Stretch or 4:3. Streams open at their highest quality, and on Fire TV Xtream channels play the provider's original MPEG-TS stream when the account allows it.
-- **Your channels, your way**: favorites in your own order, hide channels or whole groups (Settings → Edit channels).
+- **Your channels, your way**: hold OK on a channel (touch and hold on iPhone, right-click on the web) for its options, like TiviMate: favorites, program details, other airings, another player, rename it, give it your own number, hide it or its group. Favorites in your own order and hidden groups are in Settings → Edit channels.
+- **Stream details**: the channel banner and player panel show the resolution (4K, 1080p…), frame rate, video codec and audio (Dolby Digital 5.1, AAC stereo…).
 - **Themes**: everyday themes plus holiday themes with their own scenery and particles (bats, snow, leaves, fireworks…) that can switch on in season. Pick highlight and menu colors, fonts and interface size.
 - **Smooth on every screen**: menus, lists and the guide glide instead of jumping a page at a time, and the item you're on always has room around it.
 - **Private and secure**: passwords, playlist links and the VPN key are stored encrypted on your device (Android Keystore on Fire TV, Keychain on iPhone) and only ever sent to your provider. The app pages run only their own code under a strict content security policy, can't be framed, and Fire TV backups are off.
@@ -56,6 +57,7 @@ New builds install over the old one and keep your playlists and favorites.
 | ↑ ↓ | Move between channels | Change channel |
 | ← → | Earlier and later programs, back to 12 hours ago | ← channel list |
 | OK | Watch, or open program details and catch-up | Player panel: timeline (◀ ▶ to scrub, OK to jump) and buttons (▼) |
+| OK (hold) | Channel options: favorites, details, find other airings, another player, rename, change number, hide channel or group, reload guide | |
 | ▶❚❚ | Watch the selected channel | Pause and play |
 | ◀◀ ▶▶ | Jump a screen earlier or later in the guide | Rewind and fast-forward 30 s |
 | Back | Back to the playing channel, then the menu; **press Back twice there to exit** | Closes the panel, then back to the guide |

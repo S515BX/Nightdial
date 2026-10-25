@@ -165,6 +165,18 @@ struct FullScreenPlayer: View {
                         .foregroundStyle(Theme.fg2)
                         .monospacedDigit()
                 }
+                if !player.streamBadges.isEmpty {
+                    HStack(spacing: 6) {
+                        ForEach(Array(player.streamBadges.enumerated()), id: \.offset) { i, b in
+                            Text(b)
+                                .font(.ui(12, .semibold))
+                                .foregroundStyle(i == 0 && (b == "4K" || b == "1080p") ? Color.black : Theme.fg)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(i == 0 && (b == "4K" || b == "1080p") ? Theme.accent : Color.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                        }
+                    }
+                }
                 ScrubBar(onActivity: { poke() })
                 liveLine
                 if let ch, let p = program, model.catchup == nil, let n = model.next(after: p, on: ch) {
@@ -341,7 +353,7 @@ struct ChannelPanel: View {
             onPick()
         } label: {
             HStack(spacing: 12) {
-                Text("\(ch.num)").font(.cond(13, .semibold)).monospacedDigit().frame(width: 36, alignment: .trailing)
+                Text("\(ch.num)").font(.cond(13, .semibold)).monospacedDigit().lineLimit(1).frame(width: CGFloat(max(2, model.numberDigits)) * 8.5 + 4, alignment: .trailing)
                     .foregroundStyle(playing ? Theme.hlInk : Theme.fg3)
                 LogoBadge(channel: ch, size: 36)
                 VStack(alignment: .leading, spacing: 3) {

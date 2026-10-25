@@ -64,10 +64,16 @@ enum ExternalPlayer: String, CaseIterable, Identifiable {
     }
 }
 
+/// Your own names and numbers for channels, kept per playlist.
+struct ChannelEdits: Codable {
+    var names: [String: String] = [:]
+    var nums: [String: Int] = [:]
+}
+
 struct Channel: Identifiable, Hashable {
     let id: String          // Xtream stream_id
     var num: Int
-    let name: String
+    var name: String
     let logo: URL?
     let groupId: String
     let epgId: String

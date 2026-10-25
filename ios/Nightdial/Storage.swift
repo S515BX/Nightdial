@@ -94,6 +94,14 @@ final class Store {
         if let data = try? JSONEncoder().encode(o) { defaults.set(data, forKey: key("plopts." + id)) }
     }
 
+    func channelEdits(_ id: String) -> ChannelEdits {
+        guard let data = defaults.data(forKey: key("chedits." + id)), let e = try? JSONDecoder().decode(ChannelEdits.self, from: data) else { return ChannelEdits() }
+        return e
+    }
+    func setChannelEdits(_ e: ChannelEdits, _ id: String) {
+        if let data = try? JSONEncoder().encode(e) { defaults.set(data, forKey: key("chedits." + id)) }
+    }
+
     func bool(_ k: String, default fallback: Bool) -> Bool {
         defaults.object(forKey: key(k)) == nil ? fallback : defaults.bool(forKey: key(k))
     }
@@ -137,7 +145,7 @@ final class Store {
         Keychain.delete("playlist." + id)
         Keychain.delete("playlist-url." + id)
         Keychain.delete("playlist-epg." + id)
-        for prefix in ["fav.", "recent.", "group.", "lastch.", "hide.", "hideg.", "resume.", "plopts."] { defaults.removeObject(forKey: key(prefix + id)) }
+        for prefix in ["fav.", "recent.", "group.", "lastch.", "hide.", "hideg.", "resume.", "plopts.", "chedits."] { defaults.removeObject(forKey: key(prefix + id)) }
         if string("last") == id { setString(nil, "last") }
     }
 }
