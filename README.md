@@ -8,76 +8,44 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/S515BX/turner/releases/download/firetv/Nightdial-FireTV.apk"><b>Fire TV app</b></a> ·
-  <a href="https://github.com/S515BX/turner/releases/download/ios/Nightdial.ipa"><b>iPhone &amp; iPad app</b></a> ·
-  <a href="web/"><b>Web version</b></a>
+  <a href="https://s515bx.github.io/Nightdial/"><b>Website</b></a> ·
+  <a href="https://github.com/S515BX/Nightdial/releases/download/firetv/Nightdial-FireTV.apk"><b>Fire TV app</b></a> ·
+  <a href="https://github.com/S515BX/Nightdial/releases/download/ios/Nightdial.ipa"><b>iPhone &amp; iPad app</b></a> ·
+  <a href="https://s515bx.github.io/Nightdial/app/"><b>Web player</b></a>
 </p>
-
-> Nightdial was called **Tuner** before. Old `Tuner-FireTV.apk` and `Tuner.ipa` links still download the newest build.
-
-## Screenshots
-
-<p align="center">
-  <img src="docs/screenshots/firetv-guide.jpg" alt="Fire TV: TV guide" width="100%">
-</p>
-<p align="center">
-  <img src="docs/screenshots/firetv-menu.jpg" alt="Fire TV: menu and channel groups" width="49%">
-  <img src="docs/screenshots/firetv-movies.jpg" alt="Fire TV: movies and series" width="49%">
-</p>
-<p align="center">
-  <img src="docs/screenshots/iphone.jpg" alt="iPhone: sign-in, guide, movies and series, paused live TV" width="100%">
-</p>
-<p align="center">
-  <img src="docs/screenshots/ipad.jpg" alt="iPad: guide, movies and series, paused live TV" width="70%">
-</p>
-
-<sub>Screenshots use the built-in sample channels. Nightdial doesn't include any channels; use it with a service you subscribe to.</sub>
 
 ## Features
 
 - **Two ways to sign in**: Xtream Codes (server, username, password) or an M3U playlist link with an optional XMLTV guide link. Compressed `.xml.gz` guides work, and a `get.php` M3U link signs in with Xtream Codes automatically. The app starts empty, with no demo.
-- **Full TV guide (EPG)**: a scrolling grid of what's on now and next, catch-up for channels whose provider keeps recordings, search across channels and programs, and jumping to a channel by number.
+- **Full TV guide (EPG)**: a smooth-scrolling grid of what's on now and next. ← goes back through shows that already aired (up to 12 hours), with catch-up where your provider keeps recordings. Search channels and programs, or jump to a channel by number.
 - **Movies & Series**: shows up when your subscription includes them. Browse by category, search, see details, seasons and episodes, and pick up where you left off.
-- **Pause, rewind and scrub live TV**: press OK while watching for the player panel, like TiviMate: program info, a timeline to scrub with ◀ ▶ (faster the longer you hold), and buttons for pause, ±30 s, back to live, picture shape, audio track and favorites. Channels with catch-up can scrub back through the program; others within what their stream keeps.
-- **Picture shape**: 16:9 (default), Fit, Zoom, Stretch or 4:3, from the player panel or Settings.
-- **Best picture**: the player opens every stream at its highest quality instead of working up to it, and on Fire TV Xtream channels play the provider's original MPEG-TS stream when the account allows it (Settings → Stream format → Best).
-- **Your channels, your way**: favorites in your own order, hide channels or whole groups, and sort by provider order, number or A–Z.
-- **Themes**: everyday themes plus holiday themes that can switch on by themselves in season. Each one has its own scenery (a moonlit graveyard for Halloween, snowy pines and string lights for Christmas, fireworks over the skyline for New Year and the 4th of July...) and particles with depth: snow, bats, falling leaves, petals, fireworks. Highlight and menu colors, six fonts and interface size are yours to pick.
-- **Smooth on every screen**: menus and highlights respond instantly on Fire TV, decorations pause while a menu is open, and animations run at the screen's full refresh rate (120 Hz ProMotion on iPhone and iPad).
-- **Fire TV**: built for the remote. Video plays in Android's own player, so Dolby audio, H.265 and MPEG-TS streams work.
-- **iPhone and iPad**: AirPlay, Picture in Picture and 120 Hz ProMotion.
-- **Private and secure**: passwords and playlist links are stored encrypted on your device (Keychain on iPhone, Android Keystore on Fire TV) and only ever sent to your provider. Fire TV backups are off, the app page blocks injected scripts, and it can't be steered to other websites.
+- **Pause, rewind and scrub live TV**: press OK while watching for the player panel, like TiviMate: program info, a timeline to scrub with ◀ ▶ (faster the longer you hold), and buttons for pause, ±30 s, back to live, picture shape, audio track and favorites.
+- **Playlist options**, kept for each playlist: name, login, guide source (provider or XMLTV), guide time shift, channel numbers (provider's or 1, 2, 3…), sorting, the group it opens on, stream format, User-Agent, Movies & Series on or off, and hiding adult groups.
+- **Other video players**: full screen, catch-up and movies can open in VLC or MX Player on Fire TV (or anything installed), and VLC, Infuse or nPlayer on iPhone and iPad.
+- **VPN**: on Fire TV, a built-in WireGuard VPN. Send the config from your phone: open the address the TV shows and paste it, with no typing on the remote. Optionally connect when Nightdial starts, or only play when a VPN is on. iPhone and iPad show when your VPN app is on and can hold playback until it is.
+- **Picture shape and best picture**: 16:9 (default), Fit, Zoom, Stretch or 4:3. Streams open at their highest quality, and on Fire TV Xtream channels play the provider's original MPEG-TS stream when the account allows it.
+- **Your channels, your way**: favorites in your own order, hide channels or whole groups (Settings → Edit channels).
+- **Themes**: everyday themes plus holiday themes with their own scenery and particles (bats, snow, leaves, fireworks…) that can switch on in season. Pick highlight and menu colors, fonts and interface size.
+- **Smooth on every screen**: menus, lists and the guide glide instead of jumping a page at a time, and the item you're on always has room around it.
+- **Private and secure**: passwords, playlist links and the VPN key are stored encrypted on your device (Android Keystore on Fire TV, Keychain on iPhone) and only ever sent to your provider. The app pages run only their own code under a strict content security policy, can't be framed, and Fire TV backups are off.
 
 ## Download
 
-GitHub builds the apps automatically every time something in `ios/` or `firetv/` changes. Only builds from the `main` branch are published; builds from `dev` are for testing (their files and iPhone screenshots are attached to the workflow run, and the screenshots are also on the `ci-ios-shots` branch). The newest builds are always on the **Releases** page.
-
 | App | Download | Install with |
 | --- | --- | --- |
-| iPhone and iPad | [Nightdial.ipa](https://github.com/S515BX/turner/releases/download/ios/Nightdial.ipa) | [Sideloadly](https://sideloadly.io) (signs it with your Apple ID) |
-| Fire TV | [Nightdial-FireTV.apk](https://github.com/S515BX/turner/releases/download/firetv/Nightdial-FireTV.apk) | Downloader app or adb |
-| Web | `web/` folder | `node server.js`, then open http://localhost:8080 |
+| Fire TV | [Nightdial-FireTV.apk](https://github.com/S515BX/Nightdial/releases/download/firetv/Nightdial-FireTV.apk) | Downloader app or adb |
+| iPhone and iPad | [Nightdial.ipa](https://github.com/S515BX/Nightdial/releases/download/ios/Nightdial.ipa) | [Sideloadly](https://sideloadly.io) (signs it with your Apple ID) |
+| Web | [Web player](https://s515bx.github.io/Nightdial/app/) or the computer version from the [website](https://s515bx.github.io/Nightdial/#web) | A browser; the computer version runs with `node server.js` |
 
-To build again without changing anything: **Actions** tab → pick the workflow → **Run workflow**.
-
-### iPhone and iPad (Sideloadly)
-
-1. Download `Nightdial.ipa` from Releases on your computer.
-2. Install [Sideloadly](https://sideloadly.io). On Windows it needs iTunes and iCloud from Apple's website, not the Microsoft Store versions.
-3. Plug in your iPhone, drag `Nightdial.ipa` into Sideloadly, enter your Apple ID and press **Start**.
-4. On the iPhone: Settings → General → VPN & Device Management → your Apple ID → **Trust**. Turn on Developer Mode if asked (Settings → Privacy & Security) and restart.
-5. With a free Apple ID the app lasts 7 days. Turn on Sideloadly's automatic refresh, or press Start again before then.
-
-On iPhone, most M3U channels need to be HLS (`.m3u8`) streams; Xtream-style `.ts` links are switched to `.m3u8` automatically. Movies in `.mkv` format play on Fire TV and the web but not on iPhone.
+GitHub builds the apps every time something in `ios/` or `firetv/` changes; only builds from `main` are published. Each release lists the file's SHA-256 so you can check your download.
 
 ### Fire TV
 
 1. On the Fire Stick: Settings → My Fire TV → About, select the device name 7 times. Then in **Developer options** turn on **Apps from Unknown Sources** (or allow the Downloader app to install apps).
 2. Install the free **Downloader** app from the Amazon Appstore.
-3. In Downloader, enter the APK link from the **firetv** release:
-   `https://github.com/S515BX/turner/releases/download/firetv/Nightdial-FireTV.apk`
-   (This works because the repository is public. Alternatively, install from a computer with
-   `adb connect <fire-stick-ip>` then `adb install -r Nightdial-FireTV.apk`.)
+3. In Downloader, enter:
+   `https://github.com/S515BX/Nightdial/releases/download/firetv/Nightdial-FireTV.apk`
+   (or from a computer: `adb connect <fire-stick-ip>` then `adb install -r Nightdial-FireTV.apk`).
 
 New builds install over the old one and keep your playlists and favorites.
 
@@ -86,27 +54,34 @@ New builds install over the old one and keep your playlists and favorites.
 | Button | In the guide | In full screen |
 | --- | --- | --- |
 | ↑ ↓ | Move between channels | Change channel |
-| ← → | Earlier and later programs (← from what's on now opens the menu) | ← channel list |
-| OK | Watch, or open program details | Player panel: timeline (◀ ▶ to scrub, OK to jump) and buttons (▼) |
+| ← → | Earlier and later programs, back to 12 hours ago | ← channel list |
+| OK | Watch, or open program details and catch-up | Player panel: timeline (◀ ▶ to scrub, OK to jump) and buttons (▼) |
 | ▶❚❚ | Watch the selected channel | Pause and play |
-| ◀◀ ▶▶ | Earlier programs and catch-up, later programs | Rewind and fast-forward 30 s |
-| Back | The menu; **press Back twice to exit** | Closes the panel, then back to the guide |
-| ☰ | Program details | Channel options (favorite, hide, picture shape, audio, stream format) |
+| ◀◀ ▶▶ | Jump a screen earlier or later in the guide | Rewind and fast-forward 30 s |
+| Back | Back to the playing channel, then the menu; **press Back twice there to exit** | Closes the panel, then back to the guide |
+| ☰ | Program details | Channel options (favorite, hide, picture shape, audio, another player) |
 
-**Exit Nightdial** is also at the bottom of the menu.
+### iPhone and iPad (Sideloadly)
 
-## Look and channels
+1. Download `Nightdial.ipa` on your computer.
+2. Install [Sideloadly](https://sideloadly.io). On Windows it needs iTunes and iCloud from Apple's website, not the Microsoft Store versions.
+3. Plug in your iPhone, drag `Nightdial.ipa` into Sideloadly, enter your Apple ID and press **Start**.
+4. On the iPhone: Settings → General → VPN & Device Management → your Apple ID → **Trust**. Turn on Developer Mode if asked (Settings → Privacy & Security) and restart.
+5. With a free Apple ID the app lasts 7 days. Turn on Sideloadly's automatic refresh, or press Start again before then.
 
-- **Themes & look** (menu → Themes): everyday themes (Midnight, Aurora, Ocean, Sunset, Forest, Rosé, OLED black, Classic) and holiday themes (New Year, Valentine's, St. Patrick's, Easter, 4th of July, Halloween, Thanksgiving, Christmas) that can switch on by themselves in season, each with its own scenery. Pick highlight and menu colors, one of six fonts and the interface size; turn off decorations or background scenery in the same menu.
-- **Edit channels** (menu → Edit channels): put favorites in your own order, hide channels or whole groups, and sort channels by provider order, number or A–Z.
+On iPhone, most M3U channels need to be HLS (`.m3u8`) streams; Xtream-style `.ts` links are switched to `.m3u8` automatically. Movies in `.mkv` format play on Fire TV and the web but not on iPhone.
+
+### Web
+
+Open the [web player](https://s515bx.github.io/Nightdial/app/). Browsers block plain-`http` IPTV servers on secure web pages, so for most providers use the computer version: download it from the [website](https://s515bx.github.io/Nightdial/#web), run `node server.js` (Node.js 18+) and open http://localhost:8080.
 
 ## What's inside
 
-- `ios/`: SwiftUI app (iOS 16+). Open `Tuner.xcodeproj` in Xcode 16+ if you have a Mac.
 - `firetv/`: Android TV app for Fire TV (Fire OS 5+). Opens in Android Studio.
-- `web/`: browser version with a small Node.js relay for your provider.
+- `ios/`: SwiftUI app (iOS 16+). Open `Nightdial.xcodeproj` in Xcode 16+ if you have a Mac.
+- `web/`: the computer version, with a small Node.js relay for your provider.
+- `site/`: the website (home page and web player), published with GitHub Pages.
 - `brand/`: the Nightdial logo (`icon.svg`) and the scripts that render the app icons, the Fire TV banner and this page's banner.
-- `ios/scenes/`: theme scenery and particle shapes for the iPhone/iPad app (the same art the web and Fire TV versions use).
-- `docs/`: images for this page.
+- `docs/`: the banner on this page.
 
 Nightdial doesn't include any channels. Use it with a service you subscribe to.

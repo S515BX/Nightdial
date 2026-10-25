@@ -1,0 +1,61 @@
+# Publishes the Nightdial website from site/ with GitHub Pages: the home page, the web player (app/) and a zip of the
+# computer version (web/). The video player libraries are fetched from npm here (npm checks each package's integrity)
+# and served from the site itself, so the web player loads no outside scripts.
+# One-time setup in the repository: Settings → Pages → Source: GitHub Actions.
+name: Publish website
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "web/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Video players for the web player
+        run: |
+          mkdir -p "$RUNNER_TEMP/libs" site/app/lib
+          cd "$RUNNER_TEMP/libs"
+          npm pack hls.js@1.5.15 mpegts.js@1.7.3 >/dev/null
+          tar xzf hls.js-1.5.15.tgz && cp package/dist/hls.min.js "$GITHUB_WORKSPACE/site/app/lib/" && rm -rf package
+          tar xzf mpegts.js-1.7.3.tgz && cp package/dist/mpegts.js "$GITHUB_WORKSPACE/site/app/lib/"
+          ls -l "$GITHUB_WORKSPACE/site/app/lib"
+
+      - name: Computer version download
+        run: |
+          mkdir -p site/downloads "$RUNNER_TEMP/zip/Nightdial"
+          cp web/index.html web/server.js web/README.txt "$RUNNER_TEMP/zip/Nightdial/"
+          (cd "$RUNNER_TEMP/zip" && zip -qr "$GITHUB_WORKSPACE/site/downloads/Nightdial-Web.zip" Nightdial)
+          ls -l site/downloads
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

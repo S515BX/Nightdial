@@ -16,7 +16,7 @@
   Options (environment variables):
     PORT=8080          port to listen on
     HOST=127.0.0.1     use 0.0.0.0 to watch from a TV or phone on your Wi-Fi
-    UA="Tuner/1.0"     User-Agent sent to your provider
+    UA="Nightdial/1.0" User-Agent sent to your provider
 */
 'use strict';
 const http = require('http');
@@ -26,7 +26,7 @@ const { Readable } = require('stream');
 
 const PORT = Number(process.env.PORT) || 8080;
 const HOST = process.env.HOST || '127.0.0.1';
-const UA = process.env.UA || 'Tuner/1.0';
+const UA = process.env.UA || 'Nightdial/1.0';
 
 if (typeof fetch !== 'function') {
   console.error('Nightdial needs Node.js 18 or newer. Download it from https://nodejs.org');
@@ -35,14 +35,14 @@ if (typeof fetch !== 'function') {
 
 function page() {
   const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
-  return html.replace('<!--TUNER_PROXY-->', '<script>window.TUNER_PROXY=true</script>');   // its hash is in the page's CSP (build.js)
+  return html.replace('<!--NIGHTDIAL_PROXY-->', '<script>window.NIGHTDIAL_PROXY=true</script>');   // its hash is in the page's CSP (build.js)
 }
 
 const isPlaylist = (contentType, url) => /mpegurl/i.test(contentType || '') || /\.m3u8?(\?|$)/i.test(url || '');
 
-function rewritePlaylist(text, baseUrl) {
+function rewritePlaylist(text, baseUrl, ua) {
   const abs = u => { try { return new URL(u, baseUrl).href; } catch (e) { return u; } };
-  const prox = u => '/proxy?u=' + encodeURIComponent(abs(u));
+  const prox = u => '/proxy?u=' + encodeURIComponent(abs(u)) + (ua ? '&ua=' + encodeURIComponent(ua) : '');
   return text.split(/\r?\n/).map(line => {
     const l = line.trim();
     if (!l) return line;
@@ -67,13 +67,15 @@ const server = http.createServer(async (req, res) => {
   const ctl = new AbortController();
   res.on('close', () => ctl.abort());
   try {
-    const headers = { 'user-agent': UA, accept: '*/*' };
+    // a playlist can ask for its own User-Agent (Playlist options); plain text only
+    const ua = (url.searchParams.get('ua') || '').replace(/[^\x20-\x7e]/g, '').slice(0, 200);
+    const headers = { 'user-agent': ua || UA, accept: '*/*' };
     if (req.headers.range) headers.range = req.headers.range;
     const up = await fetch(target, { headers, redirect: 'follow', signal: ctl.signal });
     const type = up.headers.get('content-type') || '';
 
     if (isPlaylist(type, up.url) || isPlaylist('', target.pathname)) {
-      const body = rewritePlaylist(await up.text(), up.url);
+      const body = rewritePlaylist(await up.text(), up.url, ua);
       res.writeHead(up.status, { 'content-type': 'application/vnd.apple.mpegurl', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': 'sandbox' });
       return res.end(body);
     }

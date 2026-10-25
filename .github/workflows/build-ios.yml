@@ -1,8 +1,8 @@
 # Builds the iPhone/iPad app on a GitHub-hosted Mac. On the main branch it also puts it on the "ios" release:
 #   https://github.com/<you>/<repo>/releases/download/ios/Nightdial.ipa
-# (Tuner.ipa is uploaded too, so older links keep working.)
 # The .ipa is unsigned on purpose: Sideloadly signs it with your Apple ID when it installs it.
-# Builds on other branches (for example "dev") keep the .ipa as an artifact and also take simulator screenshots for review.
+# Builds on other branches (for example "dev") only keep the .ipa as a workflow artifact, for testing before release.
+# The bundle ID stays app.tuner.player from the first release, so updates install over the existing app and keep its playlists.
 name: Build iOS IPA
 
 on:
@@ -30,7 +30,7 @@ jobs:
       - name: Build the app
         run: |
           set -o pipefail
-          xcodebuild -project Tuner.xcodeproj -target Tuner -configuration Release -sdk iphoneos \
+          xcodebuild -project Nightdial.xcodeproj -target Nightdial -configuration Release -sdk iphoneos \
             SYMROOT="$PWD/build" \
             PRODUCT_BUNDLE_IDENTIFIER=app.tuner.player \
             DEVELOPMENT_TEAM="" CODE_SIGN_IDENTITY="" \
@@ -44,7 +44,7 @@ jobs:
       - name: Package Nightdial.ipa
         run: |
           mkdir -p Payload
-          cp -R build/Release-iphoneos/Tuner.app Payload/
+          cp -R build/Release-iphoneos/Nightdial.app Payload/
           zip -qry Nightdial.ipa Payload
           ls -lh Nightdial.ipa
 
@@ -60,11 +60,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          NOTES="Newest Nightdial build for iPhone and iPad (unsigned). Install it with Sideloadly, which signs it with your Apple ID."
+          SHA=$(shasum -a 256 Nightdial.ipa | cut -d' ' -f1)
+          NOTES="Newest Nightdial build for iPhone and iPad (unsigned). Install it with Sideloadly, which signs it with your Apple ID.
+
+          SHA-256 of Nightdial.ipa: \`$SHA\`"
           gh release view ios >/dev/null 2>&1 || gh release create ios --target "$GITHUB_SHA" --title "Nightdial for iPhone and iPad" --notes "$NOTES"
           gh release edit ios --title "Nightdial for iPhone and iPad" --notes "$NOTES"
-          cp Nightdial.ipa Tuner.ipa
-          gh release upload ios Nightdial.ipa Tuner.ipa --clobber
+          gh release upload ios Nightdial.ipa --clobber
+          # only the current file stays on the release (older names are removed)
+          gh release view ios --json assets -q '.assets[].name' | grep -vx 'Nightdial.ipa' | while read -r old; do gh release delete-asset ios "$old" -y; done
           echo "### Download Nightdial.ipa" >> "$GITHUB_STEP_SUMMARY"
           echo "https://github.com/${GH_REPO}/releases/download/ios/Nightdial.ipa" >> "$GITHUB_STEP_SUMMARY"
 
@@ -73,92 +77,3 @@ jobs:
         with:
           name: build-log
           path: ios/build.log
-
-  # Simulator screenshots of the new build, so changes can be reviewed before they're released.
-  screenshots:
-    if: github.ref != 'refs/heads/main'
-    runs-on: macos-latest
-    defaults:
-      run:
-        working-directory: ios
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build for the simulator
-        run: |
-          set -o pipefail
-          xcodebuild -project Tuner.xcodeproj -target Tuner -configuration Debug -sdk iphonesimulator \
-            SYMROOT="$PWD/simbuild" ARCHS=arm64 ONLY_ACTIVE_ARCH=NO \
-            PRODUCT_BUNDLE_IDENTIFIER=app.tuner.player \
-            CODE_SIGNING_ALLOWED=NO \
-            build 2>&1 | tee sim.log | tail -5
-
-      - name: Take screenshots
-        run: |
-          mkdir -p shots
-          pick() {
-            xcrun simctl list devices available -j | python3 -c "
-          import json, sys
-          want = sys.argv[1]
-          devs = [d for rt, ds in json.load(sys.stdin)['devices'].items() if 'iOS' in rt for d in ds]
-          match = [d for d in devs if d['name'].startswith(want)] or [d for d in devs if d['name'].startswith(want.split()[0])]
-          print(match[-1]['udid'])" "$1"
-          }
-          # shoot DEVICE NAME SECONDS [launch arguments...]; the sample channels need -tuner.debug.demo YES
-          shoot() {
-            dev=$1; name=$2; wait=$3; shift 3
-            xcrun simctl terminate "$dev" app.tuner.player >/dev/null 2>&1 || true
-            xcrun simctl launch "$dev" app.tuner.player "$@"
-            sleep "$wait"
-            xcrun simctl io "$dev" screenshot "shots/$name.png"
-          }
-          for kind in "iPhone 16 Pro" "iPad Pro 13"; do
-            UDID=$(pick "$kind")
-            echo "$kind -> $UDID"
-            tag=$(echo "$kind" | awk '{print tolower($1)}')
-            xcrun simctl boot "$UDID" || true
-            xcrun simctl bootstatus "$UDID" -b
-            xcrun simctl status_bar "$UDID" override --time "9:41" --batteryLevel 100 --batteryState charged || true
-            xcrun simctl install "$UDID" simbuild/Debug-iphonesimulator/Tuner.app
-            D="-tuner.debug.demo YES"
-            shoot "$UDID" "$tag-01-start" 6
-            shoot "$UDID" "$tag-02-m3u-login" 6 -tuner.debug.login m3u
-            shoot "$UDID" "$tag-03-guide" 9 $D
-            shoot "$UDID" "$tag-04-movies" 8 $D -tuner.debug.sheet ondemand
-            shoot "$UDID" "$tag-05-movie-details" 10 $D -tuner.debug.sheet ondemand -tuner.debug.vod details
-            shoot "$UDID" "$tag-06-series" 10 $D -tuner.debug.sheet ondemand -tuner.debug.vod series
-            shoot "$UDID" "$tag-07-fullscreen" 9 $D -tuner.debug.full YES
-            shoot "$UDID" "$tag-08-paused" 15 $D -tuner.debug.full YES -tuner.debug.pause YES
-            shoot "$UDID" "$tag-09-themes" 9 $D -tuner.debug.sheet themes
-            shoot "$UDID" "$tag-10-channels" 9 $D -tuner.debug.sheet channels
-            shoot "$UDID" "$tag-11-christmas" 9 $D -tuner.look.theme christmas
-            shoot "$UDID" "$tag-13-halloween" 9 $D -tuner.look.theme halloween
-            shoot "$UDID" "$tag-14-halloween-movies" 9 $D -tuner.look.theme halloween -tuner.debug.sheet ondemand
-            shoot "$UDID" "$tag-12-custom" 9 $D -tuner.look.theme aurora -tuner.look.hl "#5EE6C4" -tuner.look.font outfit
-            xcrun simctl shutdown "$UDID" || true
-          done
-          ls -la shots
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ios-screenshots
-          path: ios/shots
-          if-no-files-found: error
-
-      # Also kept on a throwaway branch (replaced every run), which is easier to fetch than artifacts.
-      - name: Put screenshots on the ci-ios-shots branch
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          cd shots
-          git init -q
-          git checkout -q -b ci-ios-shots
-          git add .
-          git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -qm "iOS screenshots for ${GITHUB_SHA::7} (${GITHUB_REF_NAME})"
-          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci-ios-shots
-
-      - uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: sim-build-log
-          path: ios/sim.log

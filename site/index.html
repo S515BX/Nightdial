@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0f1220">
+<title>Nightdial</title>
+<meta name="description" content="Nightdial is an IPTV player with a full TV guide for Fire TV, iPhone, iPad and the web. Sign in with Xtream Codes or an M3U playlist.">
+<meta property="og:title" content="Nightdial">
+<meta property="og:description" content="IPTV player with a full TV guide for Fire TV, iPhone, iPad and the web.">
+<meta property="og:image" content="https://s515bx.github.io/Nightdial/social.jpg">
+<meta property="og:type" content="website">
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+@font-face{font-family:Poppins;font-weight:400;font-display:swap;src:url(fonts/Poppins-Regular.ttf) format('truetype')}
+@font-face{font-family:Poppins;font-weight:500;font-display:swap;src:url(fonts/Poppins-Medium.ttf) format('truetype')}
+@font-face{font-family:Poppins;font-weight:600;font-display:swap;src:url(fonts/Poppins-SemiBold.ttf) format('truetype')}
+@font-face{font-family:Poppins;font-weight:700;font-display:swap;src:url(fonts/Poppins-Bold.ttf) format('truetype')}
+:root{--bg:#0f1220;--bg2:#151a2c;--card:#1a2033;--card2:#20283f;--line:rgba(255,255,255,.08);--fg:#f2f4fa;--fg2:#b6bdd0;--fg3:#7f88a3;--teal:#5ee6c4;--blue:#58a6ff;--violet:#9d8cff;--pink:#ff7aa8;--r:22px}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 16px/1.6 Poppins,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit}
+img{display:block;max-width:100%}
+.wrap{width:min(1120px,100% - 32px);margin:0 auto}
+.sky{position:absolute;inset:0 0 auto;height:920px;z-index:-1;overflow:hidden;background:radial-gradient(900px 520px at 78% -6%,rgba(88,166,255,.28),transparent 70%),radial-gradient(700px 480px at 6% 18%,rgba(94,230,196,.16),transparent 70%),radial-gradient(800px 600px at 60% 90%,rgba(255,122,168,.10),transparent 70%),linear-gradient(#12162a,var(--bg))}
+.sky::before,.sky::after{content:"";position:absolute;inset:0;background-image:radial-gradient(1.2px 1.2px at 12% 22%,#fff8,transparent),radial-gradient(1px 1px at 32% 8%,#fff6,transparent),radial-gradient(1.4px 1.4px at 52% 30%,#fff7,transparent),radial-gradient(1px 1px at 68% 14%,#fff5,transparent),radial-gradient(1.2px 1.2px at 86% 34%,#fff6,transparent),radial-gradient(1px 1px at 22% 48%,#fff4,transparent),radial-gradient(1.3px 1.3px at 92% 58%,#fff5,transparent),radial-gradient(1px 1px at 44% 62%,#fff3,transparent)}
+.sky::after{transform:translate(37%,11%) scale(1.3);opacity:.6}
+header{position:sticky;top:0;z-index:10;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(15,18,32,.62);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:16px;height:64px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:600;font-size:18px;letter-spacing:-.01em}
+.brand img{width:34px;height:34px;border-radius:9px}
+nav{display:flex;gap:4px}
+nav a{padding:8px 12px;border-radius:10px;text-decoration:none;color:var(--fg2);font-size:14.5px;font-weight:500}
+nav a:hover,nav a:focus-visible{color:var(--fg);background:rgba(255,255,255,.06);outline:none}
+@media (max-width:640px){nav a.opt{display:none}}
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center;padding:88px 0 72px}
+@media (max-width:880px){.hero{grid-template-columns:1fr;padding:56px 0 40px;text-align:center}.hero .cta{justify-content:center}.hero .art{order:-1}}
+.kicker{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:99px;background:rgba(94,230,196,.1);color:var(--teal);font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+h1{margin:18px 0 14px;font-size:clamp(40px,6.4vw,68px);line-height:1.04;letter-spacing:-.03em;font-weight:700}
+h1 span{background:linear-gradient(100deg,var(--teal),var(--blue) 55%,var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{margin:0;max-width:34em;color:var(--fg2);font-size:clamp(16px,2vw,18.5px)}
+@media (max-width:880px){.lead{margin:0 auto}}
+.cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+.btn{display:inline-flex;align-items:center;gap:10px;height:52px;padding:0 22px;border-radius:14px;text-decoration:none;font-weight:600;font-size:15.5px;border:1px solid var(--line);background:var(--card);transition:transform .15s,background .15s,border-color .15s}
+.btn:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.18);background:var(--card2)}
+.btn:focus-visible{outline:3px solid var(--teal);outline-offset:3px}
+.btn.primary{background:linear-gradient(100deg,var(--teal),var(--blue));color:#0b1020;border:0}
+.btn svg{width:20px;height:20px;flex:none}
+.art{position:relative;display:grid;place-items:center}
+.art .glow{position:absolute;width:78%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(88,166,255,.45),rgba(94,230,196,.18) 45%,transparent 70%);filter:blur(30px)}
+.art img{position:relative;width:min(340px,70vw);border-radius:22%;box-shadow:0 40px 90px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.06)}
+.platforms{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+@media (max-width:880px){.platforms{justify-content:center}}
+.platforms span{padding:5px 12px;border-radius:99px;background:rgba(255,255,255,.06);color:var(--fg2);font-size:13px;font-weight:500}
+section{padding:72px 0}
+h2{margin:0 0 10px;font-size:clamp(28px,4vw,40px);line-height:1.15;letter-spacing:-.02em}
+.sub{margin:0 0 36px;color:var(--fg2);max-width:40em}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+@media (max-width:360px){.grid{grid-template-columns:1fr}}
+.card{padding:24px;border-radius:var(--r);background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line)}
+.card h3{margin:14px 0 6px;font-size:17px;letter-spacing:-.01em}
+.card p{margin:0;color:var(--fg2);font-size:14.5px}
+.ic{display:grid;place-items:center;width:44px;height:44px;border-radius:13px;background:rgba(94,230,196,.12);color:var(--teal)}
+.ic svg{width:22px;height:22px}
+.ic.b{background:rgba(88,166,255,.13);color:var(--blue)}.ic.v{background:rgba(157,140,255,.14);color:var(--violet)}.ic.p{background:rgba(255,122,168,.13);color:var(--pink)}
+.get{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media (max-width:960px){.get{grid-template-columns:1fr}}
+.get .card{display:flex;flex-direction:column;gap:14px;padding:28px}
+.get h3{margin:0;font-size:21px}
+.get ol{margin:0;padding-left:20px;color:var(--fg2);font-size:14.5px}
+.get li{margin:4px 0}
+.get .btn{align-self:flex-start;height:46px;font-size:14.5px}
+.get .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:auto}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.86em;padding:2px 7px;border-radius:7px;background:rgba(255,255,255,.07);color:var(--fg);overflow-wrap:anywhere;white-space:nowrap}
+.url{display:block;padding:12px 14px;border-radius:12px;background:#0b0e1a;border:1px solid var(--line);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;color:var(--teal);word-break:break-all;user-select:all}
+.note{margin:0;padding:14px 16px;border-radius:14px;background:rgba(246,196,83,.08);border:1px solid rgba(246,196,83,.2);color:#f3dda8;font-size:14px}
+.trust{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+@media (max-width:360px){.trust{grid-template-columns:1fr}}
+.trust div{display:flex;gap:12px;align-items:flex-start;padding:18px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid var(--line);font-size:14.5px;color:var(--fg2)}
+.trust b{display:block;color:var(--fg);font-weight:600;margin-bottom:2px}
+.trust svg{width:22px;height:22px;flex:none;color:var(--teal);margin-top:2px}
+footer{padding:40px 0 56px;border-top:1px solid var(--line);color:var(--fg3);font-size:14px}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
+footer a{color:var(--fg2)}
+</style>
+</head>
+<body>
+<div class="sky" aria-hidden="true"></div>
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="#top"><img src="icon.svg" alt="" width="34" height="34">Nightdial</a>
+    <nav aria-label="Sections">
+      <a class="opt" href="#features">Features</a>
+      <a href="#get">Get the app</a>
+      <a href="app/">Web player</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap hero">
+    <div>
+      <span class="kicker">IPTV player · TV guide</span>
+      <h1>Live TV, <span>beautifully guided.</span></h1>
+      <p class="lead">Nightdial plays your IPTV subscription with a full TV guide, movies and series, and pause and rewind for live TV. Sign in with Xtream Codes or an M3U playlist.</p>
+      <div class="cta">
+        <a class="btn primary" href="#firetv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Get it for Fire TV</a>
+        <a class="btn" href="#iphone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>iPhone &amp; iPad</a>
+        <a class="btn" href="app/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>Open web player</a>
+      </div>
+      <div class="platforms" aria-label="Works on"><span>Fire TV</span><span>iPhone</span><span>iPad</span><span>Web</span></div>
+    </div>
+    <div class="art" aria-hidden="true"><div class="glow"></div><img src="icon.svg" alt="" width="340" height="340"></div>
+  </div>
+
+  <section id="features">
+    <div class="wrap">
+      <h2>Everything a TV night needs</h2>
+      <p class="sub">Built for the remote first, smooth on every screen, and it keeps your details on your device.</p>
+      <div class="grid">
+        <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg></div><h3>Full TV guide</h3><p>A smooth-scrolling grid of what's on now and next. Scroll back through earlier shows and catch up on channels that keep recordings.</p></div>
+        <div class="card"><div class="ic b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 8l6 4-6 4z"/><circle cx="12" cy="12" r="9"/></svg></div><h3>Pause, rewind, scrub</h3><p>Press OK while watching for a TiviMate-style player panel: scrub the timeline, pause, jump back to live.</p></div>
+        <div class="card"><div class="ic v"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M7 3l5 3 5-3"/></svg></div><h3>Movies &amp; series</h3><p>Browse your provider's on-demand library by category, see seasons and episodes, and pick up where you left off.</p></div>
+        <div class="card"><div class="ic p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></div><h3>Your playlist, your way</h3><p>Rename it, fix guide times, renumber channels, pick the stream format or User-Agent, hide groups, order favorites.</p></div>
+        <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 9 9c0-.6-.4-1-1-1h-3.5a2 2 0 0 1-1.5-3.3c.4-.4.5-1 .5-1.5A3.3 3.3 0 0 0 12 3z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7.5" r="1"/></svg></div><h3>Themes for every season</h3><p>Everyday themes and holiday themes with their own scenery, from a moonlit Halloween graveyard to fireworks for New Year.</p></div>
+        <div class="card"><div class="ic b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></div><h3>VPN and other players</h3><p>On Fire TV: a built-in WireGuard VPN, and full screen can open in VLC or MX Player if you prefer them.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="get">
+    <div class="wrap">
+      <h2>Get Nightdial</h2>
+      <p class="sub">Free, with no account and no ads. Nightdial doesn't include any channels: use it with a service you subscribe to.</p>
+      <div class="get">
+        <div class="card" id="firetv">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+          <h3>Fire TV</h3>
+          <ol>
+            <li>Settings → My Fire TV → About: select your device name 7 times. Then in Developer options, allow apps from unknown sources (or allow the Downloader app).</li>
+            <li>Install the free <b>Downloader</b> app from the Amazon Appstore.</li>
+            <li>In Downloader, enter this address:</li>
+          </ol>
+          <span class="url">https://github.com/S515BX/Nightdial/releases/download/firetv/Nightdial-FireTV.apk</span>
+          <div class="btns"><a class="btn primary" href="https://github.com/S515BX/Nightdial/releases/download/firetv/Nightdial-FireTV.apk">Download APK</a></div>
+        </div>
+        <div class="card" id="iphone">
+          <div class="ic b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></div>
+          <h3>iPhone &amp; iPad</h3>
+          <ol>
+            <li>Download <code>Nightdial.ipa</code> on your computer.</li>
+            <li>Install <a href="https://sideloadly.io" rel="noopener noreferrer">Sideloadly</a>, plug in your iPhone, drag the file in, sign in with your Apple ID and press Start.</li>
+            <li>On the iPhone: Settings → General → VPN &amp; Device Management → Trust. Turn on Developer Mode if asked.</li>
+          </ol>
+          <p class="note">With a free Apple ID the app lasts 7 days. Sideloadly can refresh it for you.</p>
+          <div class="btns"><a class="btn primary" href="https://github.com/S515BX/Nightdial/releases/download/ios/Nightdial.ipa">Download IPA</a></div>
+        </div>
+        <div class="card" id="web">
+          <div class="ic v"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg></div>
+          <h3>Web</h3>
+          <ol>
+            <li><b>In your browser:</b> open the web player and sign in. Works with providers whose server uses <code>https</code>.</li>
+            <li><b>On your computer:</b> for providers on plain <code>http</code> (most of them), download the computer version, then run <code>node server.js</code> and open <code>localhost:8080</code>.</li>
+          </ol>
+          <p class="note">Browsers block plain-http servers on secure web pages, so the computer version passes them through for you.</p>
+          <div class="btns"><a class="btn primary" href="app/">Open web player</a><a class="btn" href="downloads/Nightdial-Web.zip">Computer version</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="privacy">
+    <div class="wrap">
+      <h2>Private by design</h2>
+      <p class="sub">No sign-up, no tracking, nothing in between you and your provider.</p>
+      <div class="trust">
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span><b>Encrypted on your device</b>Passwords and playlist links are stored with Android Keystore on Fire TV and the Keychain on iPhone.</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M14 6l6 6-6 6"/></svg><span><b>Only sent to your provider</b>Your details go straight to the IPTV service you sign in to, and nowhere else.</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg><span><b>No ads, no analytics</b>This site and the apps load nothing from ad or tracking networks.</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/></svg><span><b>Locked down</b>Strict content security rules: the player only runs its own code, can't be framed by other sites and sends no referrer.</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l-6-6 6-6M15 6l6 6-6 6"/></svg><span><b>Open source</b>All of it is on GitHub, and every app download is built there from that code.</span></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Nightdial doesn't include any channels. Use it with a service you subscribe to.</span>
+    <a href="https://github.com/S515BX/Nightdial" rel="noopener noreferrer">Source on GitHub</a>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="TunerTheme" parent="@android:style/Theme.Black.NoTitleBar.Fullscreen">
+    <style name="NightdialTheme" parent="@android:style/Theme.Black.NoTitleBar.Fullscreen">
         <item name="android:windowBackground">@color/room</item>
         <item name="android:colorBackground">@color/room</item>
     </style>

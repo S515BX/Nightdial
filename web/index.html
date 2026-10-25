@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-xJ6hZv1VqXvxMD11xMPedmVWYoTRTT40uZFWR56letY=' 'sha256-HikahEgCk+bADaxqL/yeoRvCIIKwI/+gxAAzt3WInDk=' https://cdn.jsdelivr.net; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src * data: blob:; media-src * data: blob:; connect-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-C548feVd04fMJq2IiHCCZuRVrtObKhPSCjujVxjMTkQ=' 'sha256-X/Lawiua1HPg46/6WFTYkASVngRdlEnru6vC9Sgh5H0=' https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.js; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src * data: blob:; media-src * data: blob:; connect-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#161922">
 <title>Nightdial</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1024 1024%22 width=%221024%22 height=%221024%22%3E    %3Cdefs%3E    %3ClinearGradient id=%22bg%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E      %3Cstop offset=%220%22 stop-color=%22#20253a%22/%3E      %3Cstop offset=%22.55%22 stop-color=%22#151925%22/%3E      %3Cstop offset=%221%22 stop-color=%22#0d0f17%22/%3E    %3C/linearGradient%3E    %3CradialGradient id=%22glowA%22 cx=%220%22 cy=%220%22 r=%221%22 gradientUnits=%22userSpaceOnUse%22 gradientTransform=%22translate(150 120) scale(620)%22%3E      %3Cstop offset=%220%22 stop-color=%22#4cc9f0%22 stop-opacity=%22.55%22/%3E      %3Cstop offset=%221%22 stop-color=%22#4cc9f0%22 stop-opacity=%220%22/%3E    %3C/radialGradient%3E    %3CradialGradient id=%22glowB%22 cx=%220%22 cy=%220%22 r=%221%22 gradientUnits=%22userSpaceOnUse%22 gradientTransform=%22translate(930 960) scale(640)%22%3E      %3Cstop offset=%220%22 stop-color=%22#ff6b8b%22 stop-opacity=%22.5%22/%3E      %3Cstop offset=%221%22 stop-color=%22#ff6b8b%22 stop-opacity=%220%22/%3E    %3C/radialGradient%3E    %3ClinearGradient id=%22moon%22 x1=%22230%22 y1=%22220%22 x2=%22760%22 y2=%22820%22 gradientUnits=%22userSpaceOnUse%22%3E      %3Cstop offset=%220%22 stop-color=%22#7ff5d6%22/%3E      %3Cstop offset=%22.45%22 stop-color=%22#4cc9f0%22/%3E      %3Cstop offset=%221%22 stop-color=%22#a99cff%22/%3E    %3C/linearGradient%3E    %3ClinearGradient id=%22play%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E      %3Cstop offset=%220%22 stop-color=%22#ffffff%22/%3E      %3Cstop offset=%221%22 stop-color=%22#ffd3de%22/%3E    %3C/linearGradient%3E    %3Cmask id=%22crescent%22%3E      %3Crect width=%221024%22 height=%221024%22 fill=%22#000%22/%3E      %3Ccircle cx=%22500%22 cy=%22520%22 r=%22292%22 fill=%22#fff%22/%3E      %3Ccircle cx=%22628%22 cy=%22438%22 r=%22250%22 fill=%22#000%22/%3E    %3C/mask%3E    %3Cfilter id=%22neon%22 x=%22-30%25%22 y=%22-30%25%22 width=%22160%25%22 height=%22160%25%22%3E      %3CfeGaussianBlur stdDeviation=%2234%22/%3E    %3C/filter%3E    %3Cfilter id=%22soft%22 x=%22-50%25%22 y=%22-50%25%22 width=%22200%25%22 height=%22200%25%22%3E      %3CfeGaussianBlur stdDeviation=%2214%22/%3E    %3C/filter%3E  %3C/defs%3E  %3Crect width=%221024%22 height=%221024%22 fill=%22url(#bg)%22/%3E  %3Crect width=%221024%22 height=%221024%22 fill=%22url(#glowA)%22/%3E  %3Crect width=%221024%22 height=%221024%22 fill=%22url(#glowB)%22/%3E    %3Cg transform=%22translate(500 520)%22 stroke=%22#ffffff%22 stroke-linecap=%22round%22%3E    %3Cg stroke-opacity=%22.22%22 stroke-width=%2210%22%3E      %3Cline x1=%220%22 y1=%22-378%22 x2=%220%22 y2=%22-352%22 transform=%22rotate(-150)%22/%3E      %3Cline x1=%220%22 y1=%22-378%22 x2=%220%22 y2=%22-352%22 transform=%22rotate(-120)%22/%3E      %3Cline x1=%220%22 y1=%22-378%22 x2=%220%22 y2=%22-352%22 transform=%22rotate(-90)%22/%3E      %3Cline x1=%220%22 y1=%22-378%22 x2=%220%22 y2=%22-352%22 transform=%22rotate(-60)%22/%3E      %3Cline x1=%220%22 y1=%22-378%22 x2=%220%22 y2=%22-352%22 transform=%22rotate(-30)%22/%3E      %3Cline x1=%220%22 y1=%22-378%22 x2=%220%22 y2=%22-352%22 transform=%22rotate(30)%22/%3E      %3Cline x1=%220%22 y1=%22-378%22 x2=%220%22 y2=%22-352%22 transform=%22rotate(60)%22/%3E      %3Cline x1=%220%22 y1=%22-378%22 x2=%220%22 y2=%22-352%22 transform=%22rotate(90)%22/%3E      %3Cline x1=%220%22 y1=%22-378%22 x2=%220%22 y2=%22-352%22 transform=%22rotate(120)%22/%3E      %3Cline x1=%220%22 y1=%22-378%22 x2=%220%22 y2=%22-352%22 transform=%22rotate(150)%22/%3E      %3Cline x1=%220%22 y1=%22-378%22 x2=%220%22 y2=%22-352%22 transform=%22rotate(180)%22/%3E    %3C/g%3E    %3Cline x1=%220%22 y1=%22-392%22 x2=%220%22 y2=%22-344%22 stroke=%22#ff7e9b%22 stroke-width=%2216%22/%3E  %3C/g%3E    %3Crect width=%221024%22 height=%221024%22 fill=%22url(#moon)%22 mask=%22url(#crescent)%22 filter=%22url(#neon)%22 opacity=%22.85%22/%3E  %3Crect width=%221024%22 height=%221024%22 fill=%22url(#moon)%22 mask=%22url(#crescent)%22/%3E    %3Cpath d=%22M598 452c0-22 24-36 43-25l176 101c19 11 19 39 0 50L641 679c-19 11-43-3-43-25z%22 fill=%22#ff6b8b%22 filter=%22url(#soft)%22 opacity=%22.75%22/%3E  %3Cpath d=%22M598 452c0-22 24-36 43-25l176 101c19 11 19 39 0 50L641 679c-19 11-43-3-43-25z%22 fill=%22url(#play)%22/%3E    %3Cpath d=%22M792 238c5 34 21 50 55 55-34 5-50 21-55 55-5-34-21-50-55-55 34-5 50-21 55-55z%22 fill=%22#ffffff%22 opacity=%22.95%22/%3E  %3Cpath d=%22M700 300c3 18 11 26 29 29-18 3-26 11-29 29-3-18-11-26-29-29 18-3 26-11 29-29z%22 fill=%22#ffd3de%22 opacity=%22.85%22/%3E  %3Ccircle cx=%22860%22 cy=%22410%22 r=%229%22 fill=%22#ffffff%22 opacity=%22.7%22/%3E%3C/svg%3E">
 <meta name="claude:viewport-fit-sides" content="cover">
-<!--TUNER_PROXY-->
+<!--NIGHTDIAL_PROXY-->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap">
@@ -270,6 +270,11 @@ html.tv .item:focus .n,html.tv .item:focus .sub,html.tv .item:focus .i{color:var
 .item .star.fill{color:var(--warn)}
 .list-label{padding:16px 14px 6px;font:600 11px var(--font-display);letter-spacing:.1em;text-transform:uppercase;color:var(--fg-3)}
 .drawer-foot{padding:14px 22px 22px;display:flex;flex-direction:column;gap:10px}
+.share-url{padding:14px 16px;border-radius:var(--r-md);background:var(--bg);font:600 var(--t-l,22px)/1.2 ui-monospace,Menlo,Consolas,monospace;color:var(--accent);word-break:break-all}
+.share-code{font:700 calc(var(--t-l,22px) * 1.6)/1 var(--font-display);letter-spacing:.12em;color:var(--fg)}
+.pl-row{display:flex;align-items:center;gap:6px}
+.pl-row .item{flex:1;min-width:0}
+.pl-row .icon-btn{flex:none}
 .search{position:fixed;left:50%;top:max(24px,env(safe-area-inset-top,0px));z-index:61;width:min(700px,calc(100% - 32px));max-height:calc(100% - 48px);transform:translateX(-50%);display:flex;flex-direction:column;background:var(--menu);border-radius:var(--r-xl);overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.05)}
 .search-bar{display:flex;align-items:center;gap:12px;margin:12px;padding:6px 6px 6px 16px;border-radius:var(--r-lg);background:var(--cell)}
 .search-bar input{flex:1;min-width:0;height:44px;border:0;background:transparent;font-size:17px;outline:none}
@@ -554,7 +559,9 @@ html.tv .cu-flag{font-size:var(--t-xs);top:var(--safe-y);left:var(--safe-x);padd
 .tvchans{position:absolute;top:var(--safe-y);bottom:var(--safe-y);left:var(--safe-x);z-index:3;width:calc(var(--vh)*76);max-width:64%;display:flex;flex-direction:column;padding:calc(var(--vh)*3);border-radius:var(--r-xl);background:var(--glass);box-shadow:0 30px 90px rgba(0,0,0,.5);animation:inL .18s ease-out}
 .tvchans-head{display:flex;justify-content:space-between;align-items:baseline;margin:0 calc(var(--vh)*1) calc(var(--vh)*2);font:600 var(--t-l) var(--font-display)}
 .tvchans-head span:last-child{color:var(--fg-2);font-variant-numeric:tabular-nums}
-.tvchans-list{display:flex;flex-direction:column;gap:calc(var(--vh)*.8)}
+.tvchans-list{position:relative;flex:1;min-height:0;overflow:hidden}
+.tvch-track{position:relative}
+.tvch-track .tvch{position:absolute;left:0;right:0}
 .tvch{display:grid;grid-template-columns:calc(var(--vh)*5) calc(var(--vh)*6.4) minmax(0,1fr);align-items:center;gap:calc(var(--vh)*1.6);height:calc(var(--vh)*9.4);padding:0 calc(var(--vh)*1.6);border-radius:var(--r-lg);cursor:pointer}
 .tvch .n{font:600 var(--t-xs) var(--font-display);color:var(--fg-3);text-align:right;font-variant-numeric:tabular-nums}
 .tvch .logo{width:calc(var(--vh)*6.4);height:calc(var(--vh)*6.4);font-size:var(--t-xs);border-radius:calc(var(--vh)*1.7)}
@@ -618,6 +625,9 @@ html.tv .drawer h2{font-size:var(--t-xl)}
 html.tv .icon-btn{width:calc(var(--vh)*6.4);height:calc(var(--vh)*6.4);border-radius:var(--r-md)}
 html.tv .icon-btn .i{width:var(--t-l);height:var(--t-l)}
 html.tv .list{padding:calc(var(--vh)*.6) calc(var(--vh)*2) calc(var(--vh)*3)}
+/* TV: scrolling lists fade out at their top and bottom edges instead of ending in a hard cut, with room to scroll the last item clear */
+html.tv .drawer .list,html.tv .tvnav-groups .list,html.tv .tvopts-list{padding-top:calc(var(--vh)*2.2);padding-bottom:calc(var(--vh)*6);-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 calc(var(--vh)*2.2),#000 calc(100% - var(--vh)*4.4),transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 calc(var(--vh)*2.2),#000 calc(100% - var(--vh)*4.4),transparent 100%)}
+html.tv .drawer header{padding-bottom:calc(var(--vh)*.4)}
 html.tv .settings section{gap:calc(var(--vh)*1.8);padding:calc(var(--vh)*1) calc(var(--vh)*1.6) calc(var(--vh)*3)}
 html.tv .settings h3{font-size:calc(var(--vh)*1.9)}
 html.tv .kv,html.tv .keys,html.tv .setting>span,html.tv .hint{font-size:var(--t-xs)}
@@ -813,6 +823,7 @@ html.native-video .screen video{display:none!important}
   <symbol id="i-grip" viewBox="0 0 24 24"><g fill="currentColor" stroke="none"><circle cx="9" cy="6.5" r="1.4"/><circle cx="15" cy="6.5" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="9" cy="17.5" r="1.4"/><circle cx="15" cy="17.5" r="1.4"/></g></symbol>
   <symbol id="i-film" viewBox="0 0 24 24"><path d="M4 10h16v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M4.2 10L3.6 7.6a1.5 1.5 0 0 1 1.1-1.8l12.9-3.3a1.5 1.5 0 0 1 1.8 1.1l.6 2.3z"/><path d="M8.2 5l2.6 3.4M13 3.8l2.6 3.4"/></symbol>
   <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8.5 5.5v13M15.5 5.5v13"/></symbol>
+  <symbol id="i-open" viewBox="0 0 24 24"><path d="M13.5 4.5h6v6M19.5 4.5l-8 8"/><path d="M17 13.5v4.5a1.5 1.5 0 0 1-1.5 1.5H6a1.5 1.5 0 0 1-1.5-1.5V8.5A1.5 1.5 0 0 1 6 7h4.5"/></symbol>
   <symbol id="i-chevr" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></symbol>
 <!--GLYPHS:BEGIN-->
   <symbol id="d-snow" viewBox="0 0 24 24"><defs><radialGradient id="dsnow"><stop offset="0" stop-color="currentColor"/><stop offset=".4" stop-color="currentColor" stop-opacity=".9"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient></defs><circle cx="12" cy="12" r="11.5" fill="url(#dsnow)"/></symbol>
@@ -946,7 +957,6 @@ html.native-video .screen video{display:none!important}
     <button class="tvnav-item" data-tv="vod" hidden><svg class="i"><use href="#i-film"/></svg>Movies &amp; Series</button>
     <button class="tvnav-item" data-tv="search"><svg class="i"><use href="#i-search"/></svg>Search</button>
     <button class="tvnav-item" data-tv="fav"><svg class="i"><use href="#i-star"/></svg>Favorites</button>
-    <button class="tvnav-item" data-tv="recent"><svg class="i"><use href="#i-replay"/></svg>Recently watched</button>
     <button class="tvnav-item" data-tv="channels"><svg class="i"><use href="#i-edit"/></svg>Edit channels</button>
     <button class="tvnav-item" data-tv="themes"><svg class="i"><use href="#i-palette"/></svg>Themes</button>
     <button class="tvnav-item" data-tv="playlists"><svg class="i"><use href="#i-playlist"/></svg>Playlists</button>
@@ -966,6 +976,11 @@ html.native-video .screen video{display:none!important}
   <header><h2>Playlists</h2><button class="icon-btn" data-close aria-label="Close"><svg class="i"><use href="#i-close"/></svg></button></header>
   <div class="list" id="playlistsList"></div>
   <div class="drawer-foot"><button class="btn primary" id="addPlaylistBtn"><svg class="i"><use href="#i-plus"/></svg>Add playlist</button></div>
+</aside>
+
+<aside class="drawer right wide" id="plDrawer" hidden aria-label="Playlist options">
+  <header><h2 id="plTitle">Playlist options</h2><button class="icon-btn" data-close aria-label="Close"><svg class="i"><use href="#i-close"/></svg></button></header>
+  <div class="list settings" id="plBody"></div>
 </aside>
 
 <aside class="drawer right" id="settingsDrawer" hidden aria-label="Settings">
@@ -991,6 +1006,7 @@ html.native-video .screen video{display:none!important}
 
 <div class="modal" id="vodModal" hidden role="dialog" aria-modal="true" aria-label="Movie or series details"><div class="modal-card vod-card" id="vodCard"></div></div>
 
+<div class="modal" id="vpnModal" hidden role="dialog" aria-modal="true" aria-label="Send a VPN config"><div class="modal-card" id="vpnCard"></div></div>
 <div class="modal" id="progModal" hidden role="dialog" aria-modal="true" aria-label="Program details"><div class="modal-card" id="progCard"></div></div>
 
 <div class="login" id="login" hidden role="dialog" aria-modal="true" aria-labelledby="loginTitle">
@@ -1042,14 +1058,16 @@ html.native-video .screen video{display:none!important}
 /* ================= basics ================= */
 const $ = (s, r = document) => r.querySelector(s);
 const MIN = 60000, HOUR = 60 * MIN, DAY = 24 * HOUR;
-const PROXY_ON = !!window.TUNER_PROXY;
-const TV_MODE = !!window.TUNER_TV;
-const PREVIEW_TV = !!window.TUNER_TV_PREVIEW;
+// Never runs inside someone else's page (no clickjacking of the website).
+if (window.top !== window.self) { document.documentElement.textContent = ''; throw new Error('Nightdial does not run inside other pages'); }
+const PROXY_ON = !!window.NIGHTDIAL_PROXY;
+const TV_MODE = !!window.NIGHTDIAL_TV;
+const PREVIEW_TV = !!window.NIGHTDIAL_TV_PREVIEW;
 // The sample "demo" playlist only exists in preview pages; the real apps start blank until you add a playlist.
-const DEMO_OK = !!window.TUNER_DEMO;
+const DEMO_OK = !!window.NIGHTDIAL_DEMO;
 if (TV_MODE) document.documentElement.classList.add('tv');
 // Fire TV app: video is drawn by Android's own player underneath the page (plays Dolby audio, H.265 and raw TS).
-const NATIVE = (() => { try { return !!(window.TunerNative && window.TunerNative.hasPlayer && window.TunerNative.hasPlayer()); } catch (e) { return false; } })();
+const NATIVE = (() => { try { return !!(window.NightdialNative && window.NightdialNative.hasPlayer && window.NightdialNative.hasPlayer()); } catch (e) { return false; } })();
 if (NATIVE) document.documentElement.classList.add('native-video');
 if (PREVIEW_TV) {
   // Browser preview of the TV app: draw everything inside a 960x540 "screen" scaled to fit.
@@ -1067,15 +1085,32 @@ if (PREVIEW_TV) {
   window.addEventListener('resize', fit);
   fit();
 }
-const via = u => PROXY_ON ? '/proxy?u=' + encodeURIComponent(u) : u;
-const HLS_SRC = 'https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js';
-const MPEGTS_SRC = 'https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.js';
+const via = u => PROXY_ON ? '/proxy?u=' + encodeURIComponent(u) + (PO.ua && !window.NIGHTDIAL_TV ? '&ua=' + encodeURIComponent(PO.ua) : '') : u;
+// The Nightdial website serves its own copies of the video players; the computer version gets these exact files from jsDelivr.
+const HLS_SRC = window.NIGHTDIAL_SITE ? 'lib/hls.min.js' : 'https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js';
+const MPEGTS_SRC = window.NIGHTDIAL_SITE ? 'lib/mpegts.js' : 'https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.js';
+const SITE = !!window.NIGHTDIAL_SITE;
+// http IPTV servers can't be reached from a secure (https) web page: browsers block it.
+const blockedHere = u => SITE && location.protocol === 'https:' && /^http:/i.test(String(u || '').trim().replace(/^(?!https?:)/i, 'http://'));
+const BLOCKED_MSG = host => `${host} uses http, which web browsers block on secure pages. Use the Fire TV or iPhone app, or the computer version from the Nightdial website.`;
 const reduceMotion = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 
+// Playlists and settings saved by earlier versions move to the current key names, once.
+try {
+  if (!localStorage.getItem('nightdial:moved')) {
+    const legacy = 'tuner:';
+    Object.keys(localStorage).filter(k => k.startsWith(legacy)).forEach(k => {
+      const nk = 'nightdial:' + k.slice(legacy.length);
+      if (localStorage.getItem(nk) == null) localStorage.setItem(nk, localStorage.getItem(k));
+      localStorage.removeItem(k);
+    });
+    localStorage.setItem('nightdial:moved', '1');
+  }
+} catch (e) {}
 const store = {
-  get(k, d) { try { const v = localStorage.getItem('tuner:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
-  set(k, v) { try { localStorage.setItem('tuner:' + k, JSON.stringify(v)); } catch (e) {} },
-  del(k) { try { localStorage.removeItem('tuner:' + k); } catch (e) {} }
+  get(k, d) { try { const v = localStorage.getItem('nightdial:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('nightdial:' + k, JSON.stringify(v)); } catch (e) {} },
+  del(k) { try { localStorage.removeItem('nightdial:' + k); } catch (e) {} }
 };
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const pad = n => String(n).padStart(2, '0');
@@ -1087,11 +1122,16 @@ const LOOK_DEFAULTS = { theme: 'midnight', hl: 'auto', menu: 'auto', font: 'popp
 /* Interface size: [id, label, TV scale, browser scale]. "Smaller" is the default so the guide shows more channels and more hours. */
 const SIZES = [['xs', 'Smallest', .74, .82], ['s', 'Smaller', .86, .9], ['m', 'Standard', 1, 1], ['l', 'Larger', 1.14, 1.1]];
 const uiScale = () => { const z = SIZES.find(x => x[0] === prefs.size) || SIZES[1]; return TV_MODE ? z[2] : z[3]; };
-const prefs = Object.assign({ clock24: defaultClock24, rows: 'comfortable', format: 'auto', aspect: '16:9', epgSource: 'provider', xmltvUrl: '', sort: 'provider' }, LOOK_DEFAULTS, store.get('prefs', {}));
+const prefs = Object.assign({ clock24: defaultClock24, rows: 'comfortable', format: 'auto', aspect: '16:9', player: 'builtin', vpnAuto: false, vpnRequired: false, epgSource: 'provider', xmltvUrl: '', sort: 'provider' }, LOOK_DEFAULTS, store.get('prefs', {}));
 const savePrefs = () => store.set('prefs', prefs);
 // Stream format now defaults to "Best": the provider's original stream when the device can play it.
 if (!prefs.fmtV2) { prefs.format = 'auto'; prefs.fmtV2 = true; savePrefs(); }
 const ASPECTS = [['16:9', '16:9'], ['fit', 'Fit'], ['zoom', 'Zoom'], ['stretch', 'Stretch'], ['4:3', '4:3']];
+/* Options kept for each playlist (Playlist options). A new playlist starts from the choices made before options were per playlist. */
+const PL_DEFAULTS = { format: 'auto', sort: 'provider', epgSource: 'provider', xmltvUrl: '', epgShift: 0, numbers: 'provider', startOn: 'last', vod: true, hideAdult: false, ua: '' };
+let PO = Object.assign({}, PL_DEFAULTS);
+const plOptsFor = id => Object.assign({}, PL_DEFAULTS, { format: prefs.format, sort: prefs.sort, epgSource: prefs.epgSource, xmltvUrl: prefs.xmltvUrl }, store.get('plopts:' + id, {}));
+const savePO = () => { if (S.provider && S.provider.type !== 'none') store.set('plopts:' + S.provider.id, PO); };
 const aspectLabel = () => (ASPECTS.find(a => a[0] === prefs.aspect) || ASPECTS[0])[1];
 
 /* ================= look: themes, highlight + menu colors, fonts, holiday decorations ================= */
@@ -1187,9 +1227,9 @@ const FONT_FILES = {
   Barlow: [[400, 'Barlow-Regular'], [500, 'Barlow-Medium'], [600, 'Barlow-SemiBold']],
   'Barlow Semi Condensed': [[500, 'BarlowSemiCondensed-Medium'], [600, 'BarlowSemiCondensed-SemiBold'], [700, 'BarlowSemiCondensed-Bold']]
 };
-if (window.TUNER_LOCAL_FONTS) {
+if (window.NIGHTDIAL_LOCAL_FONTS) {
   const st = document.createElement('style');
-  st.textContent = Object.keys(FONT_FILES).map(fam => FONT_FILES[fam].map(([w, file]) => `@font-face{font-family:'${fam}';font-weight:${w};font-style:normal;font-display:swap;src:url('/fonts/${file}.ttf') format('truetype')}`).join('')).join('');
+  st.textContent = Object.keys(FONT_FILES).map(fam => FONT_FILES[fam].map(([w, file]) => `@font-face{font-family:'${fam}';font-weight:${w};font-style:normal;font-display:swap;src:url('fonts/${file}.ttf') format('truetype')}`).join('')).join('');
   document.head.appendChild(st);
   FONTS.forEach(f => fontLinks.add(f.id));
 }
@@ -1366,7 +1406,7 @@ const el = id => document.getElementById(id);
 const app = el('app'), guideScroll = el('guideScroll'), guideCanvas = el('guideCanvas'), rowsEl = el('rows'), ticksEl = el('ticks'), nowLine = el('nowLine');
 const screenEl = el('screen'), demoCanvas = el('demoCanvas'), video = el('video'), spinner = el('spinner'), screenMsg = el('screenMsg'), unmuteBtn = el('unmuteBtn');
 const osd = el('osd'), scrim = el('scrim'), toastEl = el('toast'), numEl = el('numEntry'), loginEl = el('login');
-if (window.TUNER_TV) video.muted = false;  // TV app: sound on from the start
+if (window.NIGHTDIAL_TV) video.muted = false;  // TV app: sound on from the start
 
 const x = t => (t - rangeStart) / MIN * ppm;
 const totalW = () => x(rangeEnd);
@@ -1453,9 +1493,21 @@ function loadBlank() {
 }
 
 /* ================= provider wiring ================= */
+/* Guide time shift (Playlist options): moves every listing when a provider's guide is a few hours off. */
+const shiftList = list => { const d = (Number(PO.epgShift) || 0) * HOUR; return d ? list.map(q => Object.assign({}, q, { start: q.start + d, end: q.end + d })) : list; };
+/* Channel numbers: the provider's own, or 1, 2, 3… in the playlist's order. */
+function applyNumbering() { S.channels.forEach((c, k) => { if (c.pnum == null) c.pnum = c.num; c.num = PO.numbers === 'seq' ? k + 1 : c.pnum; }); }
+/* "Hide adult groups": groups whose names say adult/XXX/18+ stay out of the guide. */
+const ADULT_RE = /\b(adult|xxx|18\s*\+|porn|erotic)/i;
+let adultGr = new Set();
+function applyAdult() { adultGr = new Set(PO.hideAdult ? S.groups.filter(g => ADULT_RE.test(g.name)).map(g => g.id) : []); }
+/* Fire TV: the User-Agent the player and the app's requests send to the provider. */
+function applyUserAgent() { try { if (window.NightdialNative && window.NightdialNative.setUserAgent) window.NightdialNative.setUserAgent(PO.ua || ''); } catch (e) {} }
 function setProvider(p, channels, groups) {
   teardownStream();
   S.provider = p; S.channels = channels; S.groups = groups;
+  PO = p.type === 'xtream' || p.type === 'm3u' ? plOptsFor(p.id) : Object.assign({}, PL_DEFAULTS);
+  applyNumbering(); applyAdult(); applyUserAgent();
   S.byId = new Map(channels.map(c => [c.id, c]));
   epg = new Map(); epgState = new Map(); epgVer = new Map(); epgQueue = [];
   favs = new Set(store.get('fav:' + p.id, []));
@@ -1463,12 +1515,14 @@ function setProvider(p, channels, groups) {
   hiddenGr = new Set(store.get('hideg:' + p.id, []));
   recents = store.get('recent:' + p.id, []).filter(id => S.byId.has(id));
   S.groupId = store.get('group:' + p.id, 'all');
-  if (S.groupId !== 'all' && S.groupId !== 'fav' && S.groupId !== 'recent' && (!groups.some(g => g.id === S.groupId) || hiddenGr.has(S.groupId))) S.groupId = 'all';
+  if (PO.startOn === 'all' || (PO.startOn === 'fav' && !favs.size)) S.groupId = 'all';
+  else if (PO.startOn === 'fav') S.groupId = 'fav';
+  if (S.groupId !== 'all' && S.groupId !== 'fav' && (!groups.some(g => g.id === S.groupId) || hiddenGr.has(S.groupId) || adultGr.has(S.groupId))) S.groupId = 'all';
   S.playingId = null; S.catchup = null;
 }
 function startUp() {
   updateRailCard();
-  if (S.provider.type === 'xtream' && prefs.epgSource === 'xmltv') S.channels.forEach(c => epgState.set(c.id, 'loading'));
+  if (S.provider.type === 'xtream' && PO.epgSource === 'xmltv') S.channels.forEach(c => epgState.set(c.id, 'loading'));
   if (S.provider.type === 'm3u') S.channels.forEach(c => epgState.set(c.id, S.provider.epgUrl ? 'loading' : 'done'));
   applyGroup(S.groupId, { keepFocus: false });
   const lastCh = S.byId.get(store.get('lastch:' + S.provider.id, '')) || S.list[0] || S.channels[0];
@@ -1480,31 +1534,31 @@ function startUp() {
   }
   layoutGuide();
   jumpToNow(true);
-  if ((S.provider.type === 'xtream' && prefs.epgSource === 'xmltv') || (S.provider.type === 'm3u' && S.provider.epgUrl)) loadXmltv();
+  if ((S.provider.type === 'xtream' && PO.epgSource === 'xmltv') || (S.provider.type === 'm3u' && S.provider.epgUrl)) loadXmltv();
   probeVod();
 }
 
 /* Favorites keep your own order; hidden channels and groups stay out of the guide; other lists follow the sort setting. */
 let hiddenCh = new Set(), hiddenGr = new Set();
 const saveFavs = () => store.set('fav:' + S.provider.id, [...favs]);
-const saveHidden = () => { store.set('hide:' + S.provider.id, [...hiddenCh]); store.set('hideg:' + S.provider.id, [...hiddenGr]); };
-const chanVisible = c => !hiddenCh.has(c.id) && !hiddenGr.has(c.groupId);
+const saveHidden = () => { navVer++; store.set('hide:' + S.provider.id, [...hiddenCh]); store.set('hideg:' + S.provider.id, [...hiddenGr]); };
+const chanVisible = c => !hiddenCh.has(c.id) && !hiddenGr.has(c.groupId) && !adultGr.has(c.groupId);
 const sortName = c => String(c.name).replace(/^[A-Z]{2,3}\s*[:|]\s*/, '');
 function sortChannels(list) {
-  if (prefs.sort === 'number') list.sort((a, b) => (a.num || 1e9) - (b.num || 1e9));
-  else if (prefs.sort === 'name') list.sort((a, b) => sortName(a).localeCompare(sortName(b), undefined, { numeric: true, sensitivity: 'base' }));
+  if (PO.sort === 'number') list.sort((a, b) => (a.num || 1e9) - (b.num || 1e9));
+  else if (PO.sort === 'name') list.sort((a, b) => sortName(a).localeCompare(sortName(b), undefined, { numeric: true, sensitivity: 'base' }));
   return list;
 }
 function groupList(id) {
   if (id === 'fav') return [...favs].map(i => S.byId.get(i)).filter(c => c && !hiddenCh.has(c.id));
   if (id === 'recent') return recents.map(i => S.byId.get(i)).filter(c => c && chanVisible(c));
   if (id === 'all') return sortChannels(S.channels.filter(chanVisible));
-  return sortChannels(S.channels.filter(c => c.groupId === id && !hiddenCh.has(c.id)));
+  return sortChannels(S.channels.filter(c => c.groupId === id && !hiddenCh.has(c.id) && !adultGr.has(c.groupId)));
 }
 function visibleGroups() {
   const counts = new Map();
   for (const c of S.channels) if (!hiddenCh.has(c.id)) counts.set(c.groupId, (counts.get(c.groupId) || 0) + 1);
-  return S.groups.filter(g => !hiddenGr.has(g.id)).map(g => ({ id: g.id, name: g.name, count: counts.get(g.id) || 0 }));
+  return S.groups.filter(g => !hiddenGr.has(g.id) && !adultGr.has(g.id)).map(g => ({ id: g.id, name: g.name, count: counts.get(g.id) || 0 }));
 }
 function railActive() {
   const vod = S.view === 'vod';
@@ -1597,10 +1651,14 @@ function renderGuide() {
   const last = Math.min(S.list.length - 1, Math.ceil((sc.scrollTop + sc.clientHeight) / rowH) + 3);
   const leftT = rangeStart + sc.scrollLeft / ppm * MIN;
   const span = Math.max(60, (sc.clientWidth - chanW) / ppm) * MIN;
-  const wStart = Math.max(rangeStart, Math.floor((leftT - 3 * HOUR) / HOUR) * HOUR);
-  const wEnd = Math.min(rangeEnd, Math.ceil((leftT + span + 3 * HOUR) / HOUR) * HOUR);
-  const wk = wStart + ':' + wEnd;
-  if (wk !== winKey) { winKey = wk; win = { wStart, wEnd }; rowCache.forEach(r => { r.sig = ''; }); }
+  // rows hold a few hours either side of what's on screen; they're only rebuilt once the view nears an edge of that
+  const okWin = winKey && (win.wStart <= rangeStart || win.wStart <= leftT - HOUR) && (win.wEnd >= rangeEnd || win.wEnd >= leftT + span + HOUR);
+  if (!okWin) {
+    const wStart = Math.max(rangeStart, Math.floor((leftT - 3 * HOUR) / HOUR) * HOUR);
+    const wEnd = Math.min(rangeEnd, Math.ceil((leftT + span + 3 * HOUR) / HOUR) * HOUR);
+    winKey = wStart + ':' + wEnd; win = { wStart, wEnd }; rowCache.forEach(r => { r.sig = ''; });
+  }
+  const wk = winKey;
   for (const [i, r] of rowCache) {
     if (i < first || i > last || r.ch !== S.list[i].id) { r.el.remove(); rowCache.delete(i); }
   }
@@ -1620,9 +1678,11 @@ function renderGuide() {
     if (S.provider.type === 'xtream' && !epgState.has(ch.id)) need.push(ch.id);
   }
   if (need.length) requestEpg(need);
-  sc.setAttribute('aria-activedescendant', fp ? `p${focus.i}_${fp.start}` : `p${focus.i}_e`);
+  const ad = fp ? `p${focus.i}_${fp.start}` : `p${focus.i}_e`;
+  if (sc.getAttribute('aria-activedescendant') !== ad) sc.setAttribute('aria-activedescendant', ad);
   fitTitles();
-  el('cornerDate').textContent = fmtDay(leftT + 20 * MIN);
+  const cd = fmtDay(leftT + 20 * MIN), cdEl = el('cornerDate');
+  if (cdEl.textContent !== cd) cdEl.textContent = cd;
 }
 /* Programs that started before the visible edge: start their title at the edge so it stays readable. */
 function fitTitles() {
@@ -1687,8 +1747,84 @@ const isNowProg = (p, now = Date.now()) => !!p && p.start <= now && p.end > now;
 function neighbor(ch, p, dir) { const ps = epg.get(ch.id) || []; const k = ps.indexOf(p); return k < 0 ? null : ps[k + dir] || null; }
 function canCatchup(ch, p, now = Date.now()) { return !!(ch && p && ch.archive && p.end <= now && p.start >= now - (ch.archiveDays || 3) * DAY); }
 
-function focusChanged(scroll = true) {
-  if (scroll) ensureVisible();
+/* ================= smooth scrolling =================
+   Remote presses glide the guide and the menus to their new spot instead of jumping a page at a time.
+   Each scroll box eases toward its target every frame; another press while it's still moving just moves the
+   target, so holding a button gives one continuous, even scroll. Far jumps skip most of the way first. */
+const glides = new Map();
+let glideRaf = 0, glideLast = 0;
+function glideTarget(box) { const g = glides.get(box); return g ? { top: g.top, left: g.left } : { top: box.scrollTop, left: box.scrollLeft }; }
+function glideTo(box, top, left, instant) {
+  const cur = glideTarget(box);
+  const maxT = Math.max(0, box.scrollHeight - box.clientHeight), maxL = Math.max(0, box.scrollWidth - box.clientWidth);
+  const t = top == null ? cur.top : Math.round(Math.max(0, Math.min(maxT, top)));
+  const l = left == null ? cur.left : Math.round(Math.max(0, Math.min(maxL, left)));
+  if (instant || reduceMotion.matches) { glides.delete(box); box.scrollTop = t; box.scrollLeft = l; return; }
+  let g = glides.get(box);
+  if (!g) {
+    if (Math.abs(t - box.scrollTop) < 1 && Math.abs(l - box.scrollLeft) < 1) return;
+    g = { y: box.scrollTop, x: box.scrollLeft }; glides.set(box, g);
+  }
+  g.top = t; g.left = l;
+  // a long way off: start most of the way there, so the glide is short and nothing renders in between
+  const fh = box.clientHeight * 1.5, fw = box.clientWidth * 1.5;
+  if (Math.abs(t - g.y) > fh) { g.y = t - Math.sign(t - g.y) * fh; box.scrollTop = g.y; }
+  if (Math.abs(l - g.x) > fw) { g.x = l - Math.sign(l - g.x) * fw; box.scrollLeft = g.x; }
+  if (!glideRaf) { glideLast = 0; glideRaf = requestAnimationFrame(glideStep); }
+}
+function glideStep(ts) {
+  const dt = glideLast ? Math.min(50, ts - glideLast) : 16;
+  glideLast = ts;
+  const k = 1 - Math.exp(-dt / 55);   // ~95% of the way in 165 ms, the same at 30, 60 or 144 frames a second
+  for (const [box, g] of glides) {
+    g.y += (g.top - g.y) * k; g.x += (g.left - g.x) * k;
+    if (Math.abs(g.top - g.y) < .5) g.y = g.top;
+    if (Math.abs(g.left - g.x) < .5) g.x = g.left;
+    box.scrollTop = g.y; box.scrollLeft = g.x;
+    if (g.y === g.top && g.x === g.left) glides.delete(box);
+  }
+  glideRaf = glides.size ? requestAnimationFrame(glideStep) : 0;
+}
+// a mouse wheel, touch or drag takes over from a glide in progress
+['wheel', 'touchstart', 'mousedown'].forEach(t => document.addEventListener(t, () => glides.clear(), { passive: true, capture: true }));
+function scrollBoxOf(n) {
+  for (let p = n.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement) {
+    if (p.scrollHeight <= p.clientHeight + 1 && p.scrollWidth <= p.clientWidth + 1) continue;
+    const cs = getComputedStyle(p);
+    if (/auto|scroll/.test(cs.overflowY + ' ' + cs.overflowX)) return p;
+  }
+  return null;
+}
+/* Keeps a focused control fully on screen with some room around it, so the next item always peeks in and nothing is cut off. */
+let layerOpenedAt = 0;
+function keepVisible(n, instant) {
+  if (!n || !n.getBoundingClientRect) return;
+  // radios and checkboxes are hidden: their label is what's on screen
+  const t = n.tagName === 'INPUT' && /^(radio|checkbox)$/.test(n.type) ? (n.closest('label') || n.nextElementSibling || n) : n;
+  const box = scrollBoxOf(t); if (!box || box === guideScroll) return;
+  const br = box.getBoundingClientRect(), er = t.getBoundingClientRect();
+  if (!er.height && !er.width) return;
+  const cur = glideTarget(box);
+  const top = er.top - br.top - box.clientTop + box.scrollTop, left = er.left - br.left - box.clientLeft + box.scrollLeft;
+  const ch = box.clientHeight, cw = box.clientWidth;
+  const padY = Math.max(0, Math.min(Math.max(er.height * .8, ch * .12), (ch - er.height) / 2)), padX = Math.max(0, Math.min(er.width * .5, (cw - er.width) / 2));
+  let st = cur.top, sl = cur.left;
+  if (top - padY < st) st = top - padY; else if (top + er.height + padY > st + ch) st = top + er.height + padY - ch;
+  if (box.scrollWidth > cw + 1) { if (left - padX < sl) sl = left - padX; else if (left + er.width + padX > sl + cw) sl = left + er.width + padX - cw; }
+  glideTo(box, st, sl, instant || performance.now() - layerOpenedAt < 250);
+}
+// TV: every focus move glides instead of letting the browser jump the list
+if (TV_MODE) {
+  const nativeFocus = HTMLElement.prototype.focus;
+  HTMLElement.prototype.focus = function (o) {
+    nativeFocus.call(this, { preventScroll: true });
+    if (!(o && o.preventScroll)) keepVisible(this);
+  };
+}
+
+/* mode: 'row' (moved up/down: only scroll sideways if the show is out of sight), 'prog' (moved along the row), false (no scrolling) */
+function focusChanged(mode = 'row') {
+  if (mode) ensureVisible(mode);
   renderGuide();
   updateHero();
 }
@@ -1696,43 +1832,70 @@ function moveRow(d) {
   if (!S.list.length) return;
   focus.i = Math.max(0, Math.min(S.list.length - 1, focus.i + d));
   if (focus.follow) focus.t = Date.now();
-  focusChanged();
+  focusChanged('row');
 }
-function openSideMenu() { if (TV_MODE) openTvNav(true); else openGroups(); }
-function moveProg(d, allowPast) {
+/* Left/Right walk through the shows on the row: back through what already aired (to 12 hours ago) and ahead. */
+function moveProg(d) {
   const ch = S.list[focus.i]; if (!ch) return;
   const p = focusedProg(), now = Date.now();
-  if (!p) { if (d < 0) openSideMenu(); return; }
-  const n = neighbor(ch, p, d);
-  if (d > 0) {
-    if (!n || n.start >= rangeEnd) return;
-    focus.t = isNowProg(n, now) ? now : n.start; focus.follow = isNowProg(n, now);
-  } else {
-    const intoPast = n && n.end <= now;
-    if (n && n.end > rangeStart && (!intoPast || ((allowPast || !TV_MODE) && canCatchup(ch, n, now)))) {
-      focus.t = isNowProg(n, now) ? now : Math.max(n.start, rangeStart); focus.follow = isNowProg(n, now);
-    } else if (allowPast) { if (n && !canCatchup(ch, n, now)) toast(ch.archive ? 'Catch-up only goes back ' + (ch.archiveDays || 3) + ' days on this channel' : 'This channel has no catch-up'); return; }
-    else { openSideMenu(); return; }
-  }
-  focusChanged();
+  if (!p) { shiftTime(d, 30 * MIN); return; }
+  let n = neighbor(ch, p, d);
+  if (n && (d > 0 ? n.start >= rangeEnd : n.end <= rangeStart)) n = null;
+  if (!n) { ensureVisible('prog'); return; }
+  focus.follow = isNowProg(n, now);
+  focus.t = focus.follow ? now : Math.max(n.start, rangeStart);
+  focusChanged('prog');
+}
+/* Moves the guide's time by a step (Rewind / Fast-forward jump a screen's worth; rows without listings move by half an hour). */
+function shiftTime(d, step) {
+  const ch = S.list[focus.i]; if (!ch) return;
+  const now = Date.now(), from = focus.follow ? now : focus.t;
+  const t = Math.max(rangeStart, Math.min(rangeEnd - MIN, from + d * step));
+  const ps = epg.get(ch.id) || [], k = ps.length ? firstIdx(ps, t) : -1, p = k >= 0 && ps[k] && ps[k].start <= t && ps[k].end > t ? ps[k] : null;
+  if (p) { focus.follow = isNowProg(p, now); focus.t = focus.follow ? now : Math.max(p.start, rangeStart); }
+  else { focus.follow = false; focus.t = t; }
+  focusChanged('prog');
+}
+function pageTime(d) {
+  const span = Math.max(1, Math.floor((guideScroll.clientWidth - chanW) / ppm / 30) - 1) * 30 * MIN;
+  shiftTime(d, span);
 }
 function jumpToNow(initial) {
   focus.t = Date.now(); focus.follow = true;
-  const sc = guideScroll;
-  sc.scrollLeft = Math.max(0, x(Math.floor(Date.now() / (30 * MIN)) * 30 * MIN) - 6);
-  if (initial) sc.scrollTop = Math.max(0, focus.i * rowH - rowH);
-  focusChanged(!initial);
+  const sc = guideScroll, left = x(Math.floor(Date.now() / (30 * MIN)) * 30 * MIN) - 6;
+  if (initial) { glideTo(sc, focus.i * rowH - rowH, left, true); focusChanged(false); }
+  else { glideTo(sc, null, left); focusChanged('row'); }
 }
-function ensureVisible() {
-  const sc = guideScroll, top = focus.i * rowH, viewH = sc.clientHeight - headH;
-  if (top < sc.scrollTop) sc.scrollTop = top;
-  else if (top + rowH > sc.scrollTop + viewH) sc.scrollTop = top + rowH - viewH;
-  const p = focusedProg();
-  if (!p) return;
-  const l = x(Math.max(p.start, rangeStart)), r = x(Math.min(p.end, rangeEnd));
-  const viewL = sc.scrollLeft, viewW = sc.clientWidth - chanW;
-  if (l >= viewL + viewW - 60) sc.scrollLeft = Math.max(0, l - 30 * ppm);
-  else if (r <= viewL + 60) sc.scrollLeft = Math.max(0, r - viewW + 30 * ppm);
+/* Back in the guide: first back to the channel that's playing and what's on now; once there, Back opens the menu. */
+function guideBackHome() {
+  if (!S.list.length) return false;
+  const pl = S.byId.get(S.playingId), pi = pl ? S.list.indexOf(pl) : -1;
+  const target = pi >= 0 ? pi : focus.i, p = focusedProg();
+  if (focus.i === target && focus.follow && (!p || isNowProg(p))) return false;
+  focus.i = target;
+  jumpToNow(false);
+  guideScroll.focus({ preventScroll: true });
+  return true;
+}
+function ensureVisible(mode = 'row', instant = false) {
+  const sc = guideScroll, cur = glideTarget(sc);
+  const viewH = sc.clientHeight - headH, viewW = sc.clientWidth - chanW;
+  // a row of room above and below the focused row, so the next channel is always in view
+  const pad = Math.max(0, Math.min(rowH, (viewH - rowH) / 2));
+  const top = focus.i * rowH;
+  let st = cur.top, sl = cur.left;
+  if (top - pad < st) st = top - pad;
+  else if (top + rowH + pad > st + viewH) st = top + rowH + pad - viewH;
+  const p = focusedProg(), m = Math.min(30 * ppm, viewW / 6);
+  let l, r;
+  if (p) { l = x(Math.max(p.start, rangeStart)); r = x(Math.min(p.end, rangeEnd)); }
+  else { l = x(focus.follow ? Date.now() : focus.t); r = l + 30 * ppm; }
+  const seen = Math.min(r, sl + viewW) - Math.max(l, sl);
+  if (mode !== 'row' || seen < Math.min(r - l, m)) {
+    if (r - l + 2 * m <= viewW) { if (l - m < sl) sl = l - m; else if (r + m > sl + viewW) sl = r + m - viewW; }
+    else if (l - m < sl || l + m > sl + viewW) sl = l - m;
+  }
+  glideTo(sc, st, sl, instant);
 }
 function setFocusTo(i, p) {
   focus.i = i;
@@ -1828,7 +1991,7 @@ function updateOsd() {
 }
 
 /* ================= playback ================= */
-let hls = null, mts = null, playToken = 0, streamFail = null, userMuted = false, gestured = !!window.TUNER_TV;
+let hls = null, mts = null, playToken = 0, streamFail = null, userMuted = false, gestured = !!window.NIGHTDIAL_TV;
 const libs = {};
 function loadScript(src) {
   if (!libs[src]) libs[src] = new Promise((res, rej) => {
@@ -1842,7 +2005,7 @@ function loadScript(src) {
 function teardownStream() {
   if (cancelWait) cancelWait();
   streamFail = null;
-  if (NATIVE) { try { window.TunerNative.stop(); } catch (e) {} }
+  if (NATIVE) { try { window.NightdialNative.stop(); } catch (e) {} }
   if (hls) { try { hls.destroy(); } catch (e) {} hls = null; }
   if (mts) { try { mts.pause(); mts.unload(); mts.detachMediaElement(); mts.destroy(); } catch (e) {} mts = null; }
   try { video.pause(); video.removeAttribute('src'); video.load(); } catch (e) {}
@@ -1850,11 +2013,11 @@ function teardownStream() {
 /* "Best": on Fire TV the original MPEG-TS stream (Android's player handles it natively, like TiviMate) when the account allows it;
    in a browser, HLS. Or the format chosen in Settings. */
 function streamExt() {
-  if (prefs.format === 'ts' || prefs.format === 'm3u8') return prefs.format;
+  if (PO.format === 'ts' || PO.format === 'm3u8') return PO.format;
   const allowed = (S.provider && S.provider.info && S.provider.info.formats) || [];
   return NATIVE && (!allowed.length || allowed.indexOf('ts') >= 0) ? 'ts' : 'm3u8';
 }
-const formatLabel = () => prefs.format === 'auto' ? `Best (${streamExt() === 'ts' ? 'MPEG-TS' : 'HLS'})` : prefs.format === 'ts' ? 'MPEG-TS' : 'HLS';
+const formatLabel = () => PO.format === 'auto' ? `Best (${streamExt() === 'ts' ? 'MPEG-TS' : 'HLS'})` : PO.format === 'ts' ? 'MPEG-TS' : 'HLS';
 function liveUrl(ch) {
   const p = S.provider;
   return `${p.server}/live/${enc(p.user)}/${enc(p.pass)}/${ch.id}.${streamExt()}`;
@@ -1881,6 +2044,9 @@ async function play(ch, opts = {}) {
   store.set('lastch:' + S.provider.id, ch.id);
   hideScreenMsg();
   renderGuide(); updateOsd();
+  if (S.provider.type !== 'demo' && vpnGate(() => play(ch, opts))) return;
+  const external = !!opts.full && S.provider.type !== 'demo' && useExternal();
+  if (external) { updateHero(); handOff(streamUrlFor(ch), ch.name + (S.catchup ? ' · ' + S.catchup.title : ''), prefs.player); return; }
   if (opts.full) enterFull();
   if (S.provider.type === 'demo') {
     teardownStream();
@@ -1930,7 +2096,7 @@ function waitPlaying() {
 let streamOk = null, nativeDetail = '';
 /* Picture shape. The Fire TV app sizes its own player; in a browser the video element is sized here. */
 function applyAspect() {
-  if (NATIVE) { try { if (window.TunerNative.setAspect) window.TunerNative.setAspect(prefs.aspect); } catch (e) {} return; }
+  if (NATIVE) { try { if (window.NightdialNative.setAspect) window.NightdialNative.setAspect(prefs.aspect); } catch (e) {} return; }
   const a = prefs.aspect;
   screenEl.dataset.ar = a;
   if (a === '16:9' || a === '4:3') {
@@ -1950,7 +2116,7 @@ function syncVideoRect() {
   const r = app.classList.contains('is-full')
     ? { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight }
     : screenEl.getBoundingClientRect();
-  try { window.TunerNative.setVideoRect(r.left, r.top, r.width, r.height); } catch (e) {}
+  try { window.NightdialNative.setVideoRect(r.left, r.top, r.width, r.height); } catch (e) {}
   const bg = el('bg');
   if (app.classList.contains('is-full')) bg.style.clipPath = '';
   else {
@@ -1971,11 +2137,11 @@ function nativeStream(url, live) {
   teardownStream();
   syncVideoRect();
   const waiting = waitPlaying();
-  try { window.TunerNative.setMuted(!!userMuted); window.TunerNative.play(url, !!live); }
+  try { window.NightdialNative.setMuted(!!userMuted); window.NightdialNative.play(url, !!live); }
   catch (e) { if (streamFail) streamFail('network'); }
   return waiting;
 }
-window.tunerPlayerEvent = function (type, detail) {
+window.nightdialPlayerEvent = function (type, detail) {
   if (type === 'playing') { spinner.hidden = true; hideScreenMsg(); if (streamOk) streamOk(); }
   else if (type === 'buffering') { if (screenMsg.hidden) spinner.hidden = false; }
   else if (type === 'error') {
@@ -1993,7 +2159,7 @@ window.tunerPlayerEvent = function (type, detail) {
 function audioTracksInfo() {
   if (NATIVE) {
     try {
-      const list = JSON.parse(window.TunerNative.audioTracks() || '[]');
+      const list = JSON.parse(window.NightdialNative.audioTracks() || '[]');
       if (list.length < 2) return null;
       const i = Math.max(0, list.findIndex(t => t.selected));
       return { index: i, count: list.length, label: list[i].label || 'Track ' + (i + 1) };
@@ -2008,7 +2174,7 @@ function audioTracksInfo() {
 function nextAudioTrack() {
   const info = audioTracksInfo(); if (!info) return;
   const next = (info.index + 1) % info.count;
-  if (NATIVE) { try { window.TunerNative.setAudioTrack(next); } catch (e) {} }
+  if (NATIVE) { try { window.NightdialNative.setAudioTrack(next); } catch (e) {} }
   else if (hls) hls.audioTrack = next;
 }
 /* ---- pause and rewind (live TV and On Demand) ---- */
@@ -2017,7 +2183,7 @@ function mediaState() {
   if (S.vodPlaying && demoVod()) return demoVodState();
   if (NATIVE) {
     try {
-      const v = String(window.TunerNative.position()).split(';');
+      const v = String(window.NightdialNative.position()).split(';');
       return { pos: (+v[0] || 0) / 1000, dur: Math.max(0, +v[1] || 0) / 1000, paused: v[2] === '1', seekable: v[3] === '1', behind: v[4] === '' || v[4] == null || +v[4] < 0 ? null : +v[4] / 1000 };
     } catch (e) { return { pos: 0, dur: 0, paused: false, seekable: false, behind: null }; }
   }
@@ -2027,12 +2193,12 @@ function mediaState() {
 }
 function mediaSetPaused(p) {
   if (S.vodPlaying && demoVod()) { const st = demoVodState(); Object.assign(DV, { pos: st.pos, at: Date.now(), paused: !!p }); if (p) demoStop(); else demoSet(demoCh, demoCu); return; }
-  if (NATIVE) { try { window.TunerNative.setPaused(!!p); } catch (e) {} return; }
+  if (NATIVE) { try { window.NightdialNative.setPaused(!!p); } catch (e) {} return; }
   if (p) video.pause(); else { const r = video.play(); if (r && r.catch) r.catch(() => {}); }
 }
 function mediaSeekBy(sec) {
   if (S.vodPlaying && demoVod()) { const st = demoVodState(); Object.assign(DV, { pos: Math.max(0, Math.min(DV.dur - 5, st.pos + sec)), at: Date.now() }); return; }
-  if (NATIVE) { try { window.TunerNative.seekBy(Math.round(sec * 1000)); } catch (e) {} return; }
+  if (NATIVE) { try { window.NightdialNative.seekBy(Math.round(sec * 1000)); } catch (e) {} return; }
   try {
     let t = (video.currentTime || 0) + sec;
     const r = video.seekable;
@@ -2151,6 +2317,8 @@ async function startStream(url, kind, live, token) {
   await waiting;
 }
 const SCREEN_MSGS = {
+  'vpn-wait': ['Connecting the VPN…', 'This channel starts as soon as your VPN is on.'],
+  'vpn-off': ['VPN is off', 'Settings asks for a VPN before playing. Turn on your VPN app, or set one up in Settings → VPN.'],
   timeout: ["The channel didn't start", 'It may be offline, or your connection limit may be reached.'],
   network: ["This channel isn't playing", 'The stream could not be loaded. Try again, or switch the stream format in Settings.'],
   media: ["This channel's format can't be played here", 'Try switching the stream format in the channel options or Settings.'],
@@ -2179,7 +2347,7 @@ function updateMuteUi() {
 function toggleMute() {
   userMuted = NATIVE ? !userMuted : !video.muted;
   video.muted = userMuted;
-  if (NATIVE) { try { window.TunerNative.setMuted(userMuted); } catch (e) {} }
+  if (NATIVE) { try { window.NightdialNative.setMuted(userMuted); } catch (e) {} }
   updateMuteUi();
 }
 function firstGesture() {
@@ -2191,6 +2359,8 @@ function firstGesture() {
 /* full screen */
 function enterFull() {
   if (app.classList.contains('is-full')) { showOsd(); return; }
+  // another video player picked in Settings: full screen opens there instead
+  if (!S.vodPlaying && S.playingId && S.provider && S.provider.type !== 'demo' && useExternal()) { const ch = S.byId.get(S.playingId); if (ch) { play(ch, { full: true, quiet: true, catchup: S.catchup }); return; } }
   app.classList.add('is-full');
   updateOsd(); showOsd();
   syncVideoRect();
@@ -2495,8 +2665,10 @@ function netError(e, server) {
   if (e && e.code === 'timeout') return uerr(`${host} took too long to answer. Check the address and port, then try again.`);
   if (e && e.code === 'bad-json') return uerr(`${host} answered, but not like an Xtream Codes server. Check the address. It usually ends with a port, like :8080.`);
   if (e && e.status) return uerr(e.status === 401 || e.status === 403 ? `${host} refused the sign-in (error ${e.status}). Check your username and password.` : `${host} returned error ${e.status}. Check the server address.`);
+  if (blockedHere(server)) return uerr(BLOCKED_MSG(host));
   return uerr(PROXY_ON
     ? `Couldn't reach ${host}. Check the server address and port, and that ${TV_MODE ? 'your Fire TV' : 'this computer'} is online.`
+    : SITE ? `Couldn't reach ${host}. On the website, only providers that allow web players can be used. Try the Fire TV or iPhone app, or the computer version.`
     : `Couldn't reach ${host}. This web preview can't connect to IPTV servers. Run the downloadable version (server.js) on your computer to sign in, or open the demo playlist.`);
 }
 async function xtreamConnect(v, step) {
@@ -2504,6 +2676,7 @@ async function xtreamConnect(v, step) {
   const server = norm.server, user = v.user || norm.user || '', pass = v.pass || norm.pass || '';
   if (!server) throw uerr('Enter the server address from your provider, like http://line.example.com:8080.');
   if (!user || !pass) throw uerr('Enter your username and password.');
+  if (blockedHere(server)) throw uerr(BLOCKED_MSG(hostOf(server)));
   const base = `${server}/player_api.php?username=${enc(user)}&password=${enc(pass)}`;
   step('Checking account…');
   let auth;
@@ -2577,7 +2750,8 @@ function m3uError(e, url) {
   const host = hostOf(url || '');
   if (e && e.code === 'timeout') return uerr(`${host} took too long to send the playlist. Try again.`);
   if (e && e.status) return uerr(`${host} returned error ${e.status}. Check the playlist link.`);
-  return uerr(PROXY_ON ? `Couldn't reach ${host}. Check the link and that this device is online.` : `Couldn't reach ${host}. This web preview can't connect to IPTV servers.`);
+  if (blockedHere(url)) return uerr(BLOCKED_MSG(host));
+  return uerr(PROXY_ON ? `Couldn't reach ${host}. Check the link and that this device is online.` : SITE ? `Couldn't reach ${host}. On the website, only providers that allow web players can be used. Try the Fire TV or iPhone app, or the computer version.` : `Couldn't reach ${host}. This web preview can't connect to IPTV servers.`);
 }
 async function m3uConnect(v, step) {
   let url = String(v.url || '').trim();
@@ -2588,6 +2762,7 @@ async function m3uConnect(v, step) {
   if (/\/get\.php$/i.test(u.pathname) && u.searchParams.get('username') && u.searchParams.get('password')) {
     try { return await xtreamConnect({ name: v.name, server: url, user: '', pass: '' }, step); } catch (e) { /* not Xtream after all: read it as a plain M3U */ }
   }
+  if (blockedHere(url)) throw uerr(BLOCKED_MSG(u.host));
   step('Loading playlist…');
   let text;
   try { text = await getText(url, 120000); } catch (e) { throw m3uError(e, url); }
@@ -2645,7 +2820,7 @@ function pumpEpg() {
     const id = epgQueue.shift();
     epgState.set(id, 'loading'); epgActive++;
     loadXtreamEpg(id)
-      .then(list => { if (S.provider === prov) { epg.set(id, list); epgState.set(id, 'done'); } })
+      .then(list => { if (S.provider === prov) { epg.set(id, shiftList(list)); epgState.set(id, 'done'); } })
       .catch(() => { if (S.provider === prov) { epg.set(id, []); epgState.set(id, 'error'); } })
       .finally(() => { epgActive--; if (S.provider === prov) { epgVer.set(id, (epgVer.get(id) || 0) + 1); onEpgArrived(id); } pumpEpg(); });
   }
@@ -2681,13 +2856,13 @@ function parseXmltv(text) {
     ids.forEach(id => { if (!lists.has(id)) lists.set(id, []); lists.get(id).push(Object.assign({}, p)); });
     n++;
   }
-  lists.forEach((l, id) => epg.set(id, cleanList(l)));
+  lists.forEach((l, id) => epg.set(id, shiftList(cleanList(l))));
   S.channels.forEach(c => { epgState.set(c.id, 'done'); epgVer.set(c.id, (epgVer.get(c.id) || 0) + 1); if (!epg.has(c.id)) epg.set(c.id, []); });
   return n;
 }
 async function loadXmltv() {
   const pr = S.provider; if (!pr || (pr.type !== 'xtream' && pr.type !== 'm3u')) return;
-  const url = pr.type === 'm3u' ? pr.epgUrl : prefs.xmltvUrl || `${pr.server}/xmltv.php?username=${enc(pr.user)}&password=${enc(pr.pass)}`;
+  const url = pr.type === 'm3u' ? pr.epgUrl : PO.xmltvUrl || `${pr.server}/xmltv.php?username=${enc(pr.user)}&password=${enc(pr.pass)}`;
   if (!url) return;
   S.channels.forEach(c => epgState.set(c.id, 'loading'));
   invalidateRows(); renderGuide();
@@ -2709,10 +2884,10 @@ async function loadXmltv() {
 /* Passwords and playlist links are kept apart from the playlist list: in the Fire TV app they're encrypted
    with a key held by Android's keystore; in a browser they stay in this browser's storage. */
 const secrets = {
-  native: (() => { try { return !!(window.TunerNative && window.TunerNative.secretGet); } catch (e) { return false; } })(),
-  get(id) { try { const v = this.native ? window.TunerNative.secretGet(String(id)) : localStorage.getItem('tuner:secret:' + id); return v ? JSON.parse(v) : {}; } catch (e) { return {}; } },
-  set(id, obj) { try { const v = JSON.stringify(obj || {}); if (this.native) window.TunerNative.secretSet(String(id), v); else localStorage.setItem('tuner:secret:' + id, v); } catch (e) {} },
-  del(id) { try { if (this.native) window.TunerNative.secretDel(String(id)); else localStorage.removeItem('tuner:secret:' + id); } catch (e) {} }
+  native: (() => { try { return !!(window.NightdialNative && window.NightdialNative.secretGet); } catch (e) { return false; } })(),
+  get(id) { try { const v = this.native ? window.NightdialNative.secretGet(String(id)) : localStorage.getItem('nightdial:secret:' + id); return v ? JSON.parse(v) : {}; } catch (e) { return {}; } },
+  set(id, obj) { try { const v = JSON.stringify(obj || {}); if (this.native) window.NightdialNative.secretSet(String(id), v); else localStorage.setItem('nightdial:secret:' + id, v); } catch (e) {} },
+  del(id) { try { if (this.native) window.NightdialNative.secretDel(String(id)); else localStorage.removeItem('nightdial:secret:' + id); } catch (e) {} }
 };
 const savedPlaylists = () => store.get('playlists', []);
 const withSecrets = p => Object.assign({}, p, secrets.get(p.id));
@@ -2741,7 +2916,7 @@ function migrateSecrets() {
 }
 function removePlaylist(id) {
   store.set('playlists', savedPlaylists().filter(q => q.id !== id));
-  ['fav:', 'recent:', 'group:', 'lastch:', 'hide:', 'hideg:', 'resume:'].forEach(k => store.del(k + id));
+  ['fav:', 'recent:', 'group:', 'lastch:', 'hide:', 'hideg:', 'resume:', 'plopts:'].forEach(k => store.del(k + id));
   secrets.del(id);
   if (store.get('last') === id) store.del('last');
 }
@@ -2767,7 +2942,7 @@ function openLogin({ cancelable = false, values = null, error = '' } = {}) {
     el('fName').value = values.name || ''; el('fServer').value = values.server || ''; el('fUser').value = values.user || ''; el('fPass').value = values.pass || '';
     el('fM3u').value = values.url || ''; el('fEpg').value = values.epgUrl || '';
   }
-  el('loginNote').textContent = PROXY_ON ? 'Your details stay on this device and are only sent to your provider.' : DEMO_OK ? 'Preview: sign-in needs the downloadable version. The demo playlist shows every feature here.' : 'Your details stay in this browser and are only sent to your provider.';
+  el('loginNote').textContent = PROXY_ON ? 'Your details stay on this device and are only sent to your provider.' : SITE ? 'Your details stay in this browser and are only sent to your provider. Providers on plain http need the Fire TV or iPhone app, or the computer version.' : DEMO_OK ? 'Preview: sign-in needs the downloadable version. The demo playlist shows every feature here.' : 'Your details stay in this browser and are only sent to your provider.';
   closeAllLayers();
   exitFull();
   loginEl.hidden = false;
@@ -2830,7 +3005,7 @@ const layers = [];
 function syncLayerClass() { document.documentElement.classList.toggle('layer-open', layers.length > 0 || tvOptsOpen() || tvChansOpen()); }
 function openLayer(node, focusSel) {
   if (layers.includes(node)) return;
-  node.hidden = false; scrim.hidden = false; layers.push(node);
+  node.hidden = false; scrim.hidden = false; layers.push(node); layerOpenedAt = performance.now();
   document.documentElement.classList.add('layer-open');
   syncLayerClass();
   setTimeout(() => { const f = node.querySelector(focusSel || '.item.sel, .item, input, button:not([data-close])'); if (f) f.focus({ preventScroll: false }); }, 20);
@@ -2838,6 +3013,7 @@ function openLayer(node, focusSel) {
 function closeLayer() {
   const node = layers.pop();
   if (node) node.hidden = true;
+  if (node && node.id === 'vpnModal') { vpnShareOpen = false; vpnCall('vpnShareStop'); }
   if (!layers.length) { scrim.hidden = true; document.documentElement.classList.remove('layer-open'); guideScroll.focus({ preventScroll: true }); }
   syncLayerClass();
 }
@@ -2846,7 +3022,7 @@ scrim.addEventListener('click', closeAllLayers);
 document.addEventListener('click', e => { if (e.target.closest('[data-close]')) closeLayer(); });
 
 function groupsMenuHTML() {
-  const items = [['all', 'All channels', S.channels.filter(chanVisible).length], ['fav', 'Favorites', favs.size], ['recent', 'Recently watched', recents.length]];
+  const items = [['all', 'All channels', S.channels.filter(chanVisible).length], ['fav', 'Favorites', favs.size]];
   const gs = visibleGroups();
   return items.map(([id, name, n]) => groupItem(id, name, n)).join('') + (gs.length ? '<div class="list-label">Categories</div>' + gs.map(g => groupItem(g.id, g.name, g.count)).join('') : '') +
     (hiddenGr.size || hiddenCh.size ? `<p class="hint" style="padding:10px 14px">${hiddenGr.size ? hiddenGr.size + (hiddenGr.size === 1 ? ' group' : ' groups') : ''}${hiddenGr.size && hiddenCh.size ? ' and ' : ''}${hiddenCh.size ? hiddenCh.size + (hiddenCh.size === 1 ? ' channel' : ' channels') : ''} hidden. Bring them back in Edit channels.</p>` : '');
@@ -2864,9 +3040,12 @@ el('groupsList').addEventListener('click', e => {
 });
 el('groupBtn').addEventListener('click', openGroups);
 
+let tvGroupsSig = '', tvGroupsFor = null, navVer = 0;
 function openTvNav(focusMenu) {
-  el('tvGroups').innerHTML = groupsMenuHTML();
-  const current = S.view === 'vod' ? 'vod' : S.groupId === 'fav' ? 'fav' : S.groupId === 'recent' ? 'recent' : 'guide';
+  // the groups list is only rebuilt when something in it changed, so the menu opens at once and keeps its place
+  const sig = [S.provider && S.provider.id, S.channels.length, S.groups.length, hiddenGr.size, hiddenCh.size, favs.size, recents.length, S.groupId, navVer, PO.sort].join('|');
+  if (sig !== tvGroupsSig || tvGroupsFor !== S.groups) { tvGroupsSig = sig; tvGroupsFor = S.groups; el('tvGroups').innerHTML = groupsMenuHTML(); }
+  const current = S.view === 'vod' ? 'vod' : S.groupId === 'fav' ? 'fav' : 'guide';
   document.querySelectorAll('.tvnav-item').forEach(b => b.classList.toggle('on', b.dataset.tv === current));
   openLayer(el('tvNav'), focusMenu ? '.tvnav-item.on' : '#tvGroups .item.sel');
 }
@@ -2886,15 +3065,15 @@ el('tvNav').addEventListener('click', e => {
   const m = e.target.closest('[data-tv]'); if (!m) return;
   const a = m.dataset.tv;
   closeLayer();
-  if (a === 'guide') { closeVod(); if (S.groupId === 'fav' || S.groupId === 'recent') applyGroup('all'); jumpToNow(false); }
+  if (a === 'guide') { closeVod(); if (S.groupId === 'fav') applyGroup('all'); jumpToNow(false); }
   else if (a === 'vod') openVod();
-  else if (a === 'fav' || a === 'recent') { closeVod(); applyGroup(a); jumpToNow(true); }
+  else if (a === 'fav') { closeVod(); applyGroup(a); jumpToNow(true); }
   else if (a === 'search') openSearch();
   else if (a === 'playlists') openPlaylists();
   else if (a === 'settings') openSettings();
   else if (a === 'channels') openMgr();
   else if (a === 'themes') openLook();
-  else if (a === 'exit') { if (window.TunerNative && window.TunerNative.exit) window.TunerNative.exit(); else toast('On your Fire TV this closes Nightdial'); }
+  else if (a === 'exit') { if (window.NightdialNative && window.NightdialNative.exit) window.NightdialNative.exit(); else toast('On your Fire TV this closes Nightdial'); }
 });
 
 /* Channel options over full-screen video: the remote's center button opens them. */
@@ -2927,6 +3106,7 @@ function renderTvOpts(keep) {
   if (audio) opts.push(['audio', 'vol', 'Audio track', audio.label]);
   opts.push(['aspect', 'expand', 'Picture shape', aspectLabel()]);
   if (S.provider.type === 'xtream') opts.push(['fmt', 'settings', 'Stream format', formatLabel()]);
+  if (canHandOff() && externalPlayers().length) opts.push(['ext', 'open', 'Open in another player', '']);
   opts.push(['hide', 'eyeoff', 'Hide channel', ''], ['reload', 'replay', 'Reload channel', ''], ['guide', 'back', 'Back to guide', '']);
   el('tvOptsList').innerHTML = opts.map(([a, ic, label, val]) => `<button class="item" data-opt="${a}">${icon(ic)}<span class="lbl"><span>${esc(label)}</span></span>${val ? `<span class="n">${esc(val)}</span>` : ''}</button>`).join('');
   if (keep) { const b = el('tvOptsList').querySelector(`[data-opt="${keep}"]`); if (b) b.focus(); }
@@ -2941,8 +3121,9 @@ el('tvOptsList').addEventListener('click', e => {
   else if (a === 'fav') { toggleFav(ch); renderTvOpts('fav'); }
   else if (a === 'details') { const p = S.catchup || progAt(ch, Date.now()); closeTvOpts(); if (p) openDetails(ch, p); }
   else if (a === 'audio') { nextAudioTrack(); setTimeout(() => renderTvOpts('audio'), 300); }
-  else if (a === 'fmt') { prefs.format = { auto: 'ts', ts: 'm3u8', m3u8: 'auto' }[prefs.format] || 'auto'; savePrefs(); play(ch, { quiet: true, catchup: S.catchup }); renderTvOpts('fmt'); }
+  else if (a === 'fmt') { PO.format = { auto: 'ts', ts: 'm3u8', m3u8: 'auto' }[PO.format] || 'auto'; savePO(); play(ch, { quiet: true, catchup: S.catchup }); renderTvOpts('fmt'); }
   else if (a === 'aspect') { cycleAspect(); renderTvOpts('aspect'); }
+  else if (a === 'ext') { closeTvOpts(); const url = streamUrlFor(ch); exitFull(); handOff(url, ch.name, 'ask'); }
   else if (a === 'reload') { closeTvOpts(); play(ch, { quiet: true, catchup: S.catchup }); showOsd(); }
   else if (a === 'hide') { hiddenCh.add(ch.id); saveHidden(); closeTvOpts(); channelsChanged(); toast(`${ch.name} is hidden from the guide. Bring it back in Edit channels.`, 4500); }
   else if (a === 'guide') { closeTvOpts(); exitFull(); }
@@ -3084,7 +3265,7 @@ function goLive(ch, tl) {
   const wasPaused = !!L.pausedAt; L.pausedAt = 0;
   if (S.catchup) { play(ch, { quiet: true }); toast('Back to live', 1500); return; }
   if (demoVod()) { if (wasPaused) demoSet(ch, null); return; }
-  if (NATIVE) { try { window.TunerNative.seekToLive(); if (tl && tl.paused) window.TunerNative.setPaused(false); } catch (e) {} }
+  if (NATIVE) { try { window.NightdialNative.seekToLive(); if (tl && tl.paused) window.NightdialNative.setPaused(false); } catch (e) {} }
   else { try { const r = video.seekable; if (r && r.length) video.currentTime = Math.max(0, r.end(r.length - 1) - 1); if (video.paused) { const pr = video.play(); if (pr && pr.catch) pr.catch(() => {}); } } catch (e) {} }
   toast('Back to live', 1500);
 }
@@ -3137,21 +3318,34 @@ function openTvChans() {
   tvChanIdx = Math.max(0, base.findIndex(c => c.id === S.playingId));
   el('tvChans').hidden = false;
   osd.classList.add('hide');
-  renderTvChans(); pokeTvChans();
+  renderTvChans(true); pokeTvChans();
 }
 function closeTvChans() { el('tvChans').hidden = true; clearTimeout(tvChanTimer); }
 function pokeTvChans() { clearTimeout(tvChanTimer); tvChanTimer = setTimeout(closeTvChans, 10000); }
-function renderTvChans() {
-  const base = tvChansBase(), now = Date.now(), n = 7;
-  const from = Math.max(0, Math.min(tvChanIdx - 3, base.length - n));
+/* The full-screen channel list is one long strip that glides; only the channels near the view are built. */
+let tvChPitch = 0;
+function renderTvChans(instant) {
+  const base = tvChansBase(), now = Date.now(), box = el('tvChansList');
+  if (!tvChPitch || instant) { box.innerHTML = '<div class="tvch" style="visibility:hidden"></div>'; tvChPitch = (box.firstChild.offsetHeight * 10.2 / 9.4) || 60; }
+  const pitch = tvChPitch;
+  let track = box.firstElementChild;
+  if (!track || !track.classList.contains('tvch-track')) { box.innerHTML = '<div class="tvch-track"></div>'; track = box.firstElementChild; }
+  const H = base.length * pitch;
+  if (track.style.height !== H + 'px') track.style.height = H + 'px';
+  const ch = box.clientHeight || pitch * 7, top = tvChanIdx * pitch, pad = Math.min(pitch, Math.max(0, (ch - pitch) / 2));
+  let st = instant ? top - (ch - pitch) / 2 : glideTarget(box).top;   // opens with the playing channel in the middle
+  if (top - pad < st) st = top - pad; else if (top + pitch + pad > st + ch) st = top + pitch + pad - ch;
+  glideTo(box, st, null, instant);
+  const t = glideTarget(box).top, a = Math.min(box.scrollTop, t), z = Math.max(box.scrollTop, t) + ch;
+  const from = Math.max(0, Math.floor(a / pitch) - 1), to = Math.min(base.length, Math.ceil(z / pitch) + 1);
   let h = '';
   const need = [];
-  for (let k = from; k < Math.min(base.length, from + n); k++) {
+  for (let k = from; k < to; k++) {
     const c = base[k], p = progAt(c, now), live = !!p && isNowProg(p, now);
     if (S.provider.type === 'xtream' && !epgState.has(c.id)) need.push(c.id);
-    h += `<div class="tvch${k === tvChanIdx ? ' on' : ''}${c.id === S.playingId ? ' playing' : ''}" data-k="${k}"><span class="n">${c.num}</span>${logoHTML(c)}<span class="t"><b>${esc(c.name)}</b><span>${live ? esc(p.title) : (epgState.get(c.id) === 'done' || epgState.get(c.id) === 'error' ? 'No program information' : 'Loading guide…')}</span>${live ? `<i><u style="width:${((now - p.start) / (p.end - p.start) * 100).toFixed(0)}%"></u></i>` : ''}</span></div>`;
+    h += `<div class="tvch${k === tvChanIdx ? ' on' : ''}${c.id === S.playingId ? ' playing' : ''}" data-k="${k}" style="top:${(k * pitch).toFixed(1)}px"><span class="n">${c.num}</span>${logoHTML(c)}<span class="t"><b>${esc(c.name)}</b><span>${live ? esc(p.title) : (epgState.get(c.id) === 'done' || epgState.get(c.id) === 'error' ? 'No program information' : 'Loading guide…')}</span>${live ? `<i><u style="width:${((now - p.start) / (p.end - p.start) * 100).toFixed(0)}%"></u></i>` : ''}</span></div>`;
   }
-  el('tvChansList').innerHTML = h;
+  track.innerHTML = h;
   el('tvChansGroup').textContent = groupLabel(S.groupId);
   el('tvChansClock').textContent = fmtTime(now);
   if (need.length) requestEpg(need);
@@ -3208,7 +3402,7 @@ function renderLook() {
 function applySizeChange() {
   applyLook();
   if (!S.provider) return;
-  layoutGuide(); ensureVisible(); renderGuide(); sizeCanvas(); syncVideoRect();
+  layoutGuide(); ensureVisible('row', true); renderGuide(); sizeCanvas(); syncVideoRect();
 }
 function renderLookKeep(focusId) {
   const list = el('lookBody'), st = list.scrollTop;
@@ -3264,7 +3458,7 @@ function renderMgr({ key = null, col = 0 } = {}) {
       return `<div class="mrow${mv ? ' moving' : ''}${hiddenCh.has(c.id) ? ' off' : ''}" data-id="${esc(c.id)}"><button class="item" data-m="move">${icon('grip', 'grip')}${logoHTML(c, 'sm')}<span class="lbl"><span>${c.num ? c.num + ' · ' : ''}${esc(c.name)}</span><span class="sub">${mv ? 'Moving · Up / Down, then OK to drop' : esc(groupLabel(c.groupId))}</span></span><span class="n">${i + 1}</span></button><button class="mini" data-m="up" aria-label="Move up">${icon('up')}</button><button class="mini" data-m="down" aria-label="Move down">${icon('down')}</button><button class="mini" data-m="unfav" aria-label="Remove from favorites">${icon('close')}</button></div>`;
     }).join('') : `<p class="hint" style="padding:8px 14px">No favorites yet. Open Groups &amp; channels and select channels to add them${TV_MODE ? ', or press OK while watching and choose Add to favorites' : ''}.</p>`;
   } else if (!mgr.group) {
-    tools += `<div class="setting"><span>Sort channels</span>${seg('msort', [['provider', 'Provider order'], ['number', 'Number'], ['name', 'A–Z']], prefs.sort)}</div><p class="hint">The eye hides a whole group. Select a group to choose favorites or hide single channels.</p>`;
+    tools += `<div class="setting"><span>Sort channels</span>${seg('msort', [['provider', 'Provider order'], ['number', 'Number'], ['name', 'A–Z']], PO.sort)}</div><p class="hint">The eye hides a whole group. Select a group to choose favorites or hide single channels.</p>`;
     const counts = new Map(), hid = new Map();
     for (const c of S.channels) { counts.set(c.groupId, (counts.get(c.groupId) || 0) + 1); if (hiddenCh.has(c.id)) hid.set(c.groupId, (hid.get(c.groupId) || 0) + 1); }
     h = S.groups.map(g => {
@@ -3316,7 +3510,7 @@ function mgrKey(k, e) {
 el('mgrTools').addEventListener('change', e => {
   const t = e.target;
   if (t.name === 'mtab') { mgr.tab = t.value; mgr.group = null; mgr.moving = null; renderMgr(); el('mtab-' + t.value).focus(); }
-  if (t.name === 'msort') { prefs.sort = t.value; savePrefs(); channelsChanged(); renderMgr(); const r = el('msort-' + t.value); if (r) r.focus(); }
+  if (t.name === 'msort') { PO.sort = t.value; savePO(); channelsChanged(); renderMgr(); const r = el('msort-' + t.value); if (r) r.focus(); }
 });
 el('mgrList').addEventListener('click', e => {
   const b = e.target.closest('[data-m]'); if (!b) return;
@@ -3340,7 +3534,7 @@ function stepRadio(a, d) {
   const all = [...document.querySelectorAll(`input[type=radio][name="${a.name}"]`)].filter(n => !n.disabled);
   const n = all[all.indexOf(a) + d]; if (!n) return;
   n.checked = true; n.focus({ preventScroll: true });
-  const lab = n.nextElementSibling; if (lab && lab.scrollIntoView) lab.scrollIntoView({ block: 'nearest' });
+  keepVisible(n);
   n.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
@@ -3381,7 +3575,7 @@ async function probeVod() {
     V.cats = { movies: [{ category_id: '1', category_name: 'Drama' }, { category_id: '2', category_name: 'Thriller' }, { category_id: '3', category_name: 'Family' }], series: [{ category_id: '10', category_name: 'Drama series' }, { category_id: '11', category_name: 'Comedy & reality' }, { category_id: '12', category_name: 'Documentary & kids' }] };
     V.available = true; updateVodNav(); return;
   }
-  if (!S.provider || S.provider.type !== 'xtream') return;
+  if (!S.provider || S.provider.type !== 'xtream' || PO.vod === false) return;
   const pr = S.provider, base = xbase(pr);
   const [mc, sc] = await Promise.all([getJSON(base + '&action=get_vod_categories').catch(() => []), getJSON(base + '&action=get_series_categories').catch(() => [])]);
   if (S.provider !== pr) return;
@@ -3541,7 +3735,7 @@ function vodNav(k, e) {
   else if (k === 'pgup') j = Math.max(0, i - cols * 3);
   else return;
   e.preventDefault();
-  if (cards[j]) { cards[j].focus({ preventScroll: true }); cards[j].scrollIntoView({ block: 'nearest' }); }
+  if (cards[j]) { cards[j].focus({ preventScroll: true }); keepVisible(cards[j]); }
   if (j >= cards.length - cols * 2) moreVod();
 }
 el('vod').addEventListener('change', e => {
@@ -3691,6 +3885,8 @@ function playVod(item) {
   const key = item.kind + ':' + item.id, r = resumeAll()[key];
   const from = item.fromStart ? 0 : r && r.pos > 15 ? r.pos - 3 : 0;
   closeAllLayers();
+  if (vpnGate(() => playVod(item))) return;
+  if (useExternal()) { handOff(url, item.name + (item.sub ? ' · ' + item.sub : ''), prefs.player, from * 1000); return; }
   const token = ++playToken;
   teardownStream(); demoStop(); demoCanvas.hidden = true; hideScreenMsg(); closeTvOpts(); closeTvChans();
   S.vodPlaying = Object.assign({}, item, { key });
@@ -3708,7 +3904,7 @@ function playVod(item) {
   if (NATIVE) {
     video.hidden = true;
     const waiting = waitPlaying();
-    try { window.TunerNative.setMuted(!!userMuted); window.TunerNative.playFrom(url, Math.round(from * 1000)); } catch (e) { if (streamFail) streamFail('network'); }
+    try { window.NightdialNative.setMuted(!!userMuted); window.NightdialNative.playFrom(url, Math.round(from * 1000)); } catch (e) { if (streamFail) streamFail('network'); }
     waiting.then(done, fail);
   } else {
     video.hidden = false;
@@ -3784,13 +3980,15 @@ el('vosd').addEventListener('click', e => {
 function openPlaylists() {
   const cur = S.provider && !S.backdrop ? S.provider.id : '';
   const saved = savedPlaylists();
-  let h = saved.map(p => `<button class="item${cur === p.id ? ' sel' : ''}" data-pl="${esc(p.id)}">${icon('check', 'mark')}<span class="lbl"><span>${esc(p.name)}</span><span class="sub">${p.type === 'm3u' ? 'M3U playlist' : 'Xtream Codes'} · ${esc(p.host || hostOf(p.server || ''))}</span></span></button>`).join('');
+  let h = saved.map(p => `<div class="pl-row"><button class="item${cur === p.id ? ' sel' : ''}" data-pl="${esc(p.id)}">${icon('check', 'mark')}<span class="lbl"><span>${esc(p.name)}</span><span class="sub">${p.type === 'm3u' ? 'M3U playlist' : 'Xtream Codes'} · ${esc(p.host || hostOf(p.server || ''))}</span></span></button><button class="icon-btn" data-plopt="${esc(p.id)}" aria-label="Options for ${esc(p.name)}">${icon('settings')}</button></div>`).join('');
   if (DEMO_OK) h += `<button class="item${cur === 'demo' ? ' sel' : ''}" data-pl="demo">${icon('check', 'mark')}<span class="lbl"><span>Demo playlist</span><span class="sub">Built-in sample channels and guide</span></span></button>`;
   if (!saved.length && !DEMO_OK) h += '<p class="hint" style="padding:10px 14px">No playlists yet. Add your Xtream Codes or M3U playlist below.</p>';
   el('playlistsList').innerHTML = h;
   openLayer(el('playlistsDrawer'));
 }
 el('playlistsList').addEventListener('click', async e => {
+  const o = e.target.closest('[data-plopt]');
+  if (o) { openPlOpts(o.dataset.plopt); return; }
   const b = e.target.closest('[data-pl]'); if (!b) return;
   const id = b.dataset.pl;
   closeAllLayers();
@@ -3883,6 +4081,198 @@ function toggleFav(ch) {
   updateOsd();
 }
 
+/* ================= other video players (Fire TV: VLC, MX Player…) =================
+   Settings → Video player hands full screen, catch-up and movies to an installed player; the guide preview stays built in. */
+let extPlayers = null;
+function externalPlayers() {
+  if (extPlayers) return extPlayers;
+  try { extPlayers = NATIVE && window.NightdialNative.externalPlayers ? JSON.parse(window.NightdialNative.externalPlayers() || '[]') : []; } catch (e) { extPlayers = []; }
+  return extPlayers;
+}
+const canHandOff = () => { try { return NATIVE && !!window.NightdialNative.openExternal; } catch (e) { return false; } };
+const playerName = id => id === 'ask' ? 'another player' : ((externalPlayers().find(x => x.pkg === id) || {}).name || 'another player');
+const useExternal = () => canHandOff() && !!prefs.player && prefs.player !== 'builtin' && (prefs.player === 'ask' || externalPlayers().some(x => x.pkg === prefs.player));
+function handOff(url, title, pkg, posMs) {
+  playToken++; teardownStream(); spinner.hidden = true; hideScreenMsg();
+  let ok = false;
+  try { ok = !!window.NightdialNative.openExternal(url, pkg === 'ask' ? '' : pkg, title || '', Math.round(posMs || 0)); } catch (e) {}
+  toast(ok ? `Opening in ${playerName(pkg)}…` : `Couldn't open ${playerName(pkg)}. Pick another player in Settings → Video player.`, 3200);
+  return ok;
+}
+const streamUrlFor = ch => S.catchup ? catchupUrl(ch, S.catchup) : S.provider.type === 'm3u' ? ch.url : liveUrl(ch);
+
+/* ================= VPN =================
+   Fire TV: a built-in WireGuard VPN (config sent from a phone or loaded from a link), and it notices other VPN apps.
+   "Only play when a VPN is on" holds playback until one is; "Connect when Nightdial starts" brings the tunnel up first. */
+const VPN_NATIVE = (() => { try { return NATIVE && !!window.NightdialNative.vpnState; } catch (e) { return false; } })();
+let vpnInfo = { state: 'off', configured: false, other: false, endpoint: '', error: '' }, vpnPending = null, vpnShareOpen = false;
+function vpnRead() { if (VPN_NATIVE) { try { vpnInfo = JSON.parse(window.NightdialNative.vpnState()); } catch (e) {} } return vpnInfo; }
+const vpnOn = () => { const v = vpnRead(); return v.state === 'on' || !!v.other; };
+const vpnCall = (fn, ...a) => { try { return window.NightdialNative[fn](...a); } catch (e) { return ''; } };
+function vpnStatusText(v) {
+  if (v.state === 'on') return 'On' + (v.endpoint ? ' · ' + v.endpoint : '');
+  if (v.state === 'connecting') return 'Connecting…';
+  if (v.other) return 'On (another VPN app)';
+  if (v.state === 'error') return "Couldn't connect";
+  return v.configured ? 'Off' : 'Not set up';
+}
+/* Playback waits for the VPN when Settings asks for one. Returns true if it had to wait. */
+function vpnGate(resume) {
+  if (!prefs.vpnRequired || !VPN_NATIVE || vpnOn()) return false;
+  vpnPending = resume;
+  playToken++; teardownStream(); spinner.hidden = true;
+  if (vpnInfo.configured) { if (vpnInfo.state !== 'connecting') vpnCall('vpnConnect'); showScreenMsg('vpn-wait'); toast('Connecting the VPN…', 2500); }
+  else { showScreenMsg('vpn-off'); toast('Turn on your VPN to watch. Settings → VPN.', 4000); }
+  return true;
+}
+window.nightdialVpnEvent = function (v) {
+  const was = vpnInfo;
+  vpnInfo = Object.assign({}, vpnInfo, v || {});
+  if (vpnShareOpen && v && v.configured) {
+    if (layers.length && layers[layers.length - 1].id === 'vpnModal') closeLayer();
+    vpnShareOpen = false;
+    toast('VPN config added', 2200);
+    if (!was.configured && vpnInfo.state !== 'on') vpnCall('vpnConnect');
+  }
+  if (was.state !== 'on' && vpnInfo.state === 'on') {
+    toast('VPN on' + (vpnInfo.endpoint ? ' · ' + vpnInfo.endpoint : ''), 2200);
+    if (vpnPending) { const r = vpnPending; vpnPending = null; hideScreenMsg(); r(); }
+  }
+  if (was.state === 'on' && vpnInfo.state === 'off') toast('VPN off', 2000);
+  if (vpnInfo.state === 'error' && vpnInfo.error && vpnInfo.error !== was.error) toast(vpnInfo.error, 4500);
+  const sec = el('vpnSec');
+  if (sec && !el('settingsDrawer').hidden) { const f = document.activeElement && document.activeElement.closest('#vpnSec') ? document.activeElement.dataset.vpn || document.activeElement.id : ''; sec.outerHTML = vpnSectionHTML(); const n = f && (el(f) || el('vpnSec').querySelector(`[data-vpn="${f}"]`)); if (n) n.focus({ preventScroll: true }); }
+};
+function vpnSectionHTML() {
+  if (!VPN_NATIVE) return `<section id="vpnSec"><h3>VPN</h3><p class="hint">${NATIVE ? 'Turn on your VPN app before watching.' : 'Web browsers can\'t run a VPN. To watch through one, turn on the VPN app on this computer or phone first.'}</p></section>`;
+  const v = vpnRead(), on = v.state === 'on' || v.state === 'connecting';
+  return `<section id="vpnSec"><h3>VPN</h3>
+    <dl class="kv"><dt>Status</dt><dd><span class="status${v.state === 'error' ? ' warn' : ''}">${esc(vpnStatusText(v))}</span></dd>${v.configured ? '<dt>Type</dt><dd>WireGuard</dd>' : ''}</dl>
+    <div class="btns">${v.configured ? `<button class="btn primary" data-vpn="${on ? 'off' : 'on'}">${on ? 'Disconnect' : 'Connect'}</button>` : ''}<button class="btn ghost" data-vpn="share">${icon('plus')}${v.configured ? 'Replace config' : 'Add WireGuard config'} from a phone</button></div>
+    <div class="setting"><span>Or load the config from a link</span><input class="text-in" id="vpnUrl" placeholder="https://…/nightdial.conf"><div class="btns"><button class="btn ghost" data-vpn="url">Load from link</button></div><p class="hint">Only use a private link: anyone who has it can use your VPN.</p></div>
+    <label class="check"><input type="checkbox" id="vpnAuto"${prefs.vpnAuto ? ' checked' : ''}>Connect when Nightdial starts</label>
+    <label class="check"><input type="checkbox" id="vpnReq"${prefs.vpnRequired ? ' checked' : ''}>Only play when a VPN is on</label>
+    ${v.configured ? '<div class="btns"><button class="btn danger" data-vpn="clear">Remove VPN config</button></div>' : ''}
+    <p class="hint">Get a WireGuard config file from your VPN provider (Mullvad, Surfshark, Proton VPN, IVPN, PIA and others offer one). A VPN app you already use works too: Nightdial sees when it's on.</p>
+  </section>`;
+}
+function openVpnShare() {
+  const r = vpnCall('vpnShareStart');
+  let info = null; try { info = r ? JSON.parse(r) : null; } catch (e) {}
+  if (!info) { toast('Connect your Fire TV to your home Wi-Fi or network first.', 3500); return; }
+  vpnShareOpen = true;
+  el('vpnCard').innerHTML = `<h2>Send your VPN config from a phone</h2>
+    <p>On a phone or computer on the same Wi-Fi, open this address:</p>
+    <div class="share-url">${esc(info.url)}</div>
+    <p>Enter this code there, then paste your WireGuard config or pick the .conf file:</p>
+    <div class="share-code">${esc(info.code.replace(/(\d{3})(\d{3})/, '$1 $2'))}</div>
+    <p class="hint">Waiting for your config… This stays open for 10 minutes.</p>
+    <div class="btns"><button class="btn ghost" data-close>Cancel</button></div>`;
+  openLayer(el('vpnModal'), '.btn');
+}
+async function vpnLoadUrl(url) {
+  url = String(url || '').trim();
+  if (!/^https?:\/\//i.test(url)) { toast('Enter the full link, starting with https://', 3000); return; }
+  toast('Loading the VPN config…', 0);
+  let text = '';
+  try { text = await getText(via(url), 20000); } catch (e) { toast("Couldn't load that link.", 3000); return; }
+  const msg = vpnCall('vpnSetConfig', text);
+  if (msg) { toast(msg, 4500); return; }
+  toast('VPN config added', 2200);
+  vpnCall('vpnConnect');
+}
+// Connect when Nightdial starts (Settings → VPN)
+setTimeout(() => { if (VPN_NATIVE && prefs.vpnAuto && vpnRead().configured && vpnInfo.state === 'off' && !vpnInfo.other) vpnCall('vpnConnect'); }, 300);
+
+/* ================= playlist options ================= */
+let plFor = '';
+function openPlOpts(id) {
+  plFor = id || (S.provider && S.provider.id) || '';
+  renderPlOpts();
+  openLayer(el('plDrawer'), '#plName');
+}
+function plSaved(id) { return savedPlaylists().find(q => q.id === id); }
+function plOptsObj(id) { return S.provider && S.provider.id === id ? PO : plOptsFor(id); }
+function renderPlOpts() {
+  const id = plFor, saved = plSaved(id); if (!saved) return;
+  const cur = !!S.provider && S.provider.id === id, full = withSecrets(saved), o = plOptsObj(id), m3u = saved.type === 'm3u';
+  const shifts = [-3, -2, -1, 0, 1, 2, 3].map(h => [h, h ? (h > 0 ? '+' : '−') + Math.abs(h) + ' h' : 'None']);
+  el('plTitle').textContent = cur ? 'Playlist options' : 'Options for ' + saved.name;
+  el('plBody').innerHTML = `
+  <section><h3>Playlist</h3>
+    <div class="setting"><span>Name</span><input class="text-in" id="plName" maxlength="60" value="${esc(saved.name)}" placeholder="${esc(saved.host || '')}"></div>
+    <dl class="kv"><dt>Type</dt><dd>${m3u ? 'M3U playlist' : 'Xtream Codes'}</dd>${m3u ? `<dt>Link</dt><dd>${esc(hostOf(full.url || ''))}</dd>` : `<dt>Server</dt><dd>${esc(saved.server || '')}</dd><dt>Username</dt><dd>${esc(saved.user || '')}</dd>`}</dl>
+    <div class="btns"><button class="btn ghost" data-po="login">${icon('edit')}${m3u ? 'Change playlist link' : 'Change server or login'}</button>${cur ? `<button class="btn ghost" data-po="refresh">${icon('replay')}Refresh channels</button>` : `<button class="btn ghost" data-po="use">${icon('play')}Switch to this playlist</button>`}</div>
+  </section>
+  <section><h3>TV guide</h3>
+    ${m3u ? `<div class="setting"><span>TV guide (XMLTV) link</span><input class="text-in" id="plM3uEpg" placeholder="Optional: http://…/epg.xml" value="${esc(full.epgUrl || '')}"></div>`
+          : `<div class="setting"><span>Guide from</span>${seg('plepg', [['provider', 'Your provider'], ['xmltv', 'XMLTV link']], o.epgSource)}
+             <input class="text-in" id="plXmltv" placeholder="${esc(saved.server || '')}/xmltv.php?username=…" value="${esc(o.xmltvUrl)}" ${o.epgSource === 'xmltv' ? '' : 'hidden'}>
+             <p class="hint">${o.epgSource === 'xmltv' ? 'Leave the link empty to use your provider\'s XMLTV file.' : 'Your provider\'s guide loads channel by channel as you scroll.'}</p></div>`}
+    <div class="setting"><span>Guide time shift</span>${seg('plshift', shifts, o.epgShift)}<p class="hint">If every show in the guide starts too early or too late, move the whole guide by a few hours.</p></div>
+  </section>
+  <section><h3>Channels</h3>
+    <div class="setting"><span>Channel numbers</span>${seg('plnum', [['provider', 'From the provider'], ['seq', '1, 2, 3… in order']], o.numbers)}</div>
+    <div class="setting"><span>Sort channels</span>${seg('plsort', [['provider', 'Provider order'], ['number', 'Number'], ['name', 'A–Z']], o.sort)}</div>
+    <div class="setting"><span>Open on</span>${seg('plstart', [['last', 'Last channel'], ['fav', 'Favorites'], ['all', 'All channels']], o.startOn)}</div>
+    <label class="check"><input type="checkbox" id="plAdult"${o.hideAdult ? ' checked' : ''}>Hide adult groups</label>
+    ${cur ? `<div class="btns"><button class="btn ghost" data-po="channels">${icon('edit')}Edit channels</button></div>` : ''}
+  </section>
+  <section><h3>Playback</h3>
+    ${m3u ? '' : `<div class="setting"><span>Stream format</span>${seg('plfmt', [['auto', 'Best'], ['m3u8', 'HLS (.m3u8)'], ['ts', 'MPEG-TS (.ts)']], o.format)}<p class="hint">Best plays your provider's original stream when it can. If a channel won't play, try the other format.</p></div>`}
+    ${NATIVE || PROXY_ON ? `<div class="setting"><span>User-Agent</span><input class="text-in" id="plUa" maxlength="200" placeholder="Default" value="${esc(o.ua)}"><p class="hint">The app name sent to your provider. Only change it if your provider asks for a particular one.</p></div>` : ''}
+  </section>
+  ${m3u ? '' : `<section><h3>Movies &amp; series</h3><label class="check"><input type="checkbox" id="plVod"${o.vod !== false ? ' checked' : ''}>Show Movies &amp; Series</label></section>`}
+  <section><h3>Remove</h3><p class="hint">Removes the playlist, its favorites and hidden channels from this device.</p><div class="btns"><button class="btn danger" data-po="remove">Remove playlist</button></div></section>`;
+}
+function renderPlOptsKeep(focusId) {
+  const list = el('plBody'), st = list.scrollTop;
+  renderPlOpts(); list.scrollTop = st;
+  const f = el(focusId); if (f) f.focus({ preventScroll: true });
+}
+el('plBody').addEventListener('change', e => {
+  const t = e.target, id = plFor, saved = plSaved(id); if (!saved) return;
+  const cur = !!S.provider && S.provider.id === id, o = plOptsObj(id);
+  const save = () => store.set('plopts:' + id, o);
+  if (t.id === 'plName') {
+    const name = t.value.trim() || saved.host || 'Playlist';
+    store.set('playlists', savedPlaylists().map(q => q.id === id ? Object.assign({}, q, { name }) : q));
+    if (cur) { S.provider.name = name; updateRailCard(); }
+    el('plTitle').textContent = cur ? 'Playlist options' : 'Options for ' + name;
+    toast('Renamed to ' + name, 1800);
+  } else if (t.name === 'plepg') { o.epgSource = t.value; save(); if (cur) reloadGuide(); renderPlOptsKeep('plepg-' + t.value); }
+  else if (t.id === 'plXmltv') { o.xmltvUrl = t.value.trim(); save(); if (cur && o.epgSource === 'xmltv') reloadGuide(); }
+  else if (t.id === 'plM3uEpg') {
+    const sec = secrets.get(id); sec.epgUrl = t.value.trim(); secrets.set(id, sec);
+    if (cur) { S.provider.epgUrl = sec.epgUrl; reloadGuide(); }
+  }
+  else if (t.name === 'plshift') { o.epgShift = Number(t.value) || 0; save(); if (cur) { reloadGuide(); toast(o.epgShift ? `Guide moved ${o.epgShift > 0 ? 'later' : 'earlier'} by ${Math.abs(o.epgShift)} h` : 'Guide time shift off', 2000); } }
+  else if (t.name === 'plnum') { o.numbers = t.value; save(); if (cur) { applyNumbering(); invalidateRows(); channelsChanged(); updateHero(); } }
+  else if (t.name === 'plsort') { o.sort = t.value; save(); if (cur) channelsChanged(); }
+  else if (t.name === 'plstart') { o.startOn = t.value; save(); }
+  else if (t.id === 'plAdult') { o.hideAdult = t.checked; save(); if (cur) { applyAdult(); navVer++; channelsChanged(); } }
+  else if (t.name === 'plfmt') { o.format = t.value; save(); if (cur) { const ch = S.byId.get(S.playingId); if (ch) play(ch, { quiet: true, catchup: S.catchup }); } }
+  else if (t.id === 'plUa') { o.ua = t.value.replace(/[^\x20-\x7e]/g, '').trim(); save(); if (cur) { applyUserAgent(); const ch = S.byId.get(S.playingId); if (ch) play(ch, { quiet: true, catchup: S.catchup }); } }
+  else if (t.id === 'plVod') { o.vod = t.checked; save(); if (cur) { if (!o.vod && S.view === 'vod') closeVod(); probeVod(); } }
+});
+let plRemoveArmed = 0;
+el('plBody').addEventListener('click', async e => {
+  const b = e.target.closest('[data-po]'); if (!b) return;
+  const id = plFor, saved = plSaved(id); if (!saved) return;
+  const a = b.dataset.po, cur = !!S.provider && S.provider.id === id;
+  if (a === 'login') { openLogin({ cancelable: true, values: withSecrets(saved) }); }
+  else if (a === 'channels') { closeLayer(); openMgr(); }
+  else if (a === 'refresh' || a === 'use') {
+    closeAllLayers(); toast(`Connecting to ${saved.name}…`, 0);
+    try { await connectPlaylist(saved); } catch (ex) { toastEl.hidden = true; openLogin({ cancelable: true, values: withSecrets(saved), error: ex.message }); }
+  } else if (a === 'remove') {
+    if (!b.classList.contains('armed')) { b.classList.add('armed'); b.textContent = 'Select again to remove'; clearTimeout(plRemoveArmed); plRemoveArmed = setTimeout(() => { b.classList.remove('armed'); b.textContent = 'Remove playlist'; }, 3500); return; }
+    removePlaylist(id); closeAllLayers();
+    if (cur) { if (DEMO_OK) loadDemo(true); else loadBlank(); openLogin({}); }
+    toast(`Removed ${saved.name}`);
+  }
+});
+
 /* settings */
 function seg(name, opts, val, disabled) {
   return `<div class="seg" role="radiogroup">${opts.map(([v, l]) => `<input type="radio" name="${name}" id="${name}-${v}" value="${v}"${String(val) === String(v) ? ' checked' : ''}${disabled ? ' disabled' : ''}><label for="${name}-${v}">${l}</label>`).join('')}</div>`;
@@ -3891,6 +4281,7 @@ function openSettings() {
   const p = S.provider, m3u = p.type === 'm3u', demo = p.type !== 'xtream' && !m3u, none = p.type === 'none', inf = p.info || {};
   const exp = inf.exp ? fmtDate(inf.exp) : demo ? 'Never' : 'Unlimited';
   const soon = inf.exp && inf.exp - Date.now() < 7 * DAY;
+  const players = externalPlayers();
   el('settingsBody').innerHTML = (none ? `
   <section><h3>Playlist</h3>
     <p class="hint">No playlist yet. Add the server address, username and password from your IPTV provider.</p>
@@ -3906,46 +4297,46 @@ function openSettings() {
       ${demo || m3u ? '' : `<dt>Connections</dt><dd>${esc(inf.active != null ? inf.active : '–')} of ${esc(inf.max != null ? inf.max : '–')} in use</dd>`}
       <dt>Channels</dt><dd>${S.channels.length.toLocaleString()} in ${S.groups.length} groups</dd>
     </dl>
-    <div class="btns"><button class="btn ghost" data-s="switch">${icon('playlist')}Switch playlist</button>${demo ? '' : `<button class="btn danger" data-s="remove">Remove playlist</button>`}</div>
+    <div class="btns">${demo ? '' : `<button class="btn primary" data-s="plopts">${icon('settings')}Playlist options</button>`}<button class="btn ghost" data-s="switch">${icon('playlist')}Switch playlist</button></div>
+    ${demo ? '' : '<p class="hint">Playlist options: name, login, guide source and time shift, channel numbers, stream format, User-Agent and more.</p>'}
   </section>`) + `
+  <section><h3>Channels</h3>
+    <dl class="kv"><dt>Favorites</dt><dd>${favs.size}</dd><dt>Hidden</dt><dd>${hiddenCh.size} ${hiddenCh.size === 1 ? 'channel' : 'channels'} · ${hiddenGr.size} ${hiddenGr.size === 1 ? 'group' : 'groups'}</dd></dl>
+    <div class="btns"><button class="btn ghost" data-s="channels">${icon('edit')}Edit channels</button></div>
+    <p class="hint">Order your favorites, hide channels or whole groups, and sort the list.</p>
+  </section>
+  <section><h3>TV guide</h3>
+    <div class="setting"><span>Clock</span>${seg('clock', [['12', '12-hour'], ['24', '24-hour']], prefs.clock24 ? 24 : 12)}</div>
+    <div class="setting"><span>Row size</span>${seg('rows', [['compact', 'Compact'], ['comfortable', 'Comfortable']], prefs.rows)}</div>
+    ${demo || none ? '' : '<div class="btns"><button class="btn ghost" data-s="reload">Reload guide</button></div>'}
+  </section>
+  <section><h3>Playback</h3>
+    <div class="setting"><span>Picture shape</span>${seg('aspect', ASPECTS, prefs.aspect)}<p class="hint">16:9 fills a TV screen. Fit keeps each channel's own shape; Zoom fills the screen by trimming the edges.</p></div>
+    ${canHandOff() ? `<div class="setting"><span>Video player</span>${seg('player', [['builtin', 'Built-in']].concat(players.map(x => [x.pkg, x.name]), [['ask', 'Ask each time']]), useExternal() ? prefs.player : 'builtin')}<p class="hint">${players.length ? 'Full screen, catch-up and movies open in the player you pick. The guide preview always plays here.' : 'Install VLC or MX Player and it shows up here.'}</p></div>` : ''}
+  </section>
+  ${vpnSectionHTML()}
   <section><h3>Look</h3>
     <div class="setting"><span>Size</span>${seg('uisize', SIZES.map(z => [z[0], z[1]]), prefs.size)}</div>
     <dl class="kv"><dt>Theme</dt><dd>${esc(lookTheme.name)}${prefs.autoSeason ? ' · automatic for holidays' : ''}</dd><dt>Font</dt><dd>${esc((FONTS.find(f => f.id === prefs.font) || FONTS[0]).name)}</dd></dl>
     <div class="btns"><button class="btn ghost" data-s="look">${icon('palette')}Themes &amp; look</button></div>
   </section>
-  <section><h3>Channels</h3>
-    <div class="setting"><span>Sort channels</span>${seg('sort', [['provider', 'Provider order'], ['number', 'Number'], ['name', 'A–Z']], prefs.sort)}</div>
-    <dl class="kv"><dt>Favorites</dt><dd>${favs.size}</dd><dt>Hidden</dt><dd>${hiddenCh.size} ${hiddenCh.size === 1 ? 'channel' : 'channels'} · ${hiddenGr.size} ${hiddenGr.size === 1 ? 'group' : 'groups'}</dd></dl>
-    <div class="btns"><button class="btn ghost" data-s="channels">${icon('edit')}Edit favorites and hidden channels</button></div>
-  </section>
-  <section><h3>TV guide</h3>
-    <div class="setting"><span>Clock</span>${seg('clock', [['12', '12-hour'], ['24', '24-hour']], prefs.clock24 ? 24 : 12)}</div>
-    <div class="setting"><span>Row size</span>${seg('rows', [['compact', 'Compact'], ['comfortable', 'Comfortable']], prefs.rows)}</div>
-    ${m3u ? `<div class="setting"><span>TV guide (XMLTV) link</span><input class="text-in" id="m3uEpg" placeholder="Optional: http://…/epg.xml" value="${esc(p.epgUrl || '')}"><p class="hint">${p.epgUrl ? 'Leave empty to show channels without a guide.' : 'Add a link to show what\'s on for each channel.'}</p></div>` : `<div class="setting"><span>Guide source</span>${seg('epg', [['provider', 'From provider'], ['xmltv', 'XMLTV file']], demo ? 'provider' : prefs.epgSource, demo)}
-      ${demo ? '<p class="hint">The demo playlist has a built-in guide.</p>' : `<input class="text-in" id="xmltvUrl" placeholder="${esc(p.server)}/xmltv.php?username=…" value="${esc(prefs.xmltvUrl)}" ${prefs.epgSource === 'xmltv' ? '' : 'hidden'}><p class="hint">${prefs.epgSource === 'xmltv' ? 'Leave empty to use your provider’s XMLTV file. Large files can take a minute.' : 'Loads guide data for the channels on screen as you scroll.'}</p>`}
-    </div>`}
-    ${demo ? '' : '<div class="btns"><button class="btn ghost" data-s="reload">Reload guide</button></div>'}
-  </section>
-  <section><h3>Playback</h3>
-    <div class="setting"><span>Picture shape</span>${seg('aspect', ASPECTS, prefs.aspect)}<p class="hint">16:9 fills a TV screen. Fit keeps each channel's own shape; Zoom fills the screen by trimming the edges.</p></div>
-    ${m3u ? '<p class="hint">Channels play in the format your M3U playlist gives.</p>' : `<div class="setting"><span>Stream format</span>${seg('fmt', [['auto', 'Best'], ['m3u8', 'HLS (.m3u8)'], ['ts', 'MPEG-TS (.ts)']], prefs.format, demo)}<p class="hint">Best plays your provider's original stream when it can. If a channel won't start, try another format.</p></div>`}
-  </section>
   <section><h3>${TV_MODE ? 'Remote' : 'Remote and keyboard'}</h3>
     <div class="keys">${TV_MODE ? `
       <span><kbd>↑</kbd> <kbd>↓</kbd></span><span>Move between channels</span>
-      <span><kbd>→</kbd></span><span>Later programs</span>
-      <span><kbd>←</kbd> <kbd>Back</kbd></span><span>Open the menu (from what's on now)</span>
-      <span><kbd>◀◀</kbd> <kbd>▶▶</kbd></span><span>Earlier programs and catch-up, later programs</span>
-      <span><kbd>OK</kbd></span><span>Watch; in full screen, channel options (favorite, hide, audio, format)</span>
+      <span><kbd>←</kbd> <kbd>→</kbd></span><span>Earlier and later programs (back to 12 hours ago)</span>
+      <span><kbd>◀◀</kbd> <kbd>▶▶</kbd></span><span>Jump a screen earlier or later in the guide</span>
+      <span><kbd>OK</kbd></span><span>Watch, or open program details and catch-up</span>
+      <span><kbd>Back</kbd></span><span>Back to the playing channel, then the menu; twice to exit</span>
+      <span><kbd>OK</kbd> <small>(full screen)</small></span><span>Player panel: scrub, pause, picture shape, audio</span>
       <span><kbd>←</kbd> <small>(full screen)</small></span><span>Channel list</span>
       <span><kbd>▶❚❚</kbd></span><span>Pause and play live TV</span>
       <span><kbd>◀◀</kbd> <kbd>▶▶</kbd> <small>(full screen)</small></span><span>Rewind and fast-forward</span>
-      <span><kbd>☰</kbd></span><span>Program details and favorites</span>
+      <span><kbd>☰</kbd></span><span>Program details; in full screen, channel options</span>
     </div>` : `
       <span><kbd>↑</kbd> <kbd>↓</kbd></span><span>Move between channels</span>
       <span><kbd>←</kbd> <kbd>→</kbd></span><span>Move through programs and catch-up</span>
       <span><kbd>OK</kbd></span><span>Watch, or open program details</span>
-      <span><kbd>Back</kbd></span><span>Return to now, then open the menu</span>
+      <span><kbd>Back</kbd></span><span>Back to the playing channel, then the menu</span>
       <span><kbd>0</kbd>–<kbd>9</kbd></span><span>Jump to a channel number</span>
       <span><kbd>F</kbd></span><span>Add or remove favorite</span>
       <span><kbd>G</kbd> <kbd>/</kbd></span><span>Groups, search</span>
@@ -3957,23 +4348,35 @@ function openSettings() {
 el('settingsBody').addEventListener('change', e => {
   const t = e.target;
   if (t.name === 'clock') { prefs.clock24 = t.value === '24'; savePrefs(); renderTicks(); positionNow(); invalidateRows(); renderGuide(); updateHero(); updateOsd(); }
-  if (t.name === 'sort') { prefs.sort = t.value; savePrefs(); channelsChanged(); }
   if (t.name === 'uisize') { prefs.size = t.value; savePrefs(); applySizeChange(); }
-  if (t.name === 'rows') { prefs.rows = t.value; savePrefs(); applyRowSize(); layoutGuide(); ensureVisible(); renderGuide(); }
-  if (t.name === 'fmt') { prefs.format = t.value; savePrefs(); const ch = S.byId.get(S.playingId); if (ch && S.provider.type === 'xtream') play(ch, { quiet: true }); }
+  if (t.name === 'rows') { prefs.rows = t.value; savePrefs(); applyRowSize(); layoutGuide(); ensureVisible('row', true); renderGuide(); }
+  if (t.id === 'vpnAuto') { prefs.vpnAuto = t.checked; savePrefs(); if (t.checked && vpnRead().configured && vpnInfo.state === 'off') vpnCall('vpnConnect'); }
+  if (t.id === 'vpnReq') { prefs.vpnRequired = t.checked; savePrefs(); if (t.checked && !vpnOn()) toast(vpnInfo.configured ? 'Playback waits for the VPN' : 'Add a VPN or turn on your VPN app to watch', 3000); }
+  if (t.name === 'player') { prefs.player = t.value; savePrefs(); toast(t.value === 'builtin' ? 'Playing in Nightdial' : t.value === 'ask' ? 'You\'ll pick a player each time' : 'Full screen opens in ' + playerName(t.value), 2200); }
   if (t.name === 'aspect') { prefs.aspect = t.value; savePrefs(); applyAspect(); }
-  if (t.name === 'epg') { prefs.epgSource = t.value; savePrefs(); reloadGuide(); openSettingsKeep(); }
-  if (t.id === 'm3uEpg') { S.provider.epgUrl = t.value.trim(); secrets.set(S.provider.id, { url: S.provider.url, epgUrl: S.provider.epgUrl }); reloadGuide(); }
-  if (t.id === 'xmltvUrl') { prefs.xmltvUrl = t.value.trim(); savePrefs(); if (prefs.epgSource === 'xmltv') reloadGuide(); }
 });
 function openSettingsKeep() { const d = el('settingsDrawer'); const st = d.querySelector('.list').scrollTop; layers.splice(layers.indexOf(d), 1); d.hidden = true; openSettings(); setTimeout(() => { d.querySelector('.list').scrollTop = st; }, 30); }
 let removeArmed = 0;
 el('settingsBody').addEventListener('click', e => {
+  const vb = e.target.closest('[data-vpn]');
+  if (vb) {
+    const a = vb.dataset.vpn;
+    if (a === 'on') vpnCall('vpnConnect');
+    else if (a === 'off') vpnCall('vpnDisconnect');
+    else if (a === 'share') openVpnShare();
+    else if (a === 'url') vpnLoadUrl(el('vpnUrl') && el('vpnUrl').value);
+    else if (a === 'clear') {
+      if (!vb.classList.contains('armed')) { vb.classList.add('armed'); vb.textContent = 'Select again to remove'; setTimeout(() => { if (vb.isConnected) { vb.classList.remove('armed'); vb.textContent = 'Remove VPN config'; } }, 3500); return; }
+      vpnCall('vpnClear'); toast('VPN config removed', 2000);
+    }
+    return;
+  }
   const b = e.target.closest('[data-s]'); if (!b) return;
   if (b.dataset.s === 'switch') { closeLayer(); openPlaylists(); }
   if (b.dataset.s === 'add') { closeLayer(); openLogin({ cancelable: true, values: { name: '', server: '', user: '', pass: '' } }); }
   if (b.dataset.s === 'look') { closeLayer(); openLook(); }
   if (b.dataset.s === 'channels') { closeLayer(); openMgr(); }
+  if (b.dataset.s === 'plopts') { closeLayer(); openPlOpts(S.provider.id); }
   if (b.dataset.s === 'reload') { reloadGuide(); toast('Reloading guide…'); }
   if (b.dataset.s === 'remove') {
     if (!b.classList.contains('armed')) { b.classList.add('armed'); b.textContent = 'Select again to remove'; clearTimeout(removeArmed); removeArmed = setTimeout(() => { b.classList.remove('armed'); b.textContent = 'Remove playlist'; }, 3500); return; }
@@ -3992,7 +4395,7 @@ function reloadGuide() {
   if (S.provider.type !== 'xtream') return;
   epg = new Map(); epgState = new Map(); epgQueue = [];
   invalidateRows();
-  if (prefs.epgSource === 'xmltv') loadXmltv(); else { renderGuide(); updateHero(); }
+  if (PO.epgSource === 'xmltv') loadXmltv(); else { renderGuide(); updateHero(); }
 }
 function applyRowSize() { document.documentElement.classList.toggle('rows-compact', prefs.rows === 'compact'); }
 
@@ -4106,22 +4509,49 @@ function moveListFocus(container, d) {
 }
 
 /* ---- remote-friendly focus for forms and drawers (TV remotes have no Tab key) ---- */
-const TV = !!window.TUNER_TV;
+const TV = !!window.NIGHTDIAL_TV;
 let kbFor = null;
 function isTextInput(n) { return !!n && n.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|range)$/i.test(n.type); }
-function showKeyboard(n) { kbFor = n; try { if (window.TunerNative) window.TunerNative.showKeyboard(); } catch (e) {} }
+function showKeyboard(n) { kbFor = n; try { if (window.NightdialNative) window.NightdialNative.showKeyboard(); } catch (e) {} }
 function formFocusables(container) {
   return [...container.querySelectorAll('input:not([type=hidden]):not([type=radio]), input[type=radio]:checked, button, .item')]
     .filter(n => !n.disabled && n.offsetParent !== null);
 }
 function moveFormFocus(container, d) {
   const items = formFocusables(container); if (!items.length) return null;
-  const i = items.indexOf(document.activeElement);
+  const a = document.activeElement;
+  let i = items.indexOf(a);
+  // on a choice that isn't the picked one (theme tiles, colors): step from where that group sits in the list
+  if (i < 0 && a && a.type === 'radio') i = items.findIndex(n => n.type === 'radio' && n.name === a.name);
   const next = items[Math.max(0, Math.min(items.length - 1, i < 0 ? 0 : i + d))];
   next.focus(); return next;
 }
+/* Theme tiles, color swatches and fonts: the arrows move around them and OK picks one. Moving alone changes nothing. */
+const GRID_SEL = '.tiles, .swatches, .seg.fonts';
+function gridMove(a, k) {
+  const all = [...document.querySelectorAll(`input[type=radio][name="${a.name}"]`)].filter(n => !n.disabled && n.nextElementSibling && n.nextElementSibling.offsetParent !== null);
+  const i = all.indexOf(a);
+  if (k === 'left' || k === 'right') { const n = all[i + (k === 'right' ? 1 : -1)]; if (n) n.focus(); return true; }
+  const r = a.nextElementSibling.getBoundingClientRect(), cx = r.left + r.width / 2;
+  let best = null, bd = Infinity;
+  for (const n of all) {
+    if (n === a) continue;
+    const q = n.nextElementSibling.getBoundingClientRect();
+    const dy = k === 'down' ? q.top - r.bottom : r.top - q.bottom;
+    if (dy < -2) continue;
+    const d = Math.round(dy / 4) * 100000 + Math.abs(q.left + q.width / 2 - cx);   // the nearest row, then the closest one in it
+    if (d < bd) { bd = d; best = n; }
+  }
+  if (best) best.focus();
+  return !!best;
+}
 function tvNav(k, e, container) {
   const a = document.activeElement;
+  if (a && a.tagName === 'INPUT' && a.type === 'radio' && a.closest(GRID_SEL) && (k === 'up' || k === 'down' || k === 'left' || k === 'right')) {
+    e.preventDefault();
+    if (!gridMove(a, k) && (k === 'up' || k === 'down')) moveFormFocus(container, k === 'down' ? 1 : -1);
+    return true;
+  }
   if (k === 'up' || k === 'down') { e.preventDefault(); moveFormFocus(container, k === 'down' ? 1 : -1); return true; }
   if (k === 'left' || k === 'right') {
     if (a && a.tagName === 'INPUT' && a.type === 'radio') { e.preventDefault(); stepRadio(a, k === 'right' ? 1 : -1); return true; }
@@ -4164,7 +4594,7 @@ function handleBack() {
   // Back twice from the guide closes the app: the first press opens the menu, a second one within 2 seconds exits.
   if (TV_MODE && backArmed && Date.now() - backArmed < 2000 && layers.length === 1 && layers[0].id === 'tvNav') {
     backArmed = 0;
-    if (window.TunerNative && window.TunerNative.exit) { try { window.TunerNative.exit(); } catch (e) {} }
+    if (window.NightdialNative && window.NightdialNative.exit) { try { window.NightdialNative.exit(); } catch (e) {} }
     else toast('On your Fire TV this closes Nightdial');
     return true;
   }
@@ -4180,27 +4610,33 @@ function handleBack() {
     closeVod(); return true;
   }
   if (a && a.closest && a.closest('#rail')) return false;
+  if (guideBackHome()) return true;
   if (TV_MODE) { openTvNav(true); backArmed = Date.now(); toast('Press Back again to exit', 2000); return true; }
-  const p = focusedProg();
-  if (p && !isNowProg(p)) { jumpToNow(false); guideScroll.focus({ preventScroll: true }); return true; }
   const b = document.querySelector('.rail-btn.active') || document.querySelector('.rail-btn');
   if (b && b.offsetParent) { b.focus(); return true; }
   return false;
 }
 let backArmed = 0;
-window.tunerBack = handleBack;
+window.nightdialBack = handleBack;
 /* Remote buttons sent by the Fire TV app (play/pause, menu, channel up/down, rewind, fast-forward).
    Sent to the focused control like a real key; OK on a control that nothing else handled activates it. */
-window.tunerKey = function (key) {
+window.nightdialKey = function (key) {
   const a = document.activeElement, target = a && a !== document.body ? a : document;
   const ev = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
   if (target.dispatchEvent(ev) && key === 'Enter' && a && a !== document.body && a.matches &&
       a.matches('button,a[href],summary,label,input[type=checkbox],input[type=radio],[role=button],[role=menuitem],[role=option],[role=tab]')) a.click();
 };
 
+const REPEATING = new Set(['up', 'down', 'left', 'right', 'pgup', 'pgdn']);
+let keyFrame = 0;
 document.addEventListener('keydown', e => {
   firstGesture();
   let k = keyName(e); if (!k) return;
+  // Holding a button: at most one move per drawn frame, so a slow frame never queues up moves that carry on after you let go.
+  if (REPEATING.has(k)) {
+    if (e.repeat && keyFrame && !(document.activeElement && isTextInput(document.activeElement))) { e.preventDefault(); return; }
+    if (!keyFrame) keyFrame = requestAnimationFrame(() => { keyFrame = 0; });
+  }
   if (k !== 'back') backArmed = 0;
   const a = document.activeElement;
   const inField = !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
@@ -4263,8 +4699,8 @@ document.addEventListener('keydown', e => {
     case 'pgdn': e.preventDefault(); moveRow(visRows); break;
     case 'left': e.preventDefault(); moveProg(-1); break;
     case 'right': e.preventDefault(); moveProg(1); break;
-    case 'rew': e.preventDefault(); moveProg(-1, true); break;
-    case 'ff': e.preventDefault(); moveProg(1); break;
+    case 'rew': e.preventDefault(); pageTime(-1); break;
+    case 'ff': e.preventDefault(); pageTime(1); break;
     case 'ok': {
       if (a && a.tagName === 'BUTTON') return;
       e.preventDefault();
@@ -4323,7 +4759,7 @@ window.addEventListener('resize', () => {
     const oldPpm = ppm, centerT = rangeStart + (guideScroll.scrollLeft / oldPpm) * MIN;
     layoutGuide();
     guideScroll.scrollLeft = Math.max(0, x(centerT));
-    ensureVisible(); renderGuide(); sizeCanvas(); applyAspect();
+    ensureVisible('row', true); renderGuide(); sizeCanvas(); applyAspect();
   }, 120);
 });
 

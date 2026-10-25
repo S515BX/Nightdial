@@ -1,6 +1,6 @@
-TUNER
-IPTV player with Xtream Codes sign-in and a full TV guide (EPG)
-=================================================================
+NIGHTDIAL FOR THE WEB
+IPTV player with Xtream Codes or M3U sign-in and a full TV guide (EPG)
+=====================================================================
 
 START IT
 1. Install Node.js 18 or newer from https://nodejs.org
@@ -9,9 +9,10 @@ START IT
        node server.js
 
 3. Open http://localhost:8080 in Chrome, Edge, Firefox or Safari.
-4. Enter the server URL, username and password from your IPTV provider.
-   You can also paste your full M3U link (the one with username= and
-   password= in it) into the Server URL box. Tuner fills in the rest.
+4. Sign in with Xtream Codes (server address, username, password) or an
+   M3U playlist link. You can also paste your full M3U link (the one with
+   username= and password= in it) into the Server URL box and Nightdial
+   fills in the rest.
 
 WATCH ON A TV, TABLET OR PHONE (same Wi-Fi)
    Mac / Linux:          HOST=0.0.0.0 node server.js
@@ -24,15 +25,18 @@ WHY THERE'S A SERVER
    your provider. It talks to nothing else.
 
 WHAT'S IN IT
-   - Xtream Codes sign-in, several saved playlists, account status/expiry
-   - TV guide grid with live "now" line, channel groups, favorites, recently watched
-   - Guide data per channel from your provider, or a full XMLTV file
-   - Catch-up (watch from start) on channels your provider archives
-   - Full-screen player with channel banner, channel up/down, number entry
-   - HLS (.m3u8) or MPEG-TS (.ts) stream format
-   - Remote-friendly: arrow keys, OK, Back, 0-9, F (favorite), G (groups), / (search)
+   - Xtream Codes and M3U sign-in, several saved playlists, account status
+   - TV guide grid with a live "now" line, channel groups and favorites;
+     scroll back through what already aired and catch up where your
+     provider keeps recordings
+   - Playlist options for each playlist: name, login, guide source and
+     time shift, channel numbers, sorting, start group, stream format,
+     User-Agent, Movies & Series on or off, hide adult groups
+   - Movies & Series, pause and rewind live TV, picture shape
+   - Themes, holiday themes, highlight and menu colors, fonts
+   - Keyboard: arrow keys, Enter, Esc, 0-9, F (favorite), G (groups), / (search)
 
 NOTES
    - Saved playlists and favorites live in this browser only.
-   - If a channel won't start, switch Stream format in Settings.
-   - Tuner doesn't include any channels. Use it with a service you subscribe to.
+   - If a channel won't start, change Stream format in Playlist options.
+   - Nightdial doesn't include any channels. Use it with a service you subscribe to.

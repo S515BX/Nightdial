@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Nightdial app icon: a neon crescent that doubles as a tuning dial, with a play button in the night sky. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#20253a"/>
+      <stop offset=".55" stop-color="#151925"/>
+      <stop offset="1" stop-color="#0d0f17"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(150 120) scale(620)">
+      <stop offset="0" stop-color="#4cc9f0" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#4cc9f0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(930 960) scale(640)">
+      <stop offset="0" stop-color="#ff6b8b" stop-opacity=".5"/>
+      <stop offset="1" stop-color="#ff6b8b" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="moon" x1="230" y1="220" x2="760" y2="820" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7ff5d6"/>
+      <stop offset=".45" stop-color="#4cc9f0"/>
+      <stop offset="1" stop-color="#a99cff"/>
+    </linearGradient>
+    <linearGradient id="play" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#ffd3de"/>
+    </linearGradient>
+    <mask id="crescent">
+      <rect width="1024" height="1024" fill="#000"/>
+      <circle cx="500" cy="520" r="292" fill="#fff"/>
+      <circle cx="628" cy="438" r="250" fill="#000"/>
+    </mask>
+    <filter id="neon" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="34"/>
+    </filter>
+    <filter id="soft" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <rect width="1024" height="1024" fill="url(#glowA)"/>
+  <rect width="1024" height="1024" fill="url(#glowB)"/>
+  <!-- dial ticks -->
+  <g transform="translate(500 520)" stroke="#ffffff" stroke-linecap="round">
+    <g stroke-opacity=".22" stroke-width="10">
+      <line x1="0" y1="-378" x2="0" y2="-352" transform="rotate(-150)"/>
+      <line x1="0" y1="-378" x2="0" y2="-352" transform="rotate(-120)"/>
+      <line x1="0" y1="-378" x2="0" y2="-352" transform="rotate(-90)"/>
+      <line x1="0" y1="-378" x2="0" y2="-352" transform="rotate(-60)"/>
+      <line x1="0" y1="-378" x2="0" y2="-352" transform="rotate(-30)"/>
+      <line x1="0" y1="-378" x2="0" y2="-352" transform="rotate(30)"/>
+      <line x1="0" y1="-378" x2="0" y2="-352" transform="rotate(60)"/>
+      <line x1="0" y1="-378" x2="0" y2="-352" transform="rotate(90)"/>
+      <line x1="0" y1="-378" x2="0" y2="-352" transform="rotate(120)"/>
+      <line x1="0" y1="-378" x2="0" y2="-352" transform="rotate(150)"/>
+      <line x1="0" y1="-378" x2="0" y2="-352" transform="rotate(180)"/>
+    </g>
+    <line x1="0" y1="-392" x2="0" y2="-344" stroke="#ff7e9b" stroke-width="16"/>
+  </g>
+  <!-- crescent: glow, then the shape -->
+  <rect width="1024" height="1024" fill="url(#moon)" mask="url(#crescent)" filter="url(#neon)" opacity=".85"/>
+  <rect width="1024" height="1024" fill="url(#moon)" mask="url(#crescent)"/>
+  <!-- play button in the sky -->
+  <path d="M598 452c0-22 24-36 43-25l176 101c19 11 19 39 0 50L641 679c-19 11-43-3-43-25z" fill="#ff6b8b" filter="url(#soft)" opacity=".75"/>
+  <path d="M598 452c0-22 24-36 43-25l176 101c19 11 19 39 0 50L641 679c-19 11-43-3-43-25z" fill="url(#play)"/>
+  <!-- stars -->
+  <path d="M792 238c5 34 21 50 55 55-34 5-50 21-55 55-5-34-21-50-55-55 34-5 50-21 55-55z" fill="#ffffff" opacity=".95"/>
+  <path d="M700 300c3 18 11 26 29 29-18 3-26 11-29 29-3-18-11-26-29-29 18-3 26-11 29-29z" fill="#ffd3de" opacity=".85"/>
+  <circle cx="860" cy="410" r="9" fill="#ffffff" opacity=".7"/>
+</svg>

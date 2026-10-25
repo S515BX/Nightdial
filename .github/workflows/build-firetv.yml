@@ -1,6 +1,5 @@
 # Builds the Fire TV app. On the main branch it also puts it on the "firetv" release, so the newest build always has the same link:
 #   https://github.com/<you>/<repo>/releases/download/firetv/Nightdial-FireTV.apk
-# (Tuner-FireTV.apk is uploaded too, so older links and Downloader codes keep working.)
 # Builds on other branches (for example "dev") only keep the APK as a workflow artifact, for testing before release.
 name: Build Fire TV APK
 
@@ -47,10 +46,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          NOTES="Newest Nightdial build for Fire TV. Install it with the Downloader app on your Fire Stick, or with adb. A new build installs over the old one and keeps your playlists."
+          SHA=$(sha256sum Nightdial-FireTV.apk | cut -d' ' -f1)
+          NOTES="Newest Nightdial build for Fire TV. Install it with the Downloader app on your Fire Stick, or with adb. A new build installs over the old one and keeps your playlists.
+
+          SHA-256 of Nightdial-FireTV.apk: \`$SHA\`"
           gh release view firetv >/dev/null 2>&1 || gh release create firetv --target "$GITHUB_SHA" --title "Nightdial for Fire TV" --notes "$NOTES"
           gh release edit firetv --title "Nightdial for Fire TV" --notes "$NOTES"
-          cp Nightdial-FireTV.apk Tuner-FireTV.apk
-          gh release upload firetv Nightdial-FireTV.apk Tuner-FireTV.apk --clobber
+          gh release upload firetv Nightdial-FireTV.apk --clobber
+          # only the current file stays on the release (older names are removed)
+          gh release view firetv --json assets -q '.assets[].name' | grep -vx 'Nightdial-FireTV.apk' | while read -r old; do gh release delete-asset firetv "$old" -y; done
           echo "### Download Nightdial-FireTV.apk" >> "$GITHUB_STEP_SUMMARY"
           echo "https://github.com/${GH_REPO}/releases/download/firetv/Nightdial-FireTV.apk" >> "$GITHUB_STEP_SUMMARY"

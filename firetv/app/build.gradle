@@ -6,11 +6,11 @@ plugins {
 def ciBuild = System.getenv('GITHUB_RUN_NUMBER')
 
 android {
-    namespace 'app.tuner.tv'
+    namespace 'app.nightdial.tv'
     compileSdk 34
 
     defaultConfig {
-        applicationId 'app.tuner.tv'
+        applicationId 'app.tuner.tv'   // kept from the first release: changing it would install a second app and lose saved playlists
         minSdk 22        // Fire OS 5 and newer
         targetSdk 34
         versionCode ciBuild ? ciBuild.toInteger() + 1 : 1
@@ -21,10 +21,10 @@ android {
     // It's only for sideloading onto your own devices.
     signingConfigs {
         sideload {
-            storeFile file('tuner-sideload.jks')
-            storePassword 'tuner-sideload'
-            keyAlias 'tuner'
-            keyPassword 'tuner-sideload'
+            storeFile file('nightdial-sideload.jks')
+            storePassword 'nightdial-sideload'
+            keyAlias 'nightdial'
+            keyPassword 'nightdial-sideload'
         }
     }
 
@@ -39,6 +39,8 @@ android {
     }
 
     compileOptions {
+        // the WireGuard library uses newer Java classes; this makes them work back to Fire OS 5
+        coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
@@ -54,4 +56,7 @@ dependencies {
     implementation 'androidx.media3:media3-exoplayer:1.4.1'
     implementation 'androidx.media3:media3-exoplayer-hls:1.4.1'
     implementation 'androidx.media3:media3-ui:1.4.1'
+    // Built-in VPN: the official WireGuard tunnel library.
+    implementation 'com.wireguard.android:tunnel:1.0.20230706'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
 }

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Generates the Xcode project (Tuner.xcodeproj, shown as Nightdial), the asset catalog, icon, fonts and glyphs, then checks the project file's structure."""
+"""Generates the Xcode project (Nightdial.xcodeproj), the asset catalog, icon, fonts and glyphs, then checks the project file's structure."""
 import json, os, re, shutil, sys
 from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(ROOT, "Tuner")
+SRC = os.path.join(ROOT, "Nightdial")
 SWIFT = sorted(f for f in os.listdir(SRC) if f.endswith(".swift"))
 
 counter = [0]
@@ -57,7 +57,7 @@ target_settings = """				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Tuner/Info.plist;
+				INFOPLIST_FILE = Nightdial/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Nightdial;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -100,7 +100,7 @@ for name, ref, bf in files:
     w(f"\t\t{ref} /* {name} */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = {name}; sourceTree = \"<group>\"; }};\n")
 w(f"\t\t{ids['assetsRef']} /* Assets.xcassets */ = {{isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = \"<group>\"; }};\n")
 w(f"\t\t{ids['plistRef']} /* Info.plist */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = \"<group>\"; }};\n")
-w(f"\t\t{ids['product']} /* Tuner.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tuner.app; sourceTree = BUILT_PRODUCTS_DIR; }};\n")
+w(f"\t\t{ids['product']} /* Nightdial.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nightdial.app; sourceTree = BUILT_PRODUCTS_DIR; }};\n")
 w("/* End PBXFileReference section */\n\n")
 
 w("/* Begin PBXFrameworksBuildPhase section */\n")
@@ -108,19 +108,19 @@ w(f"\t\t{ids['frameworks']} /* Frameworks */ = {{\n\t\t\tisa = PBXFrameworksBuil
 w("/* End PBXFrameworksBuildPhase section */\n\n")
 
 w("/* Begin PBXGroup section */\n")
-w(f"\t\t{ids['mainGroup']} = {{\n\t\t\tisa = PBXGroup;\n\t\t\tchildren = (\n\t\t\t\t{ids['appGroup']} /* Tuner */,\n\t\t\t\t{ids['productsGroup']} /* Products */,\n\t\t\t);\n\t\t\tsourceTree = \"<group>\";\n\t\t}};\n")
-w(f"\t\t{ids['appGroup']} /* Tuner */ = {{\n\t\t\tisa = PBXGroup;\n\t\t\tchildren = (\n")
+w(f"\t\t{ids['mainGroup']} = {{\n\t\t\tisa = PBXGroup;\n\t\t\tchildren = (\n\t\t\t\t{ids['appGroup']} /* Nightdial */,\n\t\t\t\t{ids['productsGroup']} /* Products */,\n\t\t\t);\n\t\t\tsourceTree = \"<group>\";\n\t\t}};\n")
+w(f"\t\t{ids['appGroup']} /* Nightdial */ = {{\n\t\t\tisa = PBXGroup;\n\t\t\tchildren = (\n")
 for name, ref, bf in files:
     w(f"\t\t\t\t{ref} /* {name} */,\n")
 w(f"\t\t\t\t{ids['assetsRef']} /* Assets.xcassets */,\n\t\t\t\t{ids['plistRef']} /* Info.plist */,\n")
-w("\t\t\t);\n\t\t\tpath = Tuner;\n\t\t\tsourceTree = \"<group>\";\n\t\t};\n")
-w(f"\t\t{ids['productsGroup']} /* Products */ = {{\n\t\t\tisa = PBXGroup;\n\t\t\tchildren = (\n\t\t\t\t{ids['product']} /* Tuner.app */,\n\t\t\t);\n\t\t\tname = Products;\n\t\t\tsourceTree = \"<group>\";\n\t\t}};\n")
+w("\t\t\t);\n\t\t\tpath = Nightdial;\n\t\t\tsourceTree = \"<group>\";\n\t\t};\n")
+w(f"\t\t{ids['productsGroup']} /* Products */ = {{\n\t\t\tisa = PBXGroup;\n\t\t\tchildren = (\n\t\t\t\t{ids['product']} /* Nightdial.app */,\n\t\t\t);\n\t\t\tname = Products;\n\t\t\tsourceTree = \"<group>\";\n\t\t}};\n")
 w("/* End PBXGroup section */\n\n")
 
 w("/* Begin PBXNativeTarget section */\n")
-w(f"""		{ids['target']} /* Tuner */ = {{
+w(f"""		{ids['target']} /* Nightdial */ = {{
 			isa = PBXNativeTarget;
-			buildConfigurationList = {ids['targetList']} /* Build configuration list for PBXNativeTarget "Tuner" */;
+			buildConfigurationList = {ids['targetList']} /* Build configuration list for PBXNativeTarget "Nightdial" */;
 			buildPhases = (
 				{ids['sources']} /* Sources */,
 				{ids['frameworks']} /* Frameworks */,
@@ -130,9 +130,9 @@ w(f"""		{ids['target']} /* Tuner */ = {{
 			);
 			dependencies = (
 			);
-			name = Tuner;
-			productName = Tuner;
-			productReference = {ids['product']} /* Tuner.app */;
+			name = Nightdial;
+			productName = Nightdial;
+			productReference = {ids['product']} /* Nightdial.app */;
 			productType = "com.apple.product-type.application";
 		}};
 """)
@@ -151,7 +151,7 @@ w(f"""		{ids['project']} /* Project object */ = {{
 					}};
 				}};
 			}};
-			buildConfigurationList = {ids['projectList']} /* Build configuration list for PBXProject "Tuner" */;
+			buildConfigurationList = {ids['projectList']} /* Build configuration list for PBXProject "Nightdial" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -164,7 +164,7 @@ w(f"""		{ids['project']} /* Project object */ = {{
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				{ids['target']} /* Tuner */,
+				{ids['target']} /* Nightdial */,
 			);
 		}};
 """)
@@ -191,7 +191,7 @@ w("/* End XCBuildConfiguration section */\n\n")
 w("/* Begin XCConfigurationList section */\n")
 for lid, kind, d, r in [(ids['projectList'], 'PBXProject', ids['projDebug'], ids['projRelease']),
                         (ids['targetList'], 'PBXNativeTarget', ids['tgtDebug'], ids['tgtRelease'])]:
-    w(f"""		{lid} /* Build configuration list for {kind} "Tuner" */ = {{
+    w(f"""		{lid} /* Build configuration list for {kind} "Nightdial" */ = {{
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				{d} /* Debug */,
@@ -205,7 +205,7 @@ w("/* End XCConfigurationList section */\n")
 w(f"\t}};\n\trootObject = {ids['project']} /* Project object */;\n}}\n")
 pbx = "".join(out)
 
-proj = os.path.join(ROOT, "Tuner.xcodeproj")
+proj = os.path.join(ROOT, "Nightdial.xcodeproj")
 os.makedirs(os.path.join(proj, "project.xcworkspace"), exist_ok=True)
 open(os.path.join(proj, "project.pbxproj"), "w").write(pbx)
 open(os.path.join(proj, "project.xcworkspace", "contents.xcworkspacedata"), "w").write(
@@ -249,7 +249,7 @@ if os.path.isdir(_fonts):
         shutil.copyfile(os.path.join(_fonts, f), os.path.join(d, f))
         jdump(os.path.join(d, "Contents.json"), {"data": [{"filename": f, "idiom": "universal", "universal-type-identifier": "public.truetype-ttf-font"}], "info": info})
 
-# Theme art from tuner/themes (generated by apply.js): particle glyphs (tinted in code) and scenery (full color), all vector.
+# Theme art from themes/ (generated by apply.js): particle glyphs (tinted in code) and scenery (full color), all vector.
 _scenes = os.path.join(ROOT, "scenes")
 if os.path.isdir(_scenes):
     for fn in sorted(os.listdir(_scenes)):
