@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-aqhJbgZKkI9iKOlle0GS2lg7f02tvaGdUS3mG95yMpk=' 'sha256-C548feVd04fMJq2IiHCCZuRVrtObKhPSCjujVxjMTkQ=' 'sha256-Avz/4s8RUtWSHFdqzvUmkcgQ/tHoN48sWkTT0EjbXOw='; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src * data: blob:; media-src * data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-aqhJbgZKkI9iKOlle0GS2lg7f02tvaGdUS3mG95yMpk=' 'sha256-ahNqvbjjJNoEbjYa4MAY/+4SgqjT+ujRne5N7wYaSOY=' 'sha256-Avz/4s8RUtWSHFdqzvUmkcgQ/tHoN48sWkTT0EjbXOw='; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src * data: blob:; media-src * data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#161922">
 <title>Nightdial</title>
@@ -664,6 +664,9 @@ html.tv .toast{font-size:var(--t-s);padding:calc(var(--vh)*2) calc(var(--vh)*3.4
 html.tv .numentry{font-size:calc(var(--vh)*10);top:var(--safe-y);right:var(--safe-x)}
 html.tv .screen-msg{font-size:var(--t-xs)}
 html.tv .screen-msg b{font-size:var(--t-m)}
+html.tv .screen-msg .btn{min-height:calc(var(--vh)*6.4);padding:0 calc(var(--vh)*2.6);font-size:var(--t-s);gap:calc(var(--vh)*1)}
+html.tv .screen-msg .btn:focus{outline:none;background:var(--hl);color:var(--hl-ink)}
+.retry-hint{color:var(--fg-3)}
 html.tv .login{padding:var(--safe-y) var(--safe-x);-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(8,10,16,.84)}
 html.tv .login-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);align-items:center;gap:calc(var(--vh)*6);width:min(calc(var(--vh)*156),100%);padding:calc(var(--vh)*5.6);border-radius:calc(var(--vh)*3.6)}
 html.tv .login-intro{gap:calc(var(--vh)*3)}
@@ -2328,11 +2331,25 @@ const SCREEN_MSGS = {
 };
 function showScreenMsg(code) {
   const [t, d] = SCREEN_MSGS[code] || SCREEN_MSGS.network;
-  screenMsg.innerHTML = `<b>${esc(t)}</b><span>${esc(d)}</span>${NATIVE && nativeDetail ? `<small class="err-code">${esc(nativeDetail)}</small>` : ''}<button class="btn ghost" data-act="retry">Try again</button>`;
+  screenMsg.innerHTML = `<b>${esc(t)}</b><span>${esc(d)}</span>${NATIVE && nativeDetail ? `<small class="err-code">${esc(nativeDetail)}</small>` : ''}<button class="btn ghost" data-act="retry">${icon('replay')}Try again</button>${TV_MODE ? '<small class="retry-hint">Press OK to try again</small>' : ''}`;
   screenMsg.hidden = false;
   updateMuteUi();
+  // on the TV in full screen, the remote's OK lands on "Try again"
+  if (TV_MODE && app.classList.contains('is-full') && !layers.length && !tvBarOpen()) { const b = screenMsg.querySelector('[data-act="retry"]'); if (b) b.focus({ preventScroll: true }); }
 }
-function hideScreenMsg() { screenMsg.hidden = true; }
+function hideScreenMsg() {
+  const had = screenMsg.contains(document.activeElement);
+  screenMsg.hidden = true;
+  if (had) guideScroll.focus({ preventScroll: true });
+}
+/* "Try again" after a playback error: the button, or OK / ▶❚❚ on the remote while the message is up. */
+const playErrorShown = () => !screenMsg.hidden && !!screenMsg.querySelector('[data-act="retry"]');
+function retryPlayback() {
+  nativeDetail = '';
+  hideScreenMsg();
+  if (S.vodPlaying) { playVod(S.vodPlaying); return; }
+  const ch = S.byId.get(S.playingId); if (ch) play(ch, { quiet: true, catchup: S.catchup });
+}
 function updateMuteUi() {
   const isDemo = !S.provider || (S.provider.type !== 'xtream' && S.provider.type !== 'm3u');
   unmuteBtn.hidden = isDemo || !video.muted || video.hidden || !screenMsg.hidden;
@@ -3943,6 +3960,7 @@ function showVodOsd() {
   vosdTimer = setTimeout(() => { const st = mediaState(); if (!st.paused) o.classList.add('hide'); }, 4500);
 }
 function vodPlayerKey(k, e) {
+  if ((k === 'ok' || k === 'playpause') && playErrorShown()) { e.preventDefault(); retryPlayback(); return; }
   const skip = { left: -10, right: 10, rew: -30, ff: 30 }[k];
   if (skip != null) { e.preventDefault(); mediaSeekBy(skip); showVodOsd(); setTimeout(vodTick, 350); return; }
   if (k === 'ok' || k === 'playpause') { e.preventDefault(); mediaSetPaused(!mediaState().paused); setTimeout(showVodOsd, 150); return; }
@@ -4434,7 +4452,7 @@ rowsEl.addEventListener('click', e => {
 rowsEl.addEventListener('dblclick', e => { if (e.target.closest('.prog.now, .prog.empty, .chan')) enterFull(); });
 guideScroll.addEventListener('scroll', scheduleRender, { passive: true });
 screenEl.addEventListener('click', e => {
-  if (e.target.closest('[data-act="retry"]')) { if (S.vodPlaying) { playVod(S.vodPlaying); return; } const ch = S.byId.get(S.playingId); if (ch) play(ch, { quiet: true, catchup: S.catchup }); return; }
+  if (e.target.closest('[data-act="retry"]')) { e.stopPropagation(); retryPlayback(); return; }
   if (e.target.closest('#unmuteBtn')) { userMuted = false; video.muted = false; updateMuteUi(); return; }
   if (app.classList.contains('is-full')) { osd.classList.contains('hide') ? showOsd() : osd.classList.add('hide'); }
   else if (S.playingId) enterFull();
@@ -4645,6 +4663,7 @@ document.addEventListener('keydown', e => {
   }
   if (app.classList.contains('is-full') && !layers.length && S.vodPlaying) { vodPlayerKey(k, e); return; }
   if (app.classList.contains('is-full') && !layers.length) {
+    if ((k === 'ok' || k === 'playpause') && playErrorShown() && !(TV_MODE && (tvBarOpen() || tvOptsOpen() || tvChansOpen()))) { e.preventDefault(); retryPlayback(); return; }
     if (TV_MODE && tvBarOpen()) { tvBarKey(k, e); return; }
     if (k === 'playpause') { e.preventDefault(); if (tvOptsOpen()) closeTvOpts(); liveTogglePause(); if (TV_MODE) openTvBar(); return; }
     if (TV_MODE && tvOptsOpen()) {
@@ -4703,12 +4722,12 @@ document.addEventListener('keydown', e => {
       e.preventDefault();
       const ch = S.list[focus.i]; if (!ch) return;
       const p = focusedProg();
-      if (!p || isNowProg(p)) { if (S.playingId === ch.id && !S.catchup) enterFull(); else play(ch, { full: true }); }
+      if (!p || isNowProg(p)) { if (S.playingId === ch.id && !S.catchup && !playErrorShown()) enterFull(); else play(ch, { full: true }); }
       else openDetails(ch, p);
       break;
     }
     case 'info': { e.preventDefault(); const ch = S.list[focus.i], p = focusedProg(); if (ch && p) openDetails(ch, p); break; }
-    case 'playpause': { e.preventDefault(); const ch = S.list[focus.i]; if (ch) { if (S.playingId === ch.id && !S.catchup) enterFull(); else play(ch, { full: true }); } break; }
+    case 'playpause': { e.preventDefault(); const ch = S.list[focus.i]; if (ch) { if (S.playingId === ch.id && !S.catchup && !playErrorShown()) enterFull(); else play(ch, { full: true }); } break; }
     case 'digit': e.preventDefault(); numKey(e.key); break;
     case 'fav': e.preventDefault(); toggleFav(S.list[focus.i]); break;
     case 'search': e.preventDefault(); openSearch(); break;
