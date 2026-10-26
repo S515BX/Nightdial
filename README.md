@@ -34,7 +34,7 @@
 
 | App | Download | Install with |
 | --- | --- | --- |
-| Fire TV | [Nightdial-FireTV.apk](https://github.com/S515BX/Nightdial/releases/download/firetv/Nightdial-FireTV.apk) | Downloader app or adb |
+| Fire TV | [Nightdial-FireTV.apk](https://github.com/S515BX/Nightdial/releases/download/firetv/Nightdial-FireTV.apk) | Downloader app (code **7856110**) or adb |
 | iPhone and iPad | [Nightdial.ipa](https://github.com/S515BX/Nightdial/releases/download/ios/Nightdial.ipa) | [Sideloadly](https://sideloadly.io) (signs it with your Apple ID) |
 | Web | [Web player](https://s515bx.github.io/Nightdial/app/) or the computer version from the [website](https://s515bx.github.io/Nightdial/#web) | A browser; the computer version runs with `node server.js` |
 
@@ -44,9 +44,10 @@ GitHub builds the apps every time something in `ios/` or `firetv/` changes; only
 
 1. On the Fire Stick: Settings → My Fire TV → About, select the device name 7 times. Then in **Developer options** turn on **Apps from Unknown Sources** (or allow the Downloader app to install apps).
 2. Install the free **Downloader** app from the Amazon Appstore.
-3. In Downloader, enter:
-   `https://github.com/S515BX/Nightdial/releases/download/firetv/Nightdial-FireTV.apk`
-   (or from a computer: `adb connect <fire-stick-ip>` then `adb install -r Nightdial-FireTV.apk`).
+3. Open Downloader, type the code **`7856110`** where it asks for a URL, and press **Go**. Then press **Install**.
+   The code always gets the newest version. You can also type the full address,
+   `https://github.com/S515BX/Nightdial/releases/download/firetv/Nightdial-FireTV.apk`,
+   or install from a computer: `adb connect <fire-stick-ip>` then `adb install -r Nightdial-FireTV.apk`.
 
 New builds install over the old one and keep your playlists and favorites.
 

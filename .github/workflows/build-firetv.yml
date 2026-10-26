@@ -47,7 +47,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           SHA=$(sha256sum Nightdial-FireTV.apk | cut -d' ' -f1)
-          NOTES="Newest Nightdial build for Fire TV. Install it with the Downloader app on your Fire Stick, or with adb. A new build installs over the old one and keeps your playlists.
+          NOTES="Newest Nightdial build for Fire TV. Install it with the Downloader app on your Fire Stick (enter code 7856110), or with adb. A new build installs over the old one and keeps your playlists.
 
           SHA-256 of Nightdial-FireTV.apk: \`$SHA\`"
           gh release view firetv >/dev/null 2>&1 || gh release create firetv --target "$GITHUB_SHA" --title "Nightdial for Fire TV" --notes "$NOTES"

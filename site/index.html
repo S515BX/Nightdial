@@ -78,6 +78,10 @@ h2{margin:0 0 10px;font-size:clamp(28px,4vw,40px);line-height:1.15;letter-spacin
 .get .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:auto}
 code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.86em;padding:2px 7px;border-radius:7px;background:rgba(255,255,255,.07);color:var(--fg);overflow-wrap:anywhere;white-space:nowrap}
 .url{display:block;padding:12px 14px;border-radius:12px;background:#0b0e1a;border:1px solid var(--line);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;color:var(--teal);word-break:break-all;user-select:all}
+.dlcode{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 18px;border-radius:14px;background:#0b0e1a;border:1px solid rgba(79,209,197,.35)}
+.dlcode span{color:var(--fg2);font-size:14px}
+.dlcode b{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:30px;font-weight:700;letter-spacing:.08em;color:var(--teal);user-select:all}
+.get .or{margin:0;color:var(--fg3);font-size:13.5px}
 .note{margin:0;padding:14px 16px;border-radius:14px;background:rgba(246,196,83,.08);border:1px solid rgba(246,196,83,.2);color:#f3dda8;font-size:14px}
 .trust{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
 @media (max-width:360px){.trust{grid-template-columns:1fr}}
@@ -144,8 +148,10 @@ footer a{color:var(--fg2)}
           <ol>
             <li>Settings → My Fire TV → About: select your device name 7 times. Then in Developer options, allow apps from unknown sources (or allow the Downloader app).</li>
             <li>Install the free <b>Downloader</b> app from the Amazon Appstore.</li>
-            <li>In Downloader, enter this address:</li>
+            <li>Open Downloader, type this code where it asks for a URL and press Go:</li>
           </ol>
+          <div class="dlcode"><span>Downloader code</span><b>7856110</b></div>
+          <p class="or">Or type the full address:</p>
           <span class="url">https://github.com/S515BX/Nightdial/releases/download/firetv/Nightdial-FireTV.apk</span>
           <div class="btns"><a class="btn primary" href="https://github.com/S515BX/Nightdial/releases/download/firetv/Nightdial-FireTV.apk">Download APK</a></div>
         </div>
