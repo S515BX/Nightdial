@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-aqhJbgZKkI9iKOlle0GS2lg7f02tvaGdUS3mG95yMpk=' 'sha256-Y0EBa9LEZAHWhK6E3t5aigoawOtaB5GRbRDO12h0n28=' 'sha256-Avz/4s8RUtWSHFdqzvUmkcgQ/tHoN48sWkTT0EjbXOw='; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src * data: blob:; media-src * data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-aqhJbgZKkI9iKOlle0GS2lg7f02tvaGdUS3mG95yMpk=' 'sha256-0TiMD4bT7I8nd8cf32u/sEXew7Z2cponhIL+NGVSzk8=' 'sha256-Avz/4s8RUtWSHFdqzvUmkcgQ/tHoN48sWkTT0EjbXOw='; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src * data: blob:; media-src * data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#161922">
 <title>Nightdial</title>
@@ -2053,6 +2053,7 @@ function loadScript(src) {
   return libs[src];
 }
 function teardownStream() {
+  clearTimeout(RC.timer); clearTimeout(RC.stall);
   if (cancelWait) cancelWait();
   streamFail = null;
   if (NATIVE) { try { window.NightdialNative.stop(); } catch (e) {} }
@@ -2085,6 +2086,7 @@ function catchupUrl(ch, p) {
 }
 async function play(ch, opts = {}) {
   const token = ++playToken;
+  if (!opts.reconnect) RC.n = 0;
   S.playingId = ch.id;
   S.catchup = opts.catchup ? Object.assign({}, opts.catchup, { playedAt: Date.now() }) : null;
   if (!opts.quiet) {
@@ -2114,8 +2116,11 @@ async function play(ch, opts = {}) {
     if (NATIVE) await nativeStream(raw, !S.catchup);
     else await startStream(via(raw), kind, !S.catchup, token);
     if (token === playToken) spinner.hidden = true;
+    if (opts.at > 5 && token === playToken && !NATIVE) { try { video.currentTime = opts.at; } catch (e) {} }
   } catch (err) {
     if (token !== playToken) return;
+    // a reconnect that fails tries again (up to the limit) instead of showing the error straight away
+    if (opts.reconnect && !NATIVE && err && err.message !== 'cancel' && err.message !== 'media') { streamDropped(err.message); return; }
     spinner.hidden = true;
     showScreenMsg(err && err.message);
   }
@@ -2140,6 +2145,42 @@ function waitPlaying() {
     }
     video.addEventListener('playing', ok); video.addEventListener('error', bad);
     streamFail = fail; cancelWait = cancel; streamOk = ok;
+  });
+}
+/* ---- Reconnecting ----
+   Providers cut connections now and then (busy servers, links that expire after a while, a connection limit that
+   counts the old connection for a few seconds). A stream that was playing is opened again from its original link,
+   waiting a little longer each time, for about a minute before the error shows. The Fire TV app does this in its own
+   player and only tells the page; in a browser it is done here. */
+const RC = { n: 0, timer: 0, steady: 0, stall: 0 };
+const RC_DELAYS = [1000, 2000, 3000, 5000, 8000, 10000, 12000, 15000];
+function reconnecting(n) {
+  if (!screenMsg.hidden) return;
+  spinner.hidden = false;
+  if (n === 1) toast('Connection dropped. Reconnecting…', 3000);
+}
+function streamDropped(code) {
+  clearTimeout(RC.steady); clearTimeout(RC.stall);
+  if (code === 'media' || RC.n >= RC_DELAYS.length || (!S.playingId && !S.vodPlaying)) { RC.n = 0; spinner.hidden = true; showScreenMsg(code); return; }
+  const at = mediaState().pos, n = ++RC.n;
+  reconnecting(n);
+  clearTimeout(RC.timer);
+  RC.timer = setTimeout(() => {
+    if (!screenMsg.hidden) return;
+    if (S.vodPlaying) { playVod(Object.assign({}, S.vodPlaying, { at, reconnect: true })); return; }
+    const ch = S.byId.get(S.playingId); if (!ch) return;
+    let cu = S.catchup;
+    if (cu && cu.ts) cu = Object.assign({}, cu, { start: Math.min(Date.now() - MIN, cu.start + (Date.now() - cu.playedAt)) });   // rewound live TV: carry on from the same moment
+    play(ch, { quiet: true, catchup: cu, at: cu && !cu.ts ? at : 0, reconnect: true });
+  }, RC_DELAYS[n - 1]);
+}
+if (!NATIVE) {
+  video.addEventListener('playing', () => { clearTimeout(RC.stall); clearTimeout(RC.steady); RC.steady = setTimeout(() => { RC.n = 0; }, 30000); });
+  // a live stream that freezes without an error is opened again after 20 s
+  video.addEventListener('waiting', () => {
+    if (!S.playingId || S.vodPlaying || streamFail) return;
+    clearTimeout(RC.stall);
+    RC.stall = setTimeout(() => { if (video.readyState < 3 && !video.paused && !streamFail && screenMsg.hidden) streamDropped('network'); }, 20000);
   });
 }
 /* ---- Android player (Fire TV app) ---- */
@@ -2195,6 +2236,7 @@ window.nightdialPlayerEvent = function (type, detail) {
   if (type === 'playing') { spinner.hidden = true; hideScreenMsg(); if (streamOk) streamOk(); renderStreamInfo(); setTimeout(renderStreamInfo, 1500); }
   else if (type === 'info') renderStreamInfo();
   else if (type === 'buffering') { if (screenMsg.hidden) spinner.hidden = false; }
+  else if (type === 'reconnecting') reconnecting(+detail || 1);
   else if (type === 'error') {
     const parts = String(detail || 'network').split('|');
     nativeDetail = parts[1] || '';
@@ -2338,7 +2380,8 @@ async function startStream(url, kind, live, token) {
     if (!window.mpegts || !mpegts.isSupported()) throw new Error('ts-unsupported');
     mts = mpegts.createPlayer({ type: 'mpegts', isLive: live, url }, { enableWorker: false, liveBufferLatencyChasing: live, lazyLoad: false });
     mts.attachMediaElement(video);
-    mts.on(mpegts.Events.ERROR, () => { if (streamFail) streamFail('network'); else showScreenMsg('stopped'); });
+    mts.on(mpegts.Events.ERROR, () => { if (streamFail) streamFail('network'); else streamDropped('network'); });
+    if (live) mts.on(mpegts.Events.LOADING_COMPLETE, () => { if (!streamFail) streamDropped('network'); });   // the provider closed a live stream
     mts.load();
     safePlay();
   } else if (!window.MediaSource && !window.ManagedMediaSource && video.canPlayType('application/vnd.apple.mpegurl')) {
@@ -2352,13 +2395,13 @@ async function startStream(url, kind, live, token) {
       else throw new Error('hls-unsupported');
     } else {
       let netRetry = 0, mediaRetry = 0;
-      hls = new Hls({ enableWorker: true, lowLatencyMode: false, backBufferLength: 30, manifestLoadingMaxRetry: 2, levelLoadingMaxRetry: 3, abrEwmaDefaultEstimate: 20000000, capLevelToPlayerSize: false });
+      hls = new Hls({ enableWorker: true, lowLatencyMode: false, backBufferLength: 30, manifestLoadingMaxRetry: 2, levelLoadingMaxRetry: 4, fragLoadingMaxRetry: 6, abrEwmaDefaultEstimate: 20000000, capLevelToPlayerSize: false });
       hls.on(Hls.Events.ERROR, (e, data) => {
         if (!data.fatal) return;
         if (data.type === Hls.ErrorTypes.NETWORK_ERROR && netRetry++ < 1) { hls.startLoad(); return; }
         if (data.type === Hls.ErrorTypes.MEDIA_ERROR && mediaRetry++ < 1) { hls.recoverMediaError(); return; }
         if (streamFail) streamFail(data.type === Hls.ErrorTypes.NETWORK_ERROR ? 'network' : 'media');
-        else showScreenMsg('stopped');
+        else streamDropped(data.type === Hls.ErrorTypes.NETWORK_ERROR ? 'network' : 'media');
       });
       hls.attachMedia(video);
       hls.loadSource(url);
@@ -3981,7 +4024,8 @@ function playVod(item) {
   }
   const url = `${pr.server}/${item.kind === 'movie' ? 'movie' : 'series'}/${enc(pr.user)}/${enc(pr.pass)}/${enc(item.id)}.${item.ext || 'mp4'}`;
   const key = item.kind + ':' + item.id, r = resumeAll()[key];
-  const from = item.fromStart ? 0 : r && r.pos > 15 ? r.pos - 3 : 0;
+  if (!item.reconnect) RC.n = 0;
+  const from = item.at != null ? item.at : item.fromStart ? 0 : r && r.pos > 15 ? r.pos - 3 : 0;
   closeAllLayers();
   if (vpnGate(() => playVod(item))) return;
   if (useExternal()) { handOff(url, item.name + (item.sub ? ' · ' + item.sub : ''), prefs.player, from * 1000); return; }
@@ -3997,7 +4041,11 @@ function playVod(item) {
   clearInterval(vodTimer); vodSaveAt = Date.now();
   vodTimer = setInterval(vodTick, 1000);
   const done = () => { if (token === playToken) spinner.hidden = true; };
-  const fail = err => { if (token !== playToken) return; spinner.hidden = true; showScreenMsg(err && err.message); };
+  const fail = err => {
+    if (token !== playToken) return;
+    if (item.reconnect && !NATIVE && err && err.message !== 'cancel' && err.message !== 'media') { streamDropped(err.message); return; }
+    spinner.hidden = true; showScreenMsg(err && err.message);
+  };
   if (NATIVE) {
     video.hidden = true;
     const waiting = waitPlaying();

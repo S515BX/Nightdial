@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- keeps Wi-Fi at full speed while a stream plays -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <!-- Runs on Fire TV / Android TV (remote, no touchscreen) and also installs on phones and tablets. -->
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />

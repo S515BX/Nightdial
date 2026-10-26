@@ -371,9 +371,18 @@ struct PlaybackOverlay: View {
     var body: some View {
         switch player.state {
         case .loading:
-            ProgressView()
-                .tint(Theme.accent)
-                .scaleEffect(compact ? 1 : 1.4)
+            VStack(spacing: 12) {
+                ProgressView()
+                    .tint(Theme.accent)
+                    .scaleEffect(compact ? 1 : 1.4)
+                if player.isReconnecting {
+                    Text("Reconnecting…")
+                        .font(.ui(compact ? 12 : 14, .semibold))
+                        .foregroundStyle(Theme.fg)
+                        .padding(.horizontal, 10).padding(.vertical, 4)
+                        .background(Capsule().fill(Color.black.opacity(0.55)))
+                }
+            }
         case .failed(let code):
             if model.provider?.kind == .demo, let ch = model.playingChannel {
                 DemoScene(channel: ch, program: model.catchup ?? model.program(for: ch, at: model.now))

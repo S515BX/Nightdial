@@ -43,6 +43,7 @@ import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter;
+import androidx.media3.exoplayer.upstream.DefaultLoadErrorHandlingPolicy;
 import androidx.media3.ui.AspectRatioFrameLayout;
 import androidx.media3.ui.PlayerView;
 
@@ -76,6 +77,19 @@ public class MainActivity extends Activity {
     private ShareServer share;
     private long lastBackPress;
     private int retries;
+    /** What's playing, so a dropped stream can be opened again: providers often cut connections or hand out links that expire. */
+    private String currentUrl;
+    private boolean currentLive;
+    private boolean hasPlayed;
+    /** Waits between reconnect attempts once a stream has been playing (about a minute in all), like TiviMate. */
+    private static final long[] RECONNECT_DELAYS = {1000, 2000, 3000, 5000, 8000, 10000, 12000, 15000};
+    private final Runnable reconnectNow = this::reconnect;
+    /** A stream that played for half a minute counts as healthy again. */
+    private final Runnable playingSteady = () -> retries = 0;
+    /** A live stream that stops sending without closing (it just freezes) is reopened after 20 s. */
+    private final Runnable stallCheck = () -> {
+        if (player != null && hasPlayed && player.getPlayWhenReady() && player.getPlaybackState() == Player.STATE_BUFFERING) dropped("network", "STREAM_STALLED");
+    };
     /** Player position for the page ("pos;duration;paused;seekable;behindLive", ms), refreshed on the main thread. */
     private volatile String playerState = "0;-1;0;0;-1";
     private final Handler ui = new Handler(Looper.getMainLooper());
@@ -270,7 +284,9 @@ public class MainActivity extends Activity {
                 .setAllowCrossProtocolRedirects(true)
                 .setConnectTimeoutMs(15000)
                 .setReadTimeoutMs(30000);
-        DefaultMediaSourceFactory sources = new DefaultMediaSourceFactory(new DefaultDataSource.Factory(this, http));
+        DefaultMediaSourceFactory sources = new DefaultMediaSourceFactory(new DefaultDataSource.Factory(this, http))
+                // more retries of a failed download before giving up; playback carries on from the buffer meanwhile
+                .setLoadErrorHandlingPolicy(new DefaultLoadErrorHandlingPolicy(8));
         DefaultRenderersFactory renderers = new DefaultRenderersFactory(this).setEnableDecoderFallback(true);
         // Start by assuming a fast connection, so streams with several qualities open at the best one instead of working up to it.
         DefaultBandwidthMeter meter = new DefaultBandwidthMeter.Builder(this).setInitialBitrateEstimate(40_000_000L).build();
@@ -281,6 +297,8 @@ public class MainActivity extends Activity {
                 .clearVideoSizeConstraints()
                 .clearViewportSizeConstraints()
                 .build());
+        // keeps Wi-Fi in full-speed mode while something plays, so the Fire TV's power saving doesn't starve the stream
+        player.setWakeMode(C.WAKE_MODE_NETWORK);
         player.setAudioAttributes(new AudioAttributes.Builder()
                 .setUsage(C.USAGE_MEDIA)
                 .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
@@ -288,14 +306,23 @@ public class MainActivity extends Activity {
         player.addListener(new Player.Listener() {
             @Override
             public void onPlaybackStateChanged(int state) {
-                if (state == Player.STATE_BUFFERING) send("buffering", "");
-                else if (state == Player.STATE_ENDED) send("ended", "");
+                ui.removeCallbacks(stallCheck);
+                if (state == Player.STATE_BUFFERING) {
+                    send("buffering", "");
+                    if (hasPlayed && currentLive) ui.postDelayed(stallCheck, 20000);
+                } else if (state == Player.STATE_ENDED) {
+                    // a live channel never ends: the provider closed the connection, so open it again
+                    if (currentLive && hasPlayed) dropped("network", "STREAM_ENDED");
+                    else send("ended", "");
+                }
             }
 
             @Override
             public void onIsPlayingChanged(boolean isPlaying) {
                 if (isPlaying) {
-                    retries = 0;
+                    hasPlayed = true;
+                    ui.removeCallbacks(playingSteady);
+                    ui.postDelayed(playingSteady, 30000);
                     updateStreamInfo();
                     send("playing", "");
                 }
@@ -309,12 +336,12 @@ public class MainActivity extends Activity {
                     return;
                 }
                 String kind = classify(error);
-                if ("network".equals(kind) && retries < 2) {
-                    retries++;
-                    player.prepare();
+                if ("media".equals(kind)) {
+                    send("error", kind + "|" + error.getErrorCodeName());
                     return;
                 }
-                send("error", kind + "|" + error.getErrorCodeName());
+                // timeouts, refused or cut connections, and streams broken off mid-packet: reconnect
+                dropped(kind, error.getErrorCodeName());
             }
 
             @Override
@@ -372,16 +399,58 @@ public class MainActivity extends Activity {
                 + (behind == C.TIME_UNSET ? -1 : behind);
     }
 
-    private void startPlayback(String url, long startMs) {
+    private void startPlayback(String url, long startMs, boolean live) {
         ensurePlayer();
+        cancelReconnect();
         retries = 0;
+        hasPlayed = false;
+        currentUrl = url;
+        currentLive = live;
+        load(url, startMs, true);
+    }
+
+    private void load(String url, long startMs, boolean playWhenReady) {
         MediaItem.Builder item = new MediaItem.Builder().setUri(url);
         String path = Uri.parse(url).getPath();
         if (path != null && path.toLowerCase(Locale.ROOT).endsWith(".m3u8")) item.setMimeType(MimeTypes.APPLICATION_M3U8);
         if (startMs > 0) player.setMediaItem(item.build(), startMs); else player.setMediaItem(item.build());
         player.prepare();
-        player.setPlayWhenReady(true);
+        player.setPlayWhenReady(playWhenReady);
         playerView.setVisibility(View.VISIBLE);
+    }
+
+    /**
+     * The stream failed. One that never started gets two quick tries before the page shows why; one that was playing
+     * is opened again from the original link (a fresh connection and token from the provider) for about a minute,
+     * keeping the last picture on screen, before giving up.
+     */
+    private void dropped(String kind, String code) {
+        ui.removeCallbacks(stallCheck);
+        ui.removeCallbacks(playingSteady);
+        int max = hasPlayed ? RECONNECT_DELAYS.length : 2;
+        if (currentUrl == null || retries >= max) {
+            retries = 0;
+            send("error", kind + "|" + code);
+            return;
+        }
+        long delay = hasPlayed ? RECONNECT_DELAYS[retries] : 600;
+        retries++;
+        if (hasPlayed) send("reconnecting", String.valueOf(retries));
+        ui.removeCallbacks(reconnectNow);
+        ui.postDelayed(reconnectNow, delay);
+    }
+
+    private void reconnect() {
+        if (player == null || currentUrl == null) return;
+        // live: back to the live edge; movies, episodes and catch-up: where it stopped
+        long at = currentLive ? 0 : Math.max(0, player.getCurrentPosition());
+        load(currentUrl, at, player.getPlayWhenReady());
+    }
+
+    private void cancelReconnect() {
+        ui.removeCallbacks(reconnectNow);
+        ui.removeCallbacks(stallCheck);
+        ui.removeCallbacks(playingSteady);
     }
 
     private static boolean webUrl(String url) {
@@ -464,6 +533,9 @@ public class MainActivity extends Activity {
     }
 
     private void stopPlayer() {
+        cancelReconnect();
+        currentUrl = null;
+        hasPlayed = false;
         streamInfoJson = "";
         if (player != null) {
             player.stop();
@@ -499,6 +571,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         ui.removeCallbacks(stateTicker);
+        cancelReconnect();
         if (share != null) share.stop();
         vpn.shutdown();
         if (player != null) {
@@ -571,14 +644,14 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void play(String url, boolean live) {
             if (!webUrl(url)) return;
-            runOnUiThread(() -> startPlayback(url, 0));
+            runOnUiThread(() -> startPlayback(url, 0, live));
         }
 
         /** Movies and episodes: start at a saved position. */
         @JavascriptInterface
         public void playFrom(String url, double startMs) {
             if (!webUrl(url)) return;
-            runOnUiThread(() -> startPlayback(url, (long) Math.max(0, startMs)));
+            runOnUiThread(() -> startPlayback(url, (long) Math.max(0, startMs), false));
         }
 
         @JavascriptInterface

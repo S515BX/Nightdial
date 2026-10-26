@@ -31,6 +31,17 @@ final class PlayerController: ObservableObject {
     private var endObserver: NSObjectProtocol?
     private var timeoutTask: Task<Void, Never>?
     private(set) var currentURL: URL?
+    /// Reconnecting: providers cut connections now and then (busy servers, links that expire, a connection limit that
+    /// still counts the old connection). A stream that was playing is opened again from its link, waiting a little
+    /// longer each time, for about a minute before the error shows.
+    @Published private(set) var isReconnecting = false
+    private var hasPlayed = false
+    private var reconnects = 0
+    private var reconnectTask: Task<Void, Never>?
+    private var steadyTask: Task<Void, Never>?
+    private var stallTask: Task<Void, Never>?
+    private var resumeAt: Double?
+    private static let reconnectDelays: [Double] = [1, 2, 3, 5, 8, 10, 12, 15]
 
     init() {
         let session = AVAudioSession.sharedInstance()
@@ -40,7 +51,17 @@ final class PlayerController: ObservableObject {
     }
 
     func play(_ url: URL) {
+        play(url, reconnecting: false)
+    }
+
+    private func play(_ url: URL, reconnecting: Bool) {
         clearObservers()
+        if !reconnecting {
+            reconnects = 0
+            hasPlayed = false
+            isReconnecting = false
+            resumeAt = nil
+        }
         currentURL = url
         state = .loading
         audioOptions = []
@@ -54,9 +75,15 @@ final class PlayerController: ObservableObject {
         item.preferredMaximumResolution = .zero
         item.startsOnFirstEligibleVariant = false
         statusObservation = item.observe(\.status, options: [.new]) { [weak self] observed, _ in
-            let failed = observed.status == .failed
+            let failed = observed.status == .failed, ready = observed.status == .readyToPlay
             Task { @MainActor [weak self] in
-                if failed { self?.markFailed("network") }
+                guard let self else { return }
+                if failed { self.markFailed("network") }
+                // a movie or recording that dropped carries on where it was
+                if ready, let at = self.resumeAt, at > 5 {
+                    self.resumeAt = nil
+                    self.player.seek(to: CMTime(seconds: at, preferredTimescale: 600))
+                }
             }
         }
         controlObservation = player.observe(\.timeControlStatus, options: [.new]) { [weak self] observed, _ in
@@ -64,10 +91,20 @@ final class PlayerController: ObservableObject {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 if status == .playing {
+                    self.stallTask?.cancel()
                     self.markPlaying()
                     self.isPaused = false
                 } else if status == .paused && self.state == .playing {
+                    self.stallTask?.cancel()
                     self.isPaused = true
+                } else if status == .waitingToPlayAtSpecifiedRate && self.hasPlayed {
+                    // a stream that freezes without an error is opened again after 20 s
+                    self.stallTask?.cancel()
+                    self.stallTask = Task { @MainActor [weak self] in
+                        try? await Task.sleep(nanoseconds: 20_000_000_000)
+                        guard !Task.isCancelled, let self, self.player.timeControlStatus == .waitingToPlayAtSpecifiedRate else { return }
+                        self.markFailed("network")
+                    }
                 }
             }
         }
@@ -85,11 +122,13 @@ final class PlayerController: ObservableObject {
     }
 
     func retry() {
+        cancelReconnect()
         if let url = currentURL { play(url) }
     }
 
     func fail(_ code: String) {
         clearObservers()
+        cancelReconnect()
         player.replaceCurrentItem(with: nil)
         isPaused = false
         state = .failed(code)
@@ -98,6 +137,9 @@ final class PlayerController: ObservableObject {
     func stop() {
         streamBadges = []
         clearObservers()
+        cancelReconnect()
+        hasPlayed = false
+        isReconnecting = false
         player.pause()
         player.replaceCurrentItem(with: nil)
         currentURL = nil
@@ -162,6 +204,15 @@ final class PlayerController: ObservableObject {
 
     private func markPlaying() {
         timeoutTask?.cancel()
+        hasPlayed = true
+        isReconnecting = false
+        // half a minute of steady playing counts as healthy again
+        steadyTask?.cancel()
+        steadyTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 30_000_000_000)
+            guard !Task.isCancelled else { return }
+            self?.reconnects = 0
+        }
         let first = state != .playing
         state = .playing
         if first, let item = player.currentItem {
@@ -250,7 +301,35 @@ final class PlayerController: ObservableObject {
 
     private func markFailed(_ code: String) {
         timeoutTask?.cancel()
+        stallTask?.cancel()
+        steadyTask?.cancel()
+        if hasPlayed, let url = currentURL, reconnects < Self.reconnectDelays.count {
+            let item = player.currentItem
+            let live = item.map { $0.duration.isIndefinite } ?? true
+            let t = player.currentTime().seconds
+            if !live, t.isFinite, t > 5 { resumeAt = t }
+            let delay = Self.reconnectDelays[reconnects]
+            reconnects += 1
+            isReconnecting = true
+            state = .loading
+            reconnectTask?.cancel()
+            reconnectTask = Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                guard !Task.isCancelled, let self, self.currentURL == url else { return }
+                self.play(url, reconnecting: true)
+            }
+            return
+        }
+        isReconnecting = false
         state = .failed(code)
+    }
+
+    private func cancelReconnect() {
+        reconnectTask?.cancel()
+        reconnectTask = nil
+        steadyTask?.cancel()
+        stallTask?.cancel()
+        resumeAt = nil
     }
 
     private func clearObservers() {
@@ -262,6 +341,7 @@ final class PlayerController: ObservableObject {
         endObserver = nil
         timeoutTask?.cancel()
         timeoutTask = nil
+        stallTask?.cancel()
     }
 }
 
