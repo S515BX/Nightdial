@@ -4,7 +4,7 @@
 
 <p align="center">
   <b>Nightdial</b> is an IPTV player with a full TV guide for <b>Fire TV</b>, <b>iPhone</b>, <b>iPad</b> and the <b>web</b>.<br>
-  Sign in with Xtream Codes or an M3U playlist, browse the guide, watch movies and series, and pause or rewind live TV.
+  Sign in with Xtream Codes, an M3U playlist or your own Emby server, browse the guide, watch movies and series, and pause or rewind live TV.
 </p>
 
 <p align="center">
@@ -16,8 +16,9 @@
 
 ## Features
 
-- **Two ways to sign in**: Xtream Codes (server, username, password) or an M3U playlist link with an optional XMLTV guide link. Compressed `.xml.gz` guides work, and a `get.php` M3U link signs in with Xtream Codes automatically. The app starts empty, with no demo.
+- **Three ways to sign in**: Xtream Codes (server, username, password), an M3U playlist link with an optional XMLTV guide link, or your own Emby server. Compressed `.xml.gz` guides work, and a `get.php` M3U link signs in with Xtream Codes automatically. The app starts empty, with no demo.
 - **Full TV guide (EPG)**: a smooth-scrolling grid of what's on now and next. ← goes back through shows that already aired (up to 12 hours), with catch-up where your provider keeps recordings. Search channels and programs, or jump to a channel by number.
+- **Emby (and Jellyfin)**: sign in to your own media server and Nightdial becomes your library: movies and TV shows with covers, descriptions, cast, ratings, seasons and episodes, Continue watching, Next up, Recently added, your libraries and genres. What you watch, and what you mark as watched, syncs back to Emby. Fire TV plays the original files (4K, HEVC, Dolby…); iPhone and the web get a version Emby converts when a file needs it. Only an access token is kept, never your Emby password, and removing the playlist signs the device out.
 - **Movies & Series**: shows up when your subscription includes them. Browse by category, search, see details, seasons and episodes, and pick up where you left off.
 - **Pause, rewind and scrub live TV**: press OK while watching for the player panel, like TiviMate: program info, a timeline to scrub with ◀ ▶ (faster the longer you hold), and buttons for pause, ±30 s, back to live, picture shape, audio track and favorites.
 - **Playlist options**, kept for each playlist: name, login, guide source (provider or XMLTV), guide time shift, channel numbers (provider's or 1, 2, 3…), sorting, the group it opens on, stream format, User-Agent, Movies & Series on or off, and hiding adult groups.
@@ -27,8 +28,9 @@
 - **Your channels, your way**: hold OK on a channel (touch and hold on iPhone, right-click on the web) for its options, like TiviMate: favorites, program details, other airings, another player, rename it, give it your own number, hide it or its group. Favorites in your own order and hidden groups are in Settings → Edit channels. Put your groups in your own order too: hold OK on a group in the groups list on Fire TV, or Groups → Arrange on iPhone.
 - **Stream details**: the channel banner and player panel show the resolution (4K, 1080p…), frame rate, video codec and audio (Dolby Digital 5.1, AAC stereo…).
 - **Themes**: everyday themes plus holiday themes with their own scenery and particles (bats, snow, leaves, fireworks…) that can switch on in season. Pick highlight and menu colors, fonts and interface size.
+- **Stays connected**: when your provider drops a stream (busy servers, links that expire, a connection limit), Nightdial opens it again on its own within a second or two, then keeps trying for about a minute before showing an error. A picture that freezes is reopened too.
 - **Smooth on every screen**: menus, lists and the guide glide instead of jumping a page at a time, and the item you're on always has room around it.
-- **Private and secure**: passwords, playlist links and the VPN key are stored encrypted on your device (Android Keystore on Fire TV, Keychain on iPhone) and only ever sent to your provider. The app pages run only their own code under a strict content security policy, can't be framed, and Fire TV backups are off.
+- **Private and secure**: passwords, playlist links, Emby access tokens and the VPN key are stored encrypted on your device (Android Keystore on Fire TV, Keychain on iPhone) and only ever sent to your provider. The app pages run only their own code under a strict content security policy, can't be framed, and Fire TV backups are off.
 
 ## Download
 
