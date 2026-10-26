@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-hUazcPvpBYSmnfwUa0Zk2jsX7+RGM4IwCdbSIbq7sqA=' 'sha256-X/Lawiua1HPg46/6WFTYkASVngRdlEnru6vC9Sgh5H0=' https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.js; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src * data: blob:; media-src * data: blob:; connect-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-b3jWHWMYa8p9mieMnrLg6mV1K1NvzXuUbMnGDdxMzEo=' 'sha256-X/Lawiua1HPg46/6WFTYkASVngRdlEnru6vC9Sgh5H0=' https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.js; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src * data: blob:; media-src * data: blob:; connect-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#161922">
 <title>Nightdial</title>
@@ -993,7 +993,7 @@ html.native-video .screen video{display:none!important}
     <button class="tvnav-item" data-tv="playlists"><svg class="i"><use href="#i-playlist"/></svg>Playlists</button>
     <button class="tvnav-item" data-tv="settings"><svg class="i"><use href="#i-settings"/></svg>Settings</button>
     <button class="tvnav-item tvnav-exit" data-tv="exit"><svg class="i"><use href="#i-close"/></svg>Exit Nightdial</button>
-    <p class="tvnav-hint">Right: groups · Back: close menu</p>
+    <p class="tvnav-hint">Left: menu · Right: groups · Back: close</p>
   </div>
   <div class="tvnav-groups"><h2>Groups</h2><div class="list" id="tvGroups"></div></div>
 </aside>
@@ -3108,7 +3108,7 @@ function openTvNav(focusMenu) {
   if (sig !== tvGroupsSig || tvGroupsFor !== S.groups) { tvGroupsSig = sig; tvGroupsFor = S.groups; el('tvGroups').innerHTML = groupsMenuHTML(); }
   const current = S.view === 'vod' ? 'vod' : S.groupId === 'fav' ? 'fav' : 'guide';
   document.querySelectorAll('.tvnav-item').forEach(b => b.classList.toggle('on', b.dataset.tv === current));
-  openLayer(el('tvNav'), focusMenu ? '.tvnav-item.on' : '#tvGroups .item.sel');
+  openLayer(el('tvNav'), focusMenu ? '.tvnav-item.on' : el('tvGroups').querySelector('.item.sel') ? '#tvGroups .item.sel' : '#tvGroups .item');
 }
 function tvNavKey(k, e) {
   const a = document.activeElement, inMenu = !!(a && a.closest && a.closest('#tvNavMenu'));
@@ -4829,7 +4829,8 @@ function handleBack() {
   }
   if (a && a.closest && a.closest('#rail')) return false;
   if (guideBackHome()) return true;
-  if (TV_MODE) { openTvNav(true); backArmed = Date.now(); toast('Press Back again to exit', 2000); return true; }
+  // Back from the guide opens the channel groups (the main menu is one step Left)
+  if (TV_MODE) { openTvNav(false); backArmed = Date.now(); toast('Press Back again to exit', 2000); return true; }
   const b = document.querySelector('.rail-btn.active') || document.querySelector('.rail-btn');
   if (b && b.offsetParent) { b.focus(); return true; }
   return false;

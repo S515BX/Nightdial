@@ -60,7 +60,7 @@ New builds install over the old one and keep your playlists and favorites.
 | OK (hold) | Channel options: favorites, details, find other airings, another player, rename, change number, hide channel or group, reload guide | |
 | ▶❚❚ | Watch the selected channel | Pause and play |
 | ◀◀ ▶▶ | Jump a screen earlier or later in the guide | Rewind and fast-forward 30 s |
-| Back | Back to the playing channel, then the menu; **press Back twice there to exit** | Clears the channel banner, closes the panel, then back to the guide |
+| Back | Back to the playing channel, then the channel groups (← for the main menu); **press Back twice there to exit** | Clears the channel banner, closes the panel, then back to the guide |
 | ☰ | Program details | Channel options (favorite, hide, picture shape, audio, another player) |
 
 ### iPhone and iPad (Sideloadly)
