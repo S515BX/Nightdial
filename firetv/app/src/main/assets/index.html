@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-aqhJbgZKkI9iKOlle0GS2lg7f02tvaGdUS3mG95yMpk=' 'sha256-Yr21AbbR45pN9OqNCTpsQCiv9QZL8yQaIoz3+oe5kq0=' 'sha256-Avz/4s8RUtWSHFdqzvUmkcgQ/tHoN48sWkTT0EjbXOw='; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src * data: blob:; media-src * data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-aqhJbgZKkI9iKOlle0GS2lg7f02tvaGdUS3mG95yMpk=' 'sha256-Y0EBa9LEZAHWhK6E3t5aigoawOtaB5GRbRDO12h0n28=' 'sha256-Avz/4s8RUtWSHFdqzvUmkcgQ/tHoN48sWkTT0EjbXOw='; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src * data: blob:; media-src * data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#161922">
 <title>Nightdial</title>
@@ -270,6 +270,9 @@ html.tv .item:focus .n,html.tv .item:focus .sub,html.tv .item:focus .i{color:var
 .share-url{padding:14px 16px;border-radius:var(--r-md);background:var(--bg);font:600 var(--t-l,22px)/1.2 ui-monospace,Menlo,Consolas,monospace;color:var(--accent);word-break:break-all}
 .share-code{font:700 calc(var(--t-l,22px) * 1.6)/1 var(--font-display);letter-spacing:.12em;color:var(--fg)}
 .pl-row{display:flex;align-items:center;gap:6px}
+.item.moving{box-shadow:inset 0 0 0 2px var(--accent)}
+html.tv .item.moving:focus{background:var(--accent);color:#0b1020;box-shadow:none}
+html.tv .item.moving:focus .n,html.tv .item.moving:focus .i{color:#0b1020}
 /* stream details: resolution, frame rate, codecs, audio */
 .stream-info{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .stream-info span{padding:3px 8px;border-radius:7px;background:rgba(255,255,255,.1);font:600 11.5px/1.3 var(--font-display);letter-spacing:.02em;color:var(--fg);white-space:nowrap}
@@ -1147,7 +1150,7 @@ const LOOK_DEFAULTS = { theme: 'midnight', hl: 'auto', menu: 'auto', font: 'popp
 /* Interface size: [id, label, TV scale, browser scale]. "Smaller" is the default so the guide shows more channels and more hours. */
 const SIZES = [['xs', 'Smallest', .74, .82], ['s', 'Smaller', .86, .9], ['m', 'Standard', 1, 1], ['l', 'Larger', 1.14, 1.1]];
 const uiScale = () => { const z = SIZES.find(x => x[0] === prefs.size) || SIZES[1]; return TV_MODE ? z[2] : z[3]; };
-const prefs = Object.assign({ clock24: defaultClock24, rows: 'comfortable', format: 'auto', aspect: '16:9', player: 'builtin', vpnAuto: false, vpnRequired: false, epgSource: 'provider', xmltvUrl: '', sort: 'provider' }, LOOK_DEFAULTS, store.get('prefs', {}));
+const prefs = Object.assign({ clock24: defaultClock24, rows: 'comfortable', format: 'auto', aspect: '16:9', player: 'builtin', vpnAuto: false, vpnRequired: false, startFull: true, epgSource: 'provider', xmltvUrl: '', sort: 'provider' }, LOOK_DEFAULTS, store.get('prefs', {}));
 const savePrefs = () => store.set('prefs', prefs);
 // Stream format now defaults to "Best": the provider's original stream when the device can play it.
 if (!prefs.fmtV2) { prefs.format = 'auto'; prefs.fmtV2 = true; savePrefs(); }
@@ -1533,12 +1536,21 @@ function applyNumbering() {
 /* "Hide adult groups": groups whose names say adult/XXX/18+ stay out of the guide. */
 const ADULT_RE = /\b(adult|xxx|18\s*\+|porn|erotic)/i;
 let adultGr = new Set();
+/* Your own order of channel groups (hold OK on a group in the side menu to move it), kept per playlist. New groups go last. */
+function applyGroupOrder() {
+  const ord = S.provider ? store.get('gorder:' + S.provider.id, null) : null;
+  if (!ord || !ord.length) return;
+  const pos = new Map(ord.map((id, i) => [id, i])), base = new Map(S.groups.map((g, i) => [g.id, i]));
+  const rank = g => pos.has(g.id) ? pos.get(g.id) : ord.length + base.get(g.id);
+  S.groups.sort((a, b) => rank(a) - rank(b));
+}
 function applyAdult() { adultGr = new Set(PO.hideAdult ? S.groups.filter(g => ADULT_RE.test(g.name)).map(g => g.id) : []); }
 /* Fire TV: the User-Agent the player and the app's requests send to the provider. */
 function applyUserAgent() { try { if (window.NightdialNative && window.NightdialNative.setUserAgent) window.NightdialNative.setUserAgent(PO.ua || ''); } catch (e) {} }
 function setProvider(p, channels, groups) {
   teardownStream();
   S.provider = p; S.channels = channels; S.groups = groups;
+  applyGroupOrder();
   PO = p.type === 'xtream' || p.type === 'm3u' ? plOptsFor(p.id) : Object.assign({}, PL_DEFAULTS);
   applyNumbering(); applyAdult(); applyUserAgent();
   S.byId = new Map(channels.map(c => [c.id, c]));
@@ -2410,10 +2422,10 @@ function firstGesture() {
 }
 
 /* full screen */
-function enterFull() {
+function enterFull(here) {
   if (app.classList.contains('is-full')) { showOsd(); return; }
-  // another video player picked in Settings: full screen opens there instead
-  if (!S.vodPlaying && S.playingId && S.provider && S.provider.type !== 'demo' && useExternal()) { const ch = S.byId.get(S.playingId); if (ch) { play(ch, { full: true, quiet: true, catchup: S.catchup }); return; } }
+  // another video player picked in Settings: full screen opens there instead (not when the app itself opens full screen)
+  if (!here && !S.vodPlaying && S.playingId && S.provider && S.provider.type !== 'demo' && useExternal()) { const ch = S.byId.get(S.playingId); if (ch) { play(ch, { full: true, quiet: true, catchup: S.catchup }); return; } }
   app.classList.add('is-full');
   updateOsd(); showOsd();
   syncVideoRect();
@@ -2969,7 +2981,7 @@ function migrateSecrets() {
 }
 function removePlaylist(id) {
   store.set('playlists', savedPlaylists().filter(q => q.id !== id));
-  ['fav:', 'recent:', 'group:', 'lastch:', 'hide:', 'hideg:', 'resume:', 'plopts:', 'chedits:'].forEach(k => store.del(k + id));
+  ['fav:', 'recent:', 'group:', 'lastch:', 'hide:', 'hideg:', 'resume:', 'plopts:', 'chedits:', 'gorder:'].forEach(k => store.del(k + id));
   secrets.del(id);
   if (store.get('last') === id) store.del('last');
 }
@@ -3064,6 +3076,7 @@ function openLayer(node, focusSel) {
   setTimeout(() => { const f = node.querySelector(focusSel || '.item.sel, .item, input, button:not([data-close])'); if (f) f.focus({ preventScroll: false }); }, 20);
 }
 function closeLayer() {
+  if (groupMove) { groupMove = null; navVer++; }
   const node = layers.pop();
   if (node) node.hidden = true;
   if (node && node.id === 'vpnModal') { vpnShareOpen = false; vpnCall('vpnShareStop'); }
@@ -3086,7 +3099,29 @@ function openGroups() {
   el('groupsList').innerHTML = h;
   openLayer(el('groupsDrawer'));
 }
-const groupItem = (id, name, n) => `<button class="item${S.groupId === id ? ' sel' : ''}" data-group="${esc(id)}">${icon('check', 'mark')}<span class="lbl"><span>${esc(name)}</span></span><span class="n">${n}</span></button>`;
+const groupItem = (id, name, n) => `<button class="item${S.groupId === id ? ' sel' : ''}${groupMove === id ? ' moving' : ''}" data-group="${esc(id)}">${groupMove === id ? icon('grip', 'mark') : icon('check', 'mark')}<span class="lbl"><span>${esc(name)}</span></span><span class="n">${n}</span></button>`;
+/* Moving a group: hold OK on it, then Up/Down moves it through the list; OK, Back, Left or Right puts it down. */
+let groupMove = null;
+function refreshTvGroups(focusId) {
+  const list = el('tvGroups'), box = scrollBoxOf(list.querySelector('.item') || list) || list, st = box.scrollTop;
+  list.innerHTML = groupsMenuHTML(); tvGroupsSig = '';
+  box.scrollTop = st;
+  const n = focusId && [...list.querySelectorAll('[data-group]')].find(b => b.dataset.group === focusId);
+  if (n) n.focus();
+}
+function startGroupMove(id) { groupMove = id; backArmed = 0; refreshTvGroups(id); }
+function moveGroup(d) {
+  const vis = visibleGroups().map(g => g.id), i = vis.indexOf(groupMove), j = i + d;
+  if (i < 0 || j < 0 || j >= vis.length) return;
+  const other = vis[j], from = S.groups.findIndex(g => g.id === groupMove);
+  const [g] = S.groups.splice(from, 1);
+  const at = S.groups.findIndex(x => x.id === other);
+  S.groups.splice(d > 0 ? at + 1 : at, 0, g);
+  store.set('gorder:' + S.provider.id, S.groups.map(x => x.id));
+  navVer++;
+  refreshTvGroups(groupMove);
+}
+function finishGroupMove() { if (!groupMove) return; const id = groupMove; groupMove = null; navVer++; refreshTvGroups(id); }
 el('groupsList').addEventListener('click', e => {
   const b = e.target.closest('[data-group]'); if (!b) return;
   closeLayer(); applyGroup(b.dataset.group); jumpToNow(true);
@@ -3103,6 +3138,12 @@ function openTvNav(focusMenu) {
   openLayer(el('tvNav'), focusMenu ? '.tvnav-item.on' : el('tvGroups').querySelector('.item.sel') ? '#tvGroups .item.sel' : '#tvGroups .item');
 }
 function tvNavKey(k, e) {
+  if (groupMove) {
+    e.preventDefault();
+    if (k === 'up' || k === 'down') moveGroup(k === 'down' ? 1 : -1);
+    else if (k === 'left' || k === 'right' || k === 'ok') finishGroupMove();
+    return;
+  }
   const a = document.activeElement, inMenu = !!(a && a.closest && a.closest('#tvNavMenu'));
   if (k === 'up' || k === 'down') { e.preventDefault(); moveListFocus(inMenu ? el('tvNavMenu') : el('tvGroups'), k === 'down' ? 1 : -1); }
   else if (k === 'left' && !inMenu) { e.preventDefault(); (el('tvNavMenu').querySelector('.tvnav-item.on') || el('tvNavMenu').querySelector('.tvnav-item')).focus(); }
@@ -3112,7 +3153,12 @@ function tvNavKey(k, e) {
     else closeLayer();
   }
 }
+el('tvNav').addEventListener('contextmenu', e => {
+  const g = e.target.closest('#tvGroups [data-group]'); if (!g || g.dataset.group === 'all' || g.dataset.group === 'fav') return;
+  e.preventDefault(); startGroupMove(g.dataset.group);
+});
 el('tvNav').addEventListener('click', e => {
+  if (groupMove) { finishGroupMove(); return; }
   const g = e.target.closest('[data-group]');
   if (g) { closeLayer(); closeVod(); applyGroup(g.dataset.group); jumpToNow(true); return; }
   const m = e.target.closest('[data-tv]'); if (!m) return;
@@ -4503,6 +4549,7 @@ function openSettings() {
   </section>
   <section><h3>Playback</h3>
     <div class="setting"><span>Picture shape</span>${seg('aspect', ASPECTS, prefs.aspect)}<p class="hint">16:9 fills a TV screen. Fit keeps each channel's own shape; Zoom fills the screen by trimming the edges.</p></div>
+    ${TV_MODE ? `<label class="check"><input type="checkbox" id="startFull"${prefs.startFull ? ' checked' : ''}>Open in full screen (Back shows the guide)</label>` : ''}
     ${canHandOff() ? `<div class="setting"><span>Video player</span>${seg('player', [['builtin', 'Built-in']].concat(players.map(x => [x.pkg, x.name]), [['ask', 'Ask each time']]), useExternal() ? prefs.player : 'builtin')}<p class="hint">${players.length ? 'Full screen, catch-up and movies open in the player you pick. The guide preview always plays here.' : 'Install VLC or MX Player and it shows up here.'}</p></div>` : ''}
   </section>
   ${vpnSectionHTML()}
@@ -4543,6 +4590,7 @@ el('settingsBody').addEventListener('change', e => {
   if (t.name === 'clock') { prefs.clock24 = t.value === '24'; savePrefs(); renderTicks(); positionNow(); invalidateRows(); renderGuide(); updateHero(); updateOsd(); }
   if (t.name === 'uisize') { prefs.size = t.value; savePrefs(); applySizeChange(); }
   if (t.name === 'rows') { prefs.rows = t.value; savePrefs(); applyRowSize(); layoutGuide(); ensureVisible('row', true); renderGuide(); }
+  if (t.id === 'startFull') { prefs.startFull = t.checked; savePrefs(); }
   if (t.id === 'vpnAuto') { prefs.vpnAuto = t.checked; savePrefs(); if (t.checked && vpnRead().configured && vpnInfo.state === 'off') vpnCall('vpnConnect'); }
   if (t.id === 'vpnReq') { prefs.vpnRequired = t.checked; savePrefs(); if (t.checked && !vpnOn()) toast(vpnInfo.configured ? 'Playback waits for the VPN' : 'Add a VPN or turn on your VPN app to watch', 3000); }
   if (t.name === 'player') { prefs.player = t.value; savePrefs(); toast(t.value === 'builtin' ? 'Playing in Nightdial' : t.value === 'ask' ? 'You\'ll pick a player each time' : 'Full screen opens in ' + playerName(t.value), 2200); }
@@ -4789,6 +4837,7 @@ function searchNav(k, e, top) {
 
 /* Back / Escape: close what's open, return the guide to now, then the menu. Returns false when there's nothing left (the TV app then offers to exit). */
 function handleBack() {
+  if (groupMove) { finishGroupMove(); return true; }
   if (!numEl.hidden) { numEl.hidden = true; numBuf = ''; clearTimeout(numTimer); return true; }
   if (!loginEl.hidden) { if (loginCancelable) { closeLogin(); return true; } return false; }
   if (layers.length && layers[layers.length - 1].id === 'mgrDrawer') {
@@ -4841,6 +4890,13 @@ let keyFrame = 0, okHold = null, okIsDown = false, okDownAt = 0;
    list. The Fire TV app times the hold itself and calls this; with a keyboard the page times it. Returns true if it
    opened something (otherwise the Fire TV app treats the press as a normal OK). */
 function longOk() {
+  if (groupMove) { finishGroupMove(); return true; }
+  // in the side menu's groups: pick the group up to move it
+  if (layers.length && layers[layers.length - 1].id === 'tvNav') {
+    const a = document.activeElement, g = a && a.closest && a.closest('#tvGroups [data-group]');
+    if (g && g.dataset.group !== 'all' && g.dataset.group !== 'fav') { startGroupMove(g.dataset.group); return true; }
+    return false;
+  }
   if (layers.length || !loginEl.hidden) return false;
   if (app.classList.contains('is-full')) {
     if (S.vodPlaying || tvBarOpen() || tvOptsOpen()) return false;
@@ -4879,6 +4935,7 @@ document.addEventListener('keydown', e => {
   if (k === 'ok') {
     if (e.repeat || (okIsDown && Date.now() - okDownAt < 4000)) { e.preventDefault(); return; }
     okIsDown = true; okDownAt = Date.now();
+    if (groupMove) { e.preventDefault(); finishGroupMove(); return; }
   }
   // Holding a button: at most one move per drawn frame, so a slow frame never queues up moves that carry on after you let go.
   if (REPEATING.has(k)) {
@@ -5015,19 +5072,24 @@ window.addEventListener('resize', () => {
 });
 
 /* ================= boot ================= */
+/* Opening the app goes straight to the last channel in full screen (Settings → Open in full screen); Back shows the guide. */
+function startInFullScreen() {
+  if (!TV_MODE || !prefs.startFull || !S.playingId || !loginEl.hidden || layers.length || S.backdrop) return;
+  enterFull(true);
+}
 function boot() {
   migrateSecrets();
   applyLook();
   applyAspect();
   computeRange(); applyRowSize(); readMetrics();
   const saved = savedPlaylists(), last = store.get('last', null);
-  if (last === 'demo' && DEMO_OK) loadDemo(false);
+  if (last === 'demo' && DEMO_OK) { loadDemo(false); startInFullScreen(); }
   else {
     if (DEMO_OK) loadDemo(true); else loadBlank();
     const sp = last && saved.find(p => p.id === last);
     if (sp) {
       toast(`Connecting to ${sp.name}…`, 0);
-      connectPlaylist(sp).catch(ex => { toastEl.hidden = true; openLogin({ cancelable: false, values: withSecrets(sp), error: ex.message }); });
+      connectPlaylist(sp).then(startInFullScreen).catch(ex => { toastEl.hidden = true; openLogin({ cancelable: false, values: withSecrets(sp), error: ex.message }); });
     } else openLogin({});
   }
   setInterval(tick, 15000);

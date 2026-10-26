@@ -31,6 +31,8 @@ private struct DoneButton: ToolbarContent {
 @MainActor
 struct GroupsSheet: View {
     @EnvironmentObject var model: AppModel
+    /// Arrange: drag categories into your own order (touch and hold a category to drag it any time).
+    @State private var arranging = false
 
     var body: some View {
         NavigationStack {
@@ -41,25 +43,35 @@ struct GroupsSheet: View {
                 }
                 Section {
                     ForEach(model.visibleGroups) { g in row(g.id, g.name, g.count) }
+                        .onMove { model.moveGroups(from: $0, to: $1) }
                 } header: {
                     Text("Categories")
                 } footer: {
-                    if !model.hiddenGroups.isEmpty || !model.hiddenChannels.isEmpty {
+                    if arranging {
+                        Text("Drag a category by its handle to move it. The order is kept for this playlist.")
+                    } else if !model.hiddenGroups.isEmpty || !model.hiddenChannels.isEmpty {
                         Text("Some channels or groups are hidden. Bring them back in Settings → Edit channels.")
                     }
                 }
             }
+            .environment(\.editMode, .constant(arranging ? .active : .inactive))
             .scrollContentBackground(.hidden)
             .background(Theme.menu)
             .navigationTitle("Groups")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { DoneButton { model.sheet = nil } }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(arranging ? "Finish" : "Arrange") { withAnimation { arranging.toggle() } }
+                        .disabled(model.visibleGroups.count < 2)
+                }
+                DoneButton { model.sheet = nil }
+            }
         }
     }
 
     private func row(_ id: String, _ name: String, _ count: Int) -> some View {
         Button {
-            model.selectGroup(id)
+            if !arranging { model.selectGroup(id) }
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: "checkmark")
@@ -276,10 +288,11 @@ struct SettingsSheet: View {
                     Picker("Video player", selection: $model.externalPlayer) {
                         ForEach(ExternalPlayer.allCases) { p in Text(p.name).tag(p) }
                     }
+                    Toggle("Open in full screen", isOn: $model.startFullScreen)
                 } header: {
                     Text("Playback")
                 } footer: {
-                    Text("16:9 fills a TV-shaped picture. Fit keeps each channel's own shape; Zoom fills the screen by trimming the edges. With another video player, full screen opens there; the guide preview always plays here.")
+                    Text("16:9 fills a TV-shaped picture. Fit keeps each channel's own shape; Zoom fills the screen by trimming the edges. With another video player, full screen opens there; the guide preview always plays here. Open in full screen starts the app on your last channel; close it for the guide.")
                 }
                 .listRowBackground(Theme.cell)
                 Section {

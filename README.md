@@ -24,7 +24,7 @@
 - **Other video players**: full screen, catch-up and movies can open in VLC or MX Player on Fire TV (or anything installed), and VLC, Infuse or nPlayer on iPhone and iPad.
 - **VPN**: on Fire TV, a built-in WireGuard VPN. Send the config from your phone: open the address the TV shows and paste it, with no typing on the remote. Optionally connect when Nightdial starts, or only play when a VPN is on. iPhone and iPad show when your VPN app is on and can hold playback until it is.
 - **Picture shape and best picture**: 16:9 (default), Fit, Zoom, Stretch or 4:3. Streams open at their highest quality, and on Fire TV Xtream channels play the provider's original MPEG-TS stream when the account allows it.
-- **Your channels, your way**: hold OK on a channel (touch and hold on iPhone, right-click on the web) for its options, like TiviMate: favorites, program details, other airings, another player, rename it, give it your own number, hide it or its group. Favorites in your own order and hidden groups are in Settings → Edit channels.
+- **Your channels, your way**: hold OK on a channel (touch and hold on iPhone, right-click on the web) for its options, like TiviMate: favorites, program details, other airings, another player, rename it, give it your own number, hide it or its group. Favorites in your own order and hidden groups are in Settings → Edit channels. Put your groups in your own order too: hold OK on a group in the groups list on Fire TV, or Groups → Arrange on iPhone.
 - **Stream details**: the channel banner and player panel show the resolution (4K, 1080p…), frame rate, video codec and audio (Dolby Digital 5.1, AAC stereo…).
 - **Themes**: everyday themes plus holiday themes with their own scenery and particles (bats, snow, leaves, fireworks…) that can switch on in season. Pick highlight and menu colors, fonts and interface size.
 - **Smooth on every screen**: menus, lists and the guide glide instead of jumping a page at a time, and the item you're on always has room around it.
@@ -62,6 +62,8 @@ New builds install over the old one and keep your playlists and favorites.
 | ◀◀ ▶▶ | Jump a screen earlier or later in the guide | Rewind and fast-forward 30 s |
 | Back | Back to the playing channel, then the channel groups (← for the main menu); **press Back twice there to exit** | Clears the channel banner, closes the panel, then back to the guide |
 | ☰ | Program details | Channel options (favorite, hide, picture shape, audio, another player) |
+
+Nightdial opens on your last channel in full screen; press Back for the guide (turn this off in Settings → Open in full screen). In the channel groups, hold OK on a group to move it: ↑ ↓ move it, OK or Back puts it down.
 
 ### iPhone and iPad (Sideloadly)
 

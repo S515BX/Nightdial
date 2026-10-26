@@ -145,7 +145,7 @@ final class Store {
         Keychain.delete("playlist." + id)
         Keychain.delete("playlist-url." + id)
         Keychain.delete("playlist-epg." + id)
-        for prefix in ["fav.", "recent.", "group.", "lastch.", "hide.", "hideg.", "resume.", "plopts.", "chedits."] { defaults.removeObject(forKey: key(prefix + id)) }
+        for prefix in ["fav.", "recent.", "group.", "lastch.", "hide.", "hideg.", "resume.", "plopts.", "chedits.", "gorder."] { defaults.removeObject(forKey: key(prefix + id)) }
         if string("last") == id { setString(nil, "last") }
     }
 }

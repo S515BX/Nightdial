@@ -98,6 +98,8 @@ final class AppModel: ObservableObject {
     @Published var externalPlayer: ExternalPlayer = .builtin { didSet { store.setString(externalPlayer.rawValue, "player") } }
     /// Settings → VPN: hold playback until a VPN app is on.
     @Published var vpnRequired = false { didSet { store.setBool(vpnRequired, "vpnRequired") } }
+    /// Settings → Open in full screen: launching goes straight to the last channel in full screen.
+    @Published var startFullScreen = true { didSet { store.setBool(startFullScreen, "startFull") } }
 
     @Published var isFullScreen = false
     @Published var showOnDemand = false
@@ -141,6 +143,7 @@ final class AppModel: ObservableObject {
         sortMode = store.string("sort") ?? "provider"
         externalPlayer = ExternalPlayer(rawValue: store.string("player") ?? "") ?? .builtin
         vpnRequired = store.bool("vpnRequired", default: false)
+        startFullScreen = store.bool("startFull", default: true)
         computeRange()
         timer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in self?.tick() }
@@ -158,10 +161,20 @@ final class AppModel: ObservableObject {
         }
         loadBlank()
         if let last = store.string("last"), let saved = store.playlists.first(where: { $0.id == last }) {
-            Task { await self.connectSaved(saved) }
+            Task {
+                await self.connectSaved(saved)
+                self.openFullScreenAtLaunch()
+            }
         } else {
             showLogin = true
         }
+    }
+
+    /// Opening the app plays the last channel in full screen (Settings → Open in full screen); closing it shows the guide.
+    private func openFullScreenAtLaunch() {
+        guard startFullScreen, playingId != nil, provider != nil, !isBackdrop, !showLogin, sheet == nil, !showOnDemand else { return }
+        if vpnRequired && !VPNStatus.isOn { return }
+        isFullScreen = true
     }
 
     /// No playlist: an empty guide behind the sign-in screen.
@@ -260,7 +273,7 @@ final class AppModel: ObservableObject {
         provider = p
         client = newClient
         channels = newChannels
-        groups = newGroups
+        groups = Self.arranged(newGroups, by: store.strings("gorder." + p.id))
         options = p.kind == .demo ? PlaylistOptions() : store.options(p.id)
         Net.userAgent = options.userAgent.trimmed.nonEmpty ?? Net.defaultUA
         providerNums = Dictionary(newChannels.map { ($0.id, $0.num) }, uniquingKeysWith: { a, _ in a })
@@ -583,6 +596,26 @@ final class AppModel: ObservableObject {
         var counts: [String: Int] = [:]
         for c in channels where !hiddenChannels.contains(c.id) { counts[c.groupId, default: 0] += 1 }
         return groups.filter { !hiddenGroups.contains($0.id) && !adultGroups.contains($0.id) }.map { VisibleGroup(id: $0.id, name: $0.name, count: counts[$0.id] ?? 0) }
+    }
+
+    /// Groups in the order you arranged them; groups the provider added since go at the end, in its order.
+    private static func arranged(_ gs: [ChannelGroup], by order: [String]) -> [ChannelGroup] {
+        guard !order.isEmpty else { return gs }
+        let pos = Dictionary(order.enumerated().map { ($0.element, $0.offset) }, uniquingKeysWith: { a, _ in a })
+        let rank = { (i: Int, g: ChannelGroup) in pos[g.id] ?? order.count + i }
+        return gs.enumerated().sorted { rank($0.offset, $0.element) < rank($1.offset, $1.element) }.map { $0.element }
+    }
+
+    /// Groups → Arrange: drag a category to a new place. Hidden groups keep their spots.
+    func moveGroups(from source: IndexSet, to destination: Int) {
+        guard let p = provider else { return }
+        var ids = visibleGroups.map { $0.id }
+        ids.move(fromOffsets: source, toOffset: destination)
+        let moved = Set(ids)
+        let lookup = Dictionary(groups.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        var next = ids.makeIterator()
+        groups = groups.map { g in moved.contains(g.id) ? (next.next().flatMap { lookup[$0] } ?? g) : g }
+        store.setStrings(groups.map { $0.id }, "gorder." + p.id)
     }
 
     var visibleChannelCount: Int { channels.filter { isVisible($0) }.count }
