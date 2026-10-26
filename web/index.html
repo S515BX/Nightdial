@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-ofKsJcUiP3NS9pKLZuAWusVQfEPnsQomvy0g/W1i9qQ=' 'sha256-X/Lawiua1HPg46/6WFTYkASVngRdlEnru6vC9Sgh5H0=' https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.js; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src * data: blob:; media-src * data: blob:; connect-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-hUazcPvpBYSmnfwUa0Zk2jsX7+RGM4IwCdbSIbq7sqA=' 'sha256-X/Lawiua1HPg46/6WFTYkASVngRdlEnru6vC9Sgh5H0=' https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.js; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src * data: blob:; media-src * data: blob:; connect-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#161922">
 <title>Nightdial</title>
@@ -4817,7 +4817,10 @@ function handleBack() {
   if (tvBarOpen()) { if (SC.active) { cancelScrub(); renderTvBar(); } else closeTvBar(); return true; }
   if (tvOptsOpen()) { closeTvOpts(); return true; }
   if (tvChansOpen()) { closeTvChans(); return true; }
+  // In full screen, Back first clears the channel banner (or the movie's info) off the picture; the next Back leaves
+  if (app.classList.contains('is-full') && S.vodPlaying && !el('vosd').classList.contains('hide') && !mediaState().paused) { clearTimeout(vosdTimer); el('vosd').classList.add('hide'); return true; }
   if (S.vodPlaying) { stopVod(); return true; }
+  if (app.classList.contains('is-full') && !osd.classList.contains('hide') && screenMsg.hidden) { clearTimeout(osdTimer); osd.classList.add('hide'); return true; }
   if (app.classList.contains('is-full')) { exitFull(); return true; }
   const a = document.activeElement;
   if (S.view === 'vod') {

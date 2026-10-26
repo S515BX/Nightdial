@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-HzTLc0abP7qfTP06vRPJTakMC1NxQ3oP9V2hYavz7u8=' 'sha256-ofKsJcUiP3NS9pKLZuAWusVQfEPnsQomvy0g/W1i9qQ='; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' https: data: blob:; media-src 'self' https: data: blob:; connect-src 'self' https: blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-HzTLc0abP7qfTP06vRPJTakMC1NxQ3oP9V2hYavz7u8=' 'sha256-hUazcPvpBYSmnfwUa0Zk2jsX7+RGM4IwCdbSIbq7sqA='; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' https: data: blob:; media-src 'self' https: data: blob:; connect-src 'self' https: blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#161922">
@@ -4815,7 +4815,10 @@ function handleBack() {
   if (tvBarOpen()) { if (SC.active) { cancelScrub(); renderTvBar(); } else closeTvBar(); return true; }
   if (tvOptsOpen()) { closeTvOpts(); return true; }
   if (tvChansOpen()) { closeTvChans(); return true; }
+  // In full screen, Back first clears the channel banner (or the movie's info) off the picture; the next Back leaves
+  if (app.classList.contains('is-full') && S.vodPlaying && !el('vosd').classList.contains('hide') && !mediaState().paused) { clearTimeout(vosdTimer); el('vosd').classList.add('hide'); return true; }
   if (S.vodPlaying) { stopVod(); return true; }
+  if (app.classList.contains('is-full') && !osd.classList.contains('hide') && screenMsg.hidden) { clearTimeout(osdTimer); osd.classList.add('hide'); return true; }
   if (app.classList.contains('is-full')) { exitFull(); return true; }
   const a = document.activeElement;
   if (S.view === 'vod') {
