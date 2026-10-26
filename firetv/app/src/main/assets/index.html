@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-aqhJbgZKkI9iKOlle0GS2lg7f02tvaGdUS3mG95yMpk=' 'sha256-b3jWHWMYa8p9mieMnrLg6mV1K1NvzXuUbMnGDdxMzEo=' 'sha256-Avz/4s8RUtWSHFdqzvUmkcgQ/tHoN48sWkTT0EjbXOw='; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src * data: blob:; media-src * data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-aqhJbgZKkI9iKOlle0GS2lg7f02tvaGdUS3mG95yMpk=' 'sha256-Yr21AbbR45pN9OqNCTpsQCiv9QZL8yQaIoz3+oe5kq0=' 'sha256-Avz/4s8RUtWSHFdqzvUmkcgQ/tHoN48sWkTT0EjbXOw='; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src * data: blob:; media-src * data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#161922">
 <title>Nightdial</title>
@@ -628,7 +628,6 @@ html.tv .tvnav-item:focus{outline:none;background:var(--hl);color:var(--hl-ink)}
 .tvnav-groups h2{margin:0;padding:0 calc(var(--vh)*3.4) calc(var(--vh)*1.4);font:600 var(--t-xl) var(--font-display)}
 .tvnav-groups .list{padding:0 calc(var(--vh)*2) calc(var(--vh)*2.8)}
 .tvnav-exit{margin-top:auto}
-.tvnav-hint{margin:calc(var(--vh)*1) 0 0 calc(var(--vh)*1);font-size:calc(var(--vh)*1.9);color:var(--fg-3);line-height:1.4}
 /* larger drawers, dialogs and sign-in */
 html.tv .item{min-height:calc(var(--vh)*7.2);padding:calc(var(--vh)*1.1) calc(var(--vh)*2.2);gap:calc(var(--vh)*1.8);border-radius:var(--r-lg)}
 html.tv .item .lbl>span:first-child{font-size:var(--t-s)}
@@ -693,7 +692,6 @@ html.tv .screen-msg{font-size:var(--t-xs)}
 html.tv .screen-msg b{font-size:var(--t-m)}
 html.tv .screen-msg .btn{min-height:calc(var(--vh)*6.4);padding:0 calc(var(--vh)*2.6);font-size:var(--t-s);gap:calc(var(--vh)*1)}
 html.tv .screen-msg .btn:focus{outline:none;background:var(--hl);color:var(--hl-ink)}
-.retry-hint{color:var(--fg-3)}
 html.tv .login{padding:var(--safe-y) var(--safe-x);-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(8,10,16,.84)}
 html.tv .login-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);align-items:center;gap:calc(var(--vh)*6);width:min(calc(var(--vh)*156),100%);padding:calc(var(--vh)*5.6);border-radius:calc(var(--vh)*3.6)}
 html.tv .login-intro{gap:calc(var(--vh)*3)}
@@ -919,7 +917,6 @@ html.native-video .screen video{display:none!important}
           <div class="vosd-sub" id="vosdSub"></div>
           <div class="vosd-bar"><i id="vosdBar"></i></div>
           <div class="vosd-row"><span id="vosdTime">0:00</span><span class="vosd-ctrls"><button class="osd-btn" data-v="-30" aria-label="Back 30 seconds">−30 s</button><button class="osd-btn" data-v="pause" id="vosdPause" aria-label="Pause"><svg class="i"><use href="#i-pause"/></svg></button><button class="osd-btn" data-v="30" aria-label="Forward 30 seconds">+30 s</button><button class="osd-btn" data-v="close"><svg class="i"><use href="#i-close"/></svg>Close</button></span><span id="vosdLeft"></span></div>
-          <div class="vosd-hint" id="vosdHint">◀ ▶ skip 10 s · ◀◀ ▶▶ skip 30 s · OK pause · Back to stop</div>
         </div>
         <div class="tvopts" id="tvOpts" hidden role="dialog" aria-label="Channel options"><div class="tvopts-head" id="tvOptsHead"></div><div class="tvopts-list" id="tvOptsList"></div></div>
         <div class="tvbar" id="tvBar" hidden role="dialog" aria-label="Player">
@@ -928,7 +925,6 @@ html.native-video .screen video{display:none!important}
           <div class="tb-sub" id="tbSub"></div>
           <div class="tb-line"><span class="tb-t" id="tbStart"></span><div class="tb-scrub" id="tbScrub" tabindex="0" role="slider" aria-label="Timeline"><i class="tb-avail" id="tbAvail"></i><i class="tb-played" id="tbPlayed"></i><i class="tb-now" id="tbNow"></i><b class="tb-head" id="tbHead"><span id="tbHeadTime"></span></b></div><span class="tb-t tb-end" id="tbEnd"></span></div>
           <div class="tb-btns" id="tbBtns"></div>
-          <div class="tb-hint" id="tbHint"></div>
         </div>
         <div class="tvchans" id="tvChans" hidden><div class="tvchans-head"><span id="tvChansGroup"></span><span id="tvChansClock"></span></div><div class="tvchans-list" id="tvChansList"></div></div>
       </div>
@@ -990,7 +986,6 @@ html.native-video .screen video{display:none!important}
     <button class="tvnav-item" data-tv="playlists"><svg class="i"><use href="#i-playlist"/></svg>Playlists</button>
     <button class="tvnav-item" data-tv="settings"><svg class="i"><use href="#i-settings"/></svg>Settings</button>
     <button class="tvnav-item tvnav-exit" data-tv="exit"><svg class="i"><use href="#i-close"/></svg>Exit Nightdial</button>
-    <p class="tvnav-hint">Left: menu · Right: groups · Back: close</p>
   </div>
   <div class="tvnav-groups"><h2>Groups</h2><div class="list" id="tvGroups"></div></div>
 </aside>
@@ -2375,7 +2370,7 @@ const SCREEN_MSGS = {
 };
 function showScreenMsg(code) {
   const [t, d] = SCREEN_MSGS[code] || SCREEN_MSGS.network;
-  screenMsg.innerHTML = `<b>${esc(t)}</b><span>${esc(d)}</span>${NATIVE && nativeDetail ? `<small class="err-code">${esc(nativeDetail)}</small>` : ''}<button class="btn ghost" data-act="retry">${icon('replay')}Try again</button>${TV_MODE ? '<small class="retry-hint">Press OK to try again</small>' : ''}`;
+  screenMsg.innerHTML = `<b>${esc(t)}</b><span>${esc(d)}</span>${NATIVE && nativeDetail ? `<small class="err-code">${esc(nativeDetail)}</small>` : ''}<button class="btn ghost" data-act="retry">${icon('replay')}Try again</button>`;
   screenMsg.hidden = false;
   updateMuteUi();
   // on the TV in full screen, the remote's OK lands on "Try again"
@@ -3283,7 +3278,6 @@ function renderTvBar() {
   const au = btn('audio'), audio = audioTracksInfo();
   if (au) { au.hidden = !audio; if (audio) au.lastChild.textContent = audio.label; }
   const fv = btn('fav'); if (fv) { fv.classList.toggle('on', favs.has(ch.id)); fv.lastChild.textContent = favs.has(ch.id) ? 'Favorite' : 'Add favorite'; }
-  el('tbHint').textContent = tl.can ? '◀ ▶ move through the program · OK to jump there · ▼ more' : (tl.kind === 'live' ? "This channel can't be rewound · ▼ more" : '▼ more');
 }
 /* ◀ ▶ on the timeline: steps grow while you hold the button (10 s up to 5 min). */
 function scrubStep(dir, fixed) {
@@ -3935,7 +3929,6 @@ function playVod(item) {
     video.hidden = true; demoCanvas.hidden = false; spinner.hidden = true;
     demoSet({ id: 'vod', vod: true, name: item.name, num: '', scene: 'movies', hue: hash(item.name) % 360, g: DEMO[3] }, { title: item.name, desc: '', start: Date.now(), end: Date.now() + DV.dur * 1000 });
     el('vosdTitle').textContent = item.name || ''; el('vosdSub').textContent = item.sub || '';
-    el('vosdHint').textContent = TV_MODE ? '◀ ▶ skip 10 s · ◀◀ ▶▶ skip 30 s · OK pause · Back to stop' : 'Space pauses · ← → skip 10 s · Esc stops';
     showVodOsd(); clearInterval(vodTimer); vodSaveAt = Date.now(); vodTimer = setInterval(vodTick, 1000);
     requestAnimationFrame(sizeCanvas);
     return;
@@ -3953,7 +3946,6 @@ function playVod(item) {
   syncVideoRect();
   el('vosdTitle').textContent = item.name || '';
   el('vosdSub').textContent = item.sub || '';
-  el('vosdHint').textContent = TV_MODE ? '◀ ▶ skip 10 s · ◀◀ ▶▶ skip 30 s · OK pause · Back to stop' : 'Space pauses · ← → skip 10 s · Esc stops';
   spinner.hidden = false;
   showVodOsd();
   clearInterval(vodTimer); vodSaveAt = Date.now();
@@ -4827,7 +4819,7 @@ function handleBack() {
   if (a && a.closest && a.closest('#rail')) return false;
   if (guideBackHome()) return true;
   // Back from the guide opens the channel groups (the main menu is one step Left)
-  if (TV_MODE) { openTvNav(false); backArmed = Date.now(); toast('Press Back again to exit', 2000); return true; }
+  if (TV_MODE) { openTvNav(false); backArmed = Date.now(); return true; }
   const b = document.querySelector('.rail-btn.active') || document.querySelector('.rail-btn');
   if (b && b.offsetParent) { b.focus(); return true; }
   return false;
