@@ -19,9 +19,6 @@ struct FullScreenPlayer: View {
             PlaybackOverlay(compact: false)
             if showControls && !showChannels {
                 controls.transition(.opacity)
-                if player.state == .playing || player.isPaused {
-                    transport.transition(.opacity)
-                }
             }
             if showChannels {
                 HStack {
@@ -58,28 +55,16 @@ struct FullScreenPlayer: View {
         .onDisappear { hideTask?.cancel() }
     }
 
-    /// Rewind, pause and fast-forward in the middle of the picture.
-    private var transport: some View {
-        let k: CGFloat = sizeClass == .regular ? 1.4 : 1      // bigger on iPad
-        return HStack(spacing: 34 * k) {
-            Button { model.seekLive(-30); poke() } label: {
-                Image(systemName: "gobackward.30").font(.system(size: 24 * k, weight: .semibold)).frame(width: 58 * k, height: 58 * k)
-                    .background(Circle().fill(Color.black.opacity(0.45)))
-            }
-            .accessibilityLabel("Rewind")
-            Button { model.togglePause(); poke() } label: {
-                Image(systemName: player.isPaused ? "play.fill" : "pause.fill").font(.system(size: 30 * k, weight: .bold)).frame(width: 76 * k, height: 76 * k)
-                    .background(Circle().fill(Color.black.opacity(0.5)))
-            }
-            .accessibilityLabel(player.isPaused ? "Play" : "Pause")
-            Button { model.seekLive(30); poke() } label: {
-                Image(systemName: "goforward.30").font(.system(size: 24 * k, weight: .semibold)).frame(width: 58 * k, height: 58 * k)
-                    .background(Circle().fill(Color.black.opacity(0.45)))
-            }
-            .accessibilityLabel("Fast-forward")
+    /// Rewind, pause and fast-forward: small buttons next to the timeline.
+    private func transportButton(_ icon: String, label: String, prominent: Bool = false, action: @escaping () -> Void) -> some View {
+        Button { action(); poke() } label: {
+            Image(systemName: icon)
+                .font(.system(size: prominent ? 15 : 13, weight: .bold))
+                .foregroundStyle(prominent ? Color.black : Theme.fg)
+                .frame(width: prominent ? 38 : 34, height: prominent ? 38 : 34)
+                .background(Circle().fill(prominent ? Theme.accent : Color.white.opacity(0.12)))
         }
-        .foregroundStyle(.white)
-        .buttonStyle(.plain)
+        .accessibilityLabel(label)
     }
 
     /// "Paused · 2:10 behind" or "2:10 behind live", with a button back to live; position for catch-up.
@@ -91,18 +76,19 @@ struct FullScreenPlayer: View {
             HStack(spacing: 10) {
                 if model.catchup != nil && model.timeshift == nil && info.duration > 0 {
                     Text("\(paused ? "Paused · " : "")\(Fmt.clock(info.position)) / \(Fmt.clock(info.duration))")
-                        .font(.ui(14, .medium)).foregroundStyle(Theme.fg2).monospacedDigit()
+                        .font(.ui(12, .medium)).foregroundStyle(Theme.fg2).monospacedDigit()
                 } else if paused || !behind.isEmpty {
                     Text(paused ? "Paused" + (behind.isEmpty ? "" : " · " + behind) : behind + " live")
-                        .font(.ui(14, .medium)).foregroundStyle(Theme.warn).monospacedDigit()
+                        .lineLimit(1)
+                        .font(.ui(12, .medium)).foregroundStyle(Theme.warn).monospacedDigit()
                     if !behind.isEmpty {
                         Button { model.goLive(); poke() } label: {
                             HStack(spacing: 6) {
                                 Circle().fill(Theme.live).frame(width: 7, height: 7)
-                                Text("Go live").font(.ui(13, .semibold))
+                                Text("Go live").font(.ui(12, .semibold))
                             }
-                            .padding(.horizontal, 12)
-                            .frame(height: 30)
+                            .padding(.horizontal, 10)
+                            .frame(height: 26)
                             .background(Capsule().fill(Color.white.opacity(0.14)))
                         }
                         .buttonStyle(.plain)
@@ -130,7 +116,7 @@ struct FullScreenPlayer: View {
                 } else if model.catchup != nil {
                     Badge(text: "CATCH-UP", style: .new, icon: "gobackward")
                 }
-                AirPlayButton().frame(width: 44, height: 44)
+                AirPlayButton().frame(width: 34, height: 34)
                 if pip.isSupported {
                     Button { pip.toggle() } label: {
                         Image(systemName: pip.isActive ? "pip.exit" : "pip.enter").osdIcon()
@@ -138,55 +124,53 @@ struct FullScreenPlayer: View {
                     .accessibilityLabel("Picture in Picture")
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 10)
-            .padding(.bottom, 30)
-            .background(LinearGradient(colors: [Color.black.opacity(0.7), Color.black.opacity(0)], startPoint: .top, endPoint: .bottom).ignoresSafeArea())
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 18)
+            .background(LinearGradient(colors: [Color.black.opacity(0.6), Color.black.opacity(0)], startPoint: .top, endPoint: .bottom).ignoresSafeArea())
 
             Spacer(minLength: 0)
 
-            VStack(alignment: .leading, spacing: 10) {
+            // A slim bar: channel and program on one line, the transport next to the timeline, small buttons below.
+            VStack(alignment: .leading, spacing: 6) {
                 if let ch {
-                    HStack(spacing: 12) {
-                        LogoBadge(channel: ch, size: 34)
+                    HStack(spacing: 8) {
+                        LogoBadge(channel: ch, size: 24)
                         Text("\(ch.num)").foregroundStyle(Theme.accent).monospacedDigit()
-                        Text(ch.name).lineLimit(1)
-                        Spacer()
-                        Text(Fmt.time(model.now, model.clock24)).font(.cond(22, .semibold)).monospacedDigit()
-                    }
-                    .font(.cond(17, .semibold))
-                }
-                Text(program?.title ?? "No program information")
-                    .font(.cond(28, .semibold))
-                    .lineLimit(2)
-                if let p = program {
-                    Text("\(Fmt.time(p.start, model.clock24)) – \(Fmt.time(p.end, model.clock24))")
-                        .font(.ui(14))
-                        .foregroundStyle(Theme.fg2)
-                        .monospacedDigit()
-                }
-                if !player.streamBadges.isEmpty {
-                    HStack(spacing: 6) {
-                        ForEach(Array(player.streamBadges.enumerated()), id: \.offset) { i, b in
-                            Text(b)
-                                .font(.ui(12, .semibold))
-                                .foregroundStyle(i == 0 && (b == "4K" || b == "1080p") ? Color.black : Theme.fg)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 3)
-                                .background(i == 0 && (b == "4K" || b == "1080p") ? Theme.accent : Color.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                        Text(ch.name).foregroundStyle(Theme.fg2).lineLimit(1).layoutPriority(-1)
+                        Text("·").foregroundStyle(Theme.fg3)
+                        Text(program?.title ?? "No program information").foregroundStyle(Theme.fg).lineLimit(1).layoutPriority(1)
+                        Spacer(minLength: 6)
+                        if let p = program {
+                            Text("\(Fmt.time(p.start, model.clock24)) – \(Fmt.time(p.end, model.clock24))")
+                                .font(.ui(11.5)).foregroundStyle(Theme.fg3).monospacedDigit().lineLimit(1)
                         }
+                        Text(Fmt.time(model.now, model.clock24)).font(.cond(14, .semibold)).monospacedDigit()
                     }
+                    .font(.cond(14, .semibold))
                 }
-                ScrubBar(onActivity: { poke() })
-                liveLine
-                if let ch, let p = program, model.catchup == nil, let n = model.next(after: p, on: ch) {
-                    Text("Next  \(Fmt.time(n.start, model.clock24))  \(n.title)")
-                        .font(.ui(14))
-                        .foregroundStyle(Theme.fg2)
-                        .lineLimit(1)
+                HStack(alignment: .center, spacing: 8) {
+                    if player.state == .playing || player.isPaused {
+                        transportButton("gobackward.30", label: "Rewind 30 seconds") { model.seekLive(-30) }
+                        transportButton(player.isPaused ? "play.fill" : "pause.fill", label: player.isPaused ? "Play" : "Pause", prominent: true) { model.togglePause() }
+                        transportButton("goforward.30", label: "Forward 30 seconds") { model.seekLive(30) }
+                    }
+                    ScrubBar(onActivity: { poke() })
+                        .padding(.leading, 4)
                 }
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 6) {
+                        ForEach(Array(player.streamBadges.enumerated()), id: \.offset) { i, b in
+                            let hi = i == 0 && (b == "4K" || b == "1080p")
+                            Text(b)
+                                .font(.ui(10.5, .semibold))
+                                .foregroundStyle(hi ? Color.black : Theme.fg)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(hi ? Theme.accent : Color.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+                        }
+                        liveLine
+                        Spacer(minLength: 8)
                         Button { model.stepChannel(-1); poke() } label: {
                             Image(systemName: "chevron.up").osdIcon()
                         }
@@ -196,12 +180,14 @@ struct FullScreenPlayer: View {
                         }
                         .accessibilityLabel("Next channel")
                         Button { showChannels = true } label: {
-                            Label("Channels", systemImage: "list.bullet").osdButton()
+                            Image(systemName: "list.bullet").osdIcon()
                         }
+                        .accessibilityLabel("Channel list")
                         if let ch {
                             Button { model.toggleFavorite(ch); poke() } label: {
-                                Label(favorite ? "Favorite" : "Add favorite", systemImage: favorite ? "star.fill" : "star").osdButton()
+                                Image(systemName: favorite ? "star.fill" : "star").osdIcon()
                             }
+                            .accessibilityLabel(favorite ? "Remove favorite" : "Add favorite")
                         }
                         Button { player.isMuted.toggle(); poke() } label: {
                             Image(systemName: player.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill").osdIcon()
@@ -212,13 +198,14 @@ struct FullScreenPlayer: View {
                         }
                     }
                 }
-                .padding(.top, 4)
             }
-            .padding(20)
-            .background(RoundedRectangle(cornerRadius: 26, style: .continuous).fill(Theme.panel.opacity(0.94)))
-            .shadow(color: .black.opacity(0.45), radius: 24, y: 10)
-            .padding(.horizontal, 14)
-            .padding(.bottom, 12)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Theme.panel.opacity(0.9)))
+            .shadow(color: .black.opacity(0.35), radius: 16, y: 6)
+            .frame(maxWidth: 820)
+            .padding(.horizontal, 10)
+            .padding(.bottom, 6)
         }
         .foregroundStyle(Theme.fg)
         .buttonStyle(.plain)
@@ -379,16 +366,16 @@ struct ChannelPanel: View {
 extension View {
     func osdButton() -> some View {
         self
-            .font(.ui(14.5, .semibold))
-            .padding(.horizontal, 15)
-            .frame(height: 42)
+            .font(.ui(13, .semibold))
+            .padding(.horizontal, 12)
+            .frame(height: 34)
             .background(Capsule().fill(Color.white.opacity(0.12)))
     }
 
     func osdIcon() -> some View {
         self
-            .font(.system(size: 16, weight: .semibold))
-            .frame(width: 44, height: 42)
+            .font(.system(size: 13, weight: .semibold))
+            .frame(width: 34, height: 32)
             .background(Capsule().fill(Color.white.opacity(0.12)))
     }
 }
