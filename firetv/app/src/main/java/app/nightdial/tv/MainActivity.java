@@ -169,12 +169,29 @@ public class MainActivity extends Activity {
             case KeyEvent.KEYCODE_ENTER:
             case KeyEvent.KEYCODE_NUMPAD_ENTER:
             case KeyEvent.KEYCODE_BUTTON_A: {
-                // OK is handed to the page as a real Enter key, so every button, switch and option responds
-                // exactly as it does with a keyboard (a script-made key press can't click anything).
-                KeyEvent enter = new KeyEvent(event.getDownTime(), event.getEventTime(), event.getAction(), KeyEvent.KEYCODE_ENTER,
-                        event.getRepeatCount(), event.getMetaState(), event.getDeviceId(), event.getScanCode(),
-                        event.getFlags(), event.getSource());
-                web.dispatchKeyEvent(enter);
+                // OK is timed here: a short press reaches the page as a real Enter key when it ends (so every button,
+                // switch and option responds as with a keyboard); holding it for half a second asks the page for the
+                // channel options instead (window.nightdialLongPress), and a held key never repeats into the page.
+                if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                    if (event.getRepeatCount() == 0) {
+                        okDownEvent = event;
+                        okDown = true;
+                        okLongFired = false;
+                        okLongHandled = false;
+                        okUpWhileAsking = false;
+                        ui.removeCallbacks(okLong);
+                        ui.postDelayed(okLong, 550);
+                    }
+                    return true;
+                }
+                if (event.getAction() == KeyEvent.ACTION_UP) {
+                    okDown = false;
+                    okLastUp = event;
+                    ui.removeCallbacks(okLong);
+                    if (!okLongFired) sendEnter(event);
+                    else if (okAsking) okUpWhileAsking = true;
+                    else if (!okLongHandled) sendEnter(event);
+                }
                 return true;
             }
             case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
@@ -210,6 +227,38 @@ public class MainActivity extends Activity {
             return true;
         }
         return super.dispatchKeyEvent(event);
+    }
+
+    // ---- OK button timing (short press = Enter, hold = channel options)
+    private KeyEvent okDownEvent;
+    private boolean okDown, okLongFired, okLongHandled, okAsking, okUpWhileAsking;
+    private KeyEvent okLastUp;
+
+    private final Runnable okLong = () -> {
+        if (!okDown) return;
+        okLongFired = true;
+        okAsking = true;
+        web.evaluateJavascript("(window.nightdialLongPress ? window.nightdialLongPress() : false)", value -> {
+            okAsking = false;
+            okLongHandled = "true".equals(value);
+            // nothing to open here: the press counts as a normal OK once it ends
+            if (!okLongHandled && okUpWhileAsking) {
+                okUpWhileAsking = false;
+                sendEnter(okLastUp);
+            }
+        });
+    };
+
+    /** A whole Enter press (down + up) for the page, made from the remote's own key so the WebView treats it as real. */
+    private void sendEnter(KeyEvent up) {
+        okLastUp = up;
+        KeyEvent d = okDownEvent != null ? okDownEvent : up;
+        if (d == null) return;
+        long upTime = up != null ? up.getEventTime() : d.getEventTime();
+        web.dispatchKeyEvent(new KeyEvent(d.getDownTime(), d.getEventTime(), KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER, 0,
+                d.getMetaState(), d.getDeviceId(), d.getScanCode(), d.getFlags(), d.getSource()));
+        web.dispatchKeyEvent(new KeyEvent(d.getDownTime(), upTime, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER, 0,
+                d.getMetaState(), d.getDeviceId(), d.getScanCode(), d.getFlags(), d.getSource()));
     }
 
     // ---------------------------------------------------------------- player

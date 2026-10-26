@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-HzTLc0abP7qfTP06vRPJTakMC1NxQ3oP9V2hYavz7u8=' 'sha256-KEENyDaZ0i0U9OfFdbBOIMN3MqdUrQbfzip1IgVcaGs='; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' https: data: blob:; media-src 'self' https: data: blob:; connect-src 'self' https: blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-HzTLc0abP7qfTP06vRPJTakMC1NxQ3oP9V2hYavz7u8=' 'sha256-ofKsJcUiP3NS9pKLZuAWusVQfEPnsQomvy0g/W1i9qQ='; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' https: data: blob:; media-src 'self' https: data: blob:; connect-src 'self' https: blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#161922">
@@ -4841,7 +4841,28 @@ window.nightdialKey = function (key) {
 };
 
 const REPEATING = new Set(['up', 'down', 'left', 'right', 'pgup', 'pgdn']);
-let keyFrame = 0, okHold = null;
+let keyFrame = 0, okHold = null, okIsDown = false, okDownAt = 0;
+/* Holding OK opens the channel options of the channel you're on: in the guide, while watching, or in the channel
+   list. The Fire TV app times the hold itself and calls this; with a keyboard the page times it. Returns true if it
+   opened something (otherwise the Fire TV app treats the press as a normal OK). */
+function longOk() {
+  if (layers.length || !loginEl.hidden) return false;
+  if (app.classList.contains('is-full')) {
+    if (S.vodPlaying || tvBarOpen() || tvOptsOpen()) return false;
+    if (tvChansOpen()) { const ch = tvChansBase()[tvChanIdx]; if (!ch) return false; closeTvChans(); openChannelMenu(ch, progAt(ch, Date.now())); return true; }
+    const ch = S.byId.get(S.playingId); if (!ch) return false;
+    osd.classList.add('hide');
+    openChannelMenu(ch, S.catchup || progAt(ch, Date.now()));
+    return true;
+  }
+  if (S.view === 'vod') return false;
+  const a = document.activeElement;
+  if (a && a.closest && a.closest('#rail')) return false;
+  const ch = S.list[focus.i]; if (!ch) return false;
+  openChannelMenu(ch, focusedProg());
+  return true;
+}
+window.nightdialLongPress = () => { if (okHold) { clearTimeout(okHold.timer); okHold.fired = true; } return longOk(); };
 function guideOk() {
   const ch = S.list[focus.i]; if (!ch) return;
   const p = focusedProg();
@@ -4849,15 +4870,21 @@ function guideOk() {
   else openDetails(ch, p);
 }
 document.addEventListener('keyup', e => {
-  if (keyName(e) !== 'ok' || !okHold) return;
+  if (keyName(e) !== 'ok') return;
+  okIsDown = false;
+  if (!okHold) return;
   const h = okHold; okHold = null; clearTimeout(h.timer);
   if (!h.fired) { e.preventDefault(); guideOk(); }
 });
+window.addEventListener('blur', () => { okIsDown = false; });
 document.addEventListener('keydown', e => {
   firstGesture();
   let k = keyName(e); if (!k) return;
-  // OK held down repeats: never press things again (and in the guide, the hold opens channel options)
-  if (k === 'ok' && e.repeat) { e.preventDefault(); return; }
+  // OK held down: never press things again (the hold opens channel options instead)
+  if (k === 'ok') {
+    if (e.repeat || (okIsDown && Date.now() - okDownAt < 4000)) { e.preventDefault(); return; }
+    okIsDown = true; okDownAt = Date.now();
+  }
   // Holding a button: at most one move per drawn frame, so a slow frame never queues up moves that carry on after you let go.
   if (REPEATING.has(k)) {
     if (e.repeat && keyFrame && !(document.activeElement && isTextInput(document.activeElement))) { e.preventDefault(); return; }
@@ -4932,9 +4959,11 @@ document.addEventListener('keydown', e => {
       if (a && a.tagName === 'BUTTON') return;
       e.preventDefault();
       if (!S.list[focus.i]) return;
-      // short press: watch (on release); hold for half a second: channel options, like TiviMate
+      // The Fire TV app only sends OK when a press ends (a hold calls longOk instead), so it watches straight away.
+      if (NATIVE) { guideOk(); break; }
+      // keyboard: short press watches on release; holding for half a second opens channel options
       clearTimeout(okHold && okHold.timer);
-      okHold = { fired: false, timer: setTimeout(() => { if (okHold && !okHold.fired) { okHold.fired = true; openChannelMenu(S.list[focus.i], focusedProg()); } }, 550) };
+      okHold = { fired: false, timer: setTimeout(() => { if (okHold && !okHold.fired) { okHold.fired = true; longOk(); } }, 550) };
       break;
     }
     case 'info': { e.preventDefault(); const ch = S.list[focus.i], p = focusedProg(); if (ch && p) openDetails(ch, p); break; }
