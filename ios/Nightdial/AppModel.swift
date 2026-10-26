@@ -32,7 +32,7 @@ struct VisibleGroup: Identifiable {
 
 struct LoginPrefill {
     var name = "", server = "", user = "", pass = "", error: String? = nil
-    /// "xtream" or "m3u"
+    /// "xtream", "m3u" or "emby"
     var kind = "xtream"
     var m3u = "", epg = ""
 }
@@ -341,6 +341,14 @@ final class AppModel: ObservableObject {
         showToast("Signed in to \(result.provider.name) · \(result.channels.count) channels")
     }
 
+    func signInEmby(name: String, server: String, user: String, pass: String, remember: Bool,
+                    step: @escaping @MainActor (String) -> Void) async throws {
+        let result = try await EmbyClient.connect(name: name, server: server, user: user, pass: pass, step: step)
+        apply(result, remember: remember)
+        showLogin = false
+        showToast("Signed in to \(result.provider.name)")
+    }
+
     private func apply(_ r: XtreamClient.LoginResult, remember: Bool) {
         let p = r.provider
         let c: XtreamClient? = p.kind == .xtream ? XtreamClient(server: p.server, user: p.user, pass: p.pass) : nil
@@ -348,7 +356,11 @@ final class AppModel: ObservableObject {
         isBackdrop = false
         if remember {
             var saved = store.playlists.filter { $0.id != p.id }
-            if p.kind == .m3u {
+            if p.kind == .emby {
+                // Emby gives an access token at sign-in: that goes in the Keychain, never the password
+                saved.insert(Playlist(id: p.id, name: p.name, server: p.server, user: p.user, kind: "emby", host: URL(string: p.server)?.host, userId: p.userId), at: 0)
+                store.setPassword(p.token, for: p.id)
+            } else if p.kind == .m3u {
                 // The link usually contains your username and password, so it goes in the Keychain, not the list.
                 saved.insert(Playlist(id: p.id, name: p.name, server: "", user: "", kind: "m3u", host: URL(string: p.url)?.host), at: 0)
                 store.setPlaylistLink(p.url, epg: p.epgUrl, for: p.id)
@@ -359,12 +371,29 @@ final class AppModel: ObservableObject {
             store.playlists = saved
             store.setString(p.id, "last")
         }
-        vod.configure(client: options.showVOD ? c : nil, providerId: p.id, demo: false)
+        if p.kind == .emby {
+            vod.configureEmby(EmbyClient(server: p.server, userId: p.userId, token: p.token), providerId: p.id)
+        } else {
+            vod.configure(client: options.showVOD ? c : nil, providerId: p.id, demo: false)
+        }
         startUp()
     }
 
     func connectSaved(_ pl: Playlist) async {
         showToast("Connecting to \(pl.name)…", seconds: 0)
+        if pl.kind == "emby" {
+            do {
+                let r = try await EmbyClient.resume(pl, token: store.password(for: pl.id))
+                apply(r, remember: true)
+                showLogin = false
+                showToast("Signed in to \(pl.name)")
+            } catch {
+                toast = nil
+                loginPrefill = LoginPrefill(name: pl.name, server: pl.server, user: pl.user, error: error.localizedDescription, kind: "emby")
+                showLogin = true
+            }
+            return
+        }
         if pl.kind == "m3u" {
             let link = store.playlistLink(for: pl.id)
             do {
@@ -413,6 +442,11 @@ final class AppModel: ObservableObject {
 
     func removeCurrentPlaylist() {
         guard let p = provider, p.kind != .demo else { return }
+        if p.kind == .emby {
+            // sign this device out on the Emby server too
+            let client = EmbyClient(server: p.server, userId: p.userId, token: p.token)
+            Task { await client.logout() }
+        }
         store.removePlaylist(p.id)
         if store.string("last") == p.id { store.remove("last") }
         sheet = nil
@@ -489,7 +523,7 @@ final class AppModel: ObservableObject {
         switch prov.kind {
         case .xtream: url = client?.liveURL(ch)
         case .m3u: url = ch.streamURL
-        case .demo: url = nil
+        case .demo, .emby: url = nil
         }
         guard let stream = url, let link = p.link(for: stream) else { return }
         player.stop()
@@ -510,7 +544,7 @@ final class AppModel: ObservableObject {
         adultGroups = Set(groups.filter { $0.name.range(of: "\\b(adult|xxx|18\\s*\\+|porn|erotic)", options: [.regularExpression, .caseInsensitive]) != nil }.map(\.id))
     }
 
-    var canEditOptions: Bool { provider.map { $0.kind != .demo } ?? false }
+    var canEditOptions: Bool { provider.map { $0.kind != .demo && $0.kind != .emby } ?? false }
 
     func setOptions(_ new: PlaylistOptions) {
         guard let p = provider, p.kind != .demo, new != options else { return }
@@ -872,6 +906,8 @@ final class AppModel: ObservableObject {
             if url == nil { url = client?.liveURL(ch) }
         case .m3u:
             url = ch.streamURL
+        case .emby:
+            url = nil
         }
         if external, let url, let link = externalPlayer.link(for: url) {
             player.stop()
@@ -1150,7 +1186,7 @@ final class AppModel: ObservableObject {
             guard !p.epgUrl.isEmpty else { return }
             downloader = XtreamClient(server: "", user: "", pass: "")
             source = p.epgUrl
-        case .demo:
+        case .demo, .emby:
             return
         }
         for c in channels { epgState[c.id] = .loading }

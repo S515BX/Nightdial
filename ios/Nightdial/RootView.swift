@@ -9,7 +9,14 @@ struct RootView: View {
     var body: some View {
         ZStack {
             RoomBackground()
-            MainView()
+            Group {
+                if model.provider?.kind == .emby {
+                    // an Emby playlist is a library: its movies and shows are the main screen
+                    OnDemandView(embedded: true).environmentObject(model.vod)
+                } else {
+                    MainView()
+                }
+            }
                 .id(look.revision)   // rebuild with the new colors, font and size when the look changes
                 .blur(radius: model.showLogin ? 8 : 0)
                 .allowsHitTesting(!model.showLogin)

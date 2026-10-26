@@ -171,7 +171,7 @@ struct PlaylistsSheet: View {
                         Button {
                             model.switchTo(pl)
                         } label: {
-                            row(pl.name, pl.kind == "m3u" ? "M3U playlist · \(pl.host ?? "")" : "Xtream Codes · \(URL(string: pl.server)?.host ?? pl.server)",
+                            row(pl.name, pl.kind == "m3u" ? "M3U playlist · \(pl.host ?? "")" : pl.kind == "emby" ? "Emby · \(pl.host ?? URL(string: pl.server)?.host ?? pl.server)" : "Xtream Codes · \(URL(string: pl.server)?.host ?? pl.server)",
                                 selected: model.provider?.id == pl.id && !model.isBackdrop)
                         }
                         .listRowBackground(Theme.cell)
@@ -225,7 +225,12 @@ struct SettingsSheet: View {
                 if let p = model.provider {
                     Section("Playlist") {
                         value("Name", p.name)
-                        value("Type", p.kind == .demo ? "Built-in demo" : p.kind == .m3u ? "M3U playlist" : "Xtream Codes")
+                        value("Type", p.kind == .demo ? "Built-in demo" : p.kind == .m3u ? "M3U playlist" : p.kind == .emby ? (p.info.status.hasPrefix("Jellyfin") ? "Jellyfin" : "Emby") : "Xtream Codes")
+                        if p.kind == .emby {
+                            value("Server", p.server)
+                            value("Username", p.user)
+                            value("Version", p.info.status)
+                        }
                         if p.kind == .xtream {
                             value("Server", p.server)
                             value("Username", p.user)
@@ -233,12 +238,14 @@ struct SettingsSheet: View {
                         }
                         if p.kind == .m3u {
                             value("Playlist from", URL(string: p.url)?.host ?? "–")
-                        } else {
+                        } else if p.kind != .emby {
                             value("Status", p.info.status + (p.info.trial ? " · trial" : ""))
                             value("Expires", p.info.expires.map { Fmt.dateFormatter.string(from: $0) } ?? (p.kind == .demo ? "Never" : "Unlimited"))
                         }
-                        value("Channels", "\(model.channels.count) in \(model.groups.count) groups")
-                        if model.vod.available {
+                        if p.kind != .emby {
+                            value("Channels", "\(model.channels.count) in \(model.groups.count) groups")
+                        }
+                        if model.vod.available && p.kind != .emby {
                             Button("Movies & Series") { model.openOnDemand() }
                         }
                         if model.canEditOptions {
@@ -264,6 +271,7 @@ struct SettingsSheet: View {
                     }
                 }
                 .listRowBackground(Theme.cell)
+                if model.provider?.kind != .emby {
                 Section("Channels") {
                     Picker("Sort channels", selection: $model.sortMode) {
                         Text("Provider order").tag("provider")
@@ -281,6 +289,7 @@ struct SettingsSheet: View {
                     }
                 }
                 .listRowBackground(Theme.cell)
+                }
                 Section {
                     Picker("Picture shape", selection: $player.aspect) {
                         ForEach(PlayerController.aspects.indices, id: \.self) { i in Text(PlayerController.aspects[i].1).tag(PlayerController.aspects[i].0) }
@@ -312,11 +321,13 @@ struct SettingsSheet: View {
                 }
                 .listRowBackground(Theme.cell)
                 .onAppear { vpnOn = VPNStatus.isOn }
-                Section("TV guide") {
-                    Toggle("24-hour clock", isOn: $model.clock24)
-                    Toggle("Compact rows", isOn: $model.compactRows)
+                if model.provider?.kind != .emby {
+                    Section("TV guide") {
+                        Toggle("24-hour clock", isOn: $model.clock24)
+                        Toggle("Compact rows", isOn: $model.compactRows)
+                    }
+                    .listRowBackground(Theme.cell)
                 }
-                .listRowBackground(Theme.cell)
                 if model.provider?.kind == .xtream {
                     Section {
                         Toggle("Use XMLTV file", isOn: $model.useXMLTV)

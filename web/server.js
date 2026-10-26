@@ -58,7 +58,11 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'referrer-policy': 'no-referrer', 'x-frame-options': 'DENY' });
     return res.end(page());
   }
-  if (url.pathname !== '/proxy' || (req.method !== 'GET' && req.method !== 'HEAD')) { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('Not found'); }
+  const method = req.method;
+  if (url.pathname !== '/proxy' || !['GET', 'HEAD', 'POST', 'DELETE'].includes(method)) { res.writeHead(404, { 'content-type': 'text/plain' }); return res.end('Not found'); }
+  // POST and DELETE (Emby sign-in and playback reports) only from the app itself: other web pages can't add this
+  // header to a request without this server agreeing first, and it never does.
+  if ((method === 'POST' || method === 'DELETE') && req.headers['x-nightdial'] !== '1') { res.writeHead(403, { 'content-type': 'text/plain' }); return res.end('Forbidden'); }
 
   let target;
   try { target = new URL(url.searchParams.get('u') || ''); } catch (e) { target = null; }
@@ -69,9 +73,18 @@ const server = http.createServer(async (req, res) => {
   try {
     // a playlist can ask for its own User-Agent (Playlist options); plain text only
     const ua = (url.searchParams.get('ua') || '').replace(/[^\x20-\x7e]/g, '').slice(0, 200);
-    const headers = { 'user-agent': ua || UA, accept: '*/*' };
+    const headers = { 'user-agent': ua || UA, accept: req.headers.accept === 'application/json' ? 'application/json' : '*/*' };
     if (req.headers.range) headers.range = req.headers.range;
-    const up = await fetch(target, { headers, redirect: 'follow', signal: ctl.signal });
+    // Emby's sign-in header (with its access token) goes to the Emby server and nowhere else
+    if (req.headers['x-emby-authorization']) headers['x-emby-authorization'] = String(req.headers['x-emby-authorization']).slice(0, 2000);
+    let body;
+    if (method === 'POST') {
+      const chunks = []; let size = 0;
+      for await (const c of req) { size += c.length; if (size > 1e6) { res.writeHead(413, { 'content-type': 'text/plain' }); return res.end('Too large'); } chunks.push(c); }
+      body = Buffer.concat(chunks);
+      headers['content-type'] = 'application/json';
+    }
+    const up = await fetch(target, { method, headers, body, redirect: 'follow', signal: ctl.signal });
     const type = up.headers.get('content-type') || '';
 
     if (isPlaylist(type, up.url) || isPlaylist('', target.pathname)) {

@@ -29,16 +29,18 @@ struct LoginView: View {
                 Picker("Playlist type", selection: $kind) {
                     Text("Xtream Codes").tag("xtream")
                     Text("M3U playlist").tag("m3u")
+                    Text("Emby").tag("emby")
                 }
                 .pickerStyle(.segmented)
                 .disabled(busy)
                 VStack(alignment: .leading, spacing: 14) {
-                    field("Playlist name", text: $name, prompt: "My provider", field: .name, capitalize: true)
+                    field("Playlist name", text: $name, prompt: kind == "emby" ? "Uses your server's name" : "My provider", field: .name, capitalize: true)
                     if kind == "m3u" {
                         field("M3U playlist link", text: $m3u, prompt: "http://provider.example.com/playlist.m3u", field: .m3u, keyboard: .URL)
                         field("TV guide link (XMLTV, optional)", text: $epg, prompt: "Leave empty to use the playlist's guide", field: .epg, keyboard: .URL)
                     } else {
-                        field("Server URL", text: $server, prompt: "http://line.example.com:8080", field: .server, keyboard: .URL)
+                        field(kind == "emby" ? "Emby server address" : "Server URL", text: $server,
+                              prompt: kind == "emby" ? "http://192.168.1.20:8096" : "http://line.example.com:8080", field: .server, keyboard: .URL)
                         field("Username", text: $user, prompt: "", field: .user, content: .username)
                         passwordField
                     }
@@ -83,7 +85,8 @@ struct LoginView: View {
                 BrandMark(size: 42)
                 Text("Nightdial").font(.cond(24, .semibold)).foregroundStyle(Theme.fg)
             }
-            Label(kind == "m3u" ? "M3U PLAYLIST" : "XTREAM CODES", systemImage: kind == "m3u" ? "list.bullet.rectangle" : "dot.radiowaves.left.and.right")
+            Label(kind == "m3u" ? "M3U PLAYLIST" : kind == "emby" ? "EMBY" : "XTREAM CODES",
+                  systemImage: kind == "m3u" ? "list.bullet.rectangle" : kind == "emby" ? "film.stack" : "dot.radiowaves.left.and.right")
                 .font(.cond(11.5, .semibold))
                 .foregroundStyle(Theme.accent)
                 .padding(.horizontal, 12)
@@ -92,6 +95,8 @@ struct LoginView: View {
             Text("Add a playlist").font(.cond(28, .semibold)).foregroundStyle(Theme.fg)
             Text(kind == "m3u"
                  ? "Paste the M3U link from your IPTV provider. Add a TV guide link if your provider gave you one."
+                 : kind == "emby"
+                 ? "Your own movies and shows from your Emby server (Jellyfin works too). Enter its address and your Emby username and password."
                  : "Enter the server address, username and password from your IPTV provider. You can also paste your full M3U link into Server URL.")
                 .font(.ui(15))
                 .foregroundStyle(Theme.fg2)
@@ -197,6 +202,7 @@ struct LoginView: View {
     /// When a whole M3U link is pasted, pull the username and password out of it.
     private func handleServerChange(_ value: String) {
         defer { lastServer = value }
+        guard kind == "xtream" else { return }
         guard value.count - lastServer.count > 1 else { return }
         let n = XtreamClient.normalize(value)
         if let u = n.user, let p = n.pass {
@@ -218,6 +224,21 @@ struct LoginView: View {
             Task { @MainActor in
                 do {
                     try await model.signInM3U(name: values.0, url: values.1, epg: values.2, remember: remember) { text in
+                        step = text
+                    }
+                } catch {
+                    errorText = error.localizedDescription
+                }
+                busy = false
+            }
+            return
+        }
+        if kind == "emby" {
+            step = "Finding your server…"
+            let values = (name.trimmed, server.trimmed, user.trimmed, pass)
+            Task { @MainActor in
+                do {
+                    try await model.signInEmby(name: values.0, server: values.1, user: values.2, pass: values.3, remember: remember) { text in
                         step = text
                     }
                 } catch {

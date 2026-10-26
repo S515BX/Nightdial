@@ -132,9 +132,12 @@ struct Playlist: Codable, Identifiable, Hashable {
     var name: String
     var server: String
     var user: String
-    /// nil or "xtream" for Xtream Codes, "m3u" for an M3U link (the link itself is kept in the Keychain).
+    /// nil or "xtream" for Xtream Codes, "m3u" for an M3U link (the link itself is kept in the Keychain),
+    /// "emby" for an Emby or Jellyfin server (its access token is kept in the Keychain, never the password).
     var kind: String? = nil
     var host: String? = nil
+    /// Emby: the signed-in user.
+    var userId: String? = nil
 }
 
 struct AccountInfo: Hashable {
@@ -146,7 +149,7 @@ struct AccountInfo: Hashable {
     var timezone: String? = nil
 }
 
-enum ProviderKind { case demo, xtream, m3u }
+enum ProviderKind { case demo, xtream, m3u, emby }
 
 struct Provider {
     let id: String
@@ -158,6 +161,9 @@ struct Provider {
     var info = AccountInfo()
     var url: String = ""
     var epgUrl: String = ""
+    /// Emby: the user and the access token from signing in.
+    var userId: String = ""
+    var token: String = ""
 }
 
 enum EPGLoad { case queued, loading, done, failed }
@@ -241,6 +247,11 @@ struct VodItem: Identifiable, Hashable {
     let added: Double
     var plot: String = ""
     var genre: String = ""
+    /// Emby: watched, where you stopped, length, and the libraries and genres it's in.
+    var played = false
+    var position: Double = 0
+    var runtime: Double = 0
+    var categories: [String] = []
 
     var hue: Double { Double(fnv1a(name) % 360) }
     var resumeKey: String { (kind == .movies ? "m:" : "s:") + id }
@@ -257,6 +268,15 @@ struct VodDetails: Hashable {
     var backdrop: URL? = nil
     var poster: URL? = nil
     var ext = ""
+    /// Emby: tagline, age rating, watched and where you stopped, and the file's format (to pick how to play it).
+    var tagline = ""
+    var official = ""
+    var played = false
+    var position: Double = 0
+    var runtime: Double = 0
+    var mediaSourceId = ""
+    var videoCodec = ""
+    var audioCodec = ""
 }
 
 struct Episode: Identifiable, Hashable {
@@ -268,6 +288,10 @@ struct Episode: Identifiable, Hashable {
     var plot = ""
     var duration = ""
     var image: URL? = nil
+    /// Emby: watched and where you stopped.
+    var played = false
+    var position: Double = 0
+    var runtime: Double = 0
 
     var resumeKey: String { "e:" + id }
 }
@@ -276,6 +300,8 @@ struct SeriesDetails: Hashable {
     var info = VodDetails()
     var seasons: [Int] = []
     var episodes: [Int: [Episode]] = [:]
+    /// Emby: the episode Next up points at.
+    var nextEpisodeId: String? = nil
 }
 
 /// Where you stopped in a movie or episode.

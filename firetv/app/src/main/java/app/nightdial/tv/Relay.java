@@ -177,6 +177,74 @@ public final class Relay {
                 new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8)));
     }
 
+    /** A whole text answer from a server (Emby's API), for {@link #request}. */
+    public static final class Plain {
+        public final int status;
+        public final String body;
+
+        Plain(int status, String body) {
+            this.status = status;
+            this.body = body;
+        }
+    }
+
+    /** Headers the page may set on its own requests; nothing else (no cookies, no Host). */
+    private static final String[] PAGE_HEADERS = {"X-Emby-Authorization", "Content-Type", "Accept"};
+    private static final int MAX_ANSWER = 16 * 1024 * 1024;
+
+    /**
+     * One API request for the page (GET, POST or DELETE with a JSON body), used for Emby: WebView can't relay a
+     * POST body through /proxy. Follows redirects by hand, like {@link #open}.
+     */
+    public static Plain request(String method, String target, Map<String, String> pageHeaders, String body) throws IOException {
+        if (target == null || !(target.startsWith("http://") || target.startsWith("https://"))) return new Plain(400, "Bad address");
+        URL url = new URL(target);
+        String m = method;
+        byte[] data = body == null || body.isEmpty() || "GET".equals(method) ? null : body.getBytes(StandardCharsets.UTF_8);
+        for (int hop = 0; hop < 6; hop++) {
+            HttpURLConnection c = (HttpURLConnection) url.openConnection();
+            c.setInstanceFollowRedirects(false);
+            c.setConnectTimeout(15000);
+            c.setReadTimeout(30000);
+            c.setRequestMethod(m);
+            c.setRequestProperty("User-Agent", userAgent);
+            c.setRequestProperty("Accept", "application/json");
+            for (String name : PAGE_HEADERS) {
+                String v = header(pageHeaders, name);
+                if (v != null && v.length() < 2000 && !v.contains("\n") && !v.contains("\r")) c.setRequestProperty(name, v);
+            }
+            if (data != null) {
+                c.setDoOutput(true);
+                c.setFixedLengthStreamingMode(data.length);
+                c.getOutputStream().write(data);
+            }
+            int code = c.getResponseCode();
+            if (code == 301 || code == 302 || code == 303 || code == 307 || code == 308) {
+                String location = c.getHeaderField("Location");
+                c.disconnect();
+                if (location == null) throw new IOException("Redirect without a location");
+                url = new URL(url, location);
+                if (code == 303 || ((code == 301 || code == 302) && !"GET".equals(m))) { m = "GET"; data = null; }
+                continue;
+            }
+            InputStream in = code >= 400 ? c.getErrorStream() : c.getInputStream();
+            if (in == null) return new Plain(code, "");
+            try {
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                byte[] buf = new byte[16384];
+                int n;
+                while ((n = in.read(buf)) != -1) {
+                    out.write(buf, 0, n);
+                    if (out.size() > MAX_ANSWER) throw new IOException("Answer too large");
+                }
+                return new Plain(code, new String(out.toByteArray(), StandardCharsets.UTF_8));
+            } finally {
+                in.close();
+            }
+        }
+        throw new IOException("Too many redirects");
+    }
+
     public static String readAll(InputStream in) throws IOException {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();

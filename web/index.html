@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-0TiMD4bT7I8nd8cf32u/sEXew7Z2cponhIL+NGVSzk8=' 'sha256-X/Lawiua1HPg46/6WFTYkASVngRdlEnru6vC9Sgh5H0=' https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.js; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src * data: blob:; media-src * data: blob:; connect-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-5l44AHbTwbysbxLgfD44ZJ4E+EE924YkmaZTp/0sAQo=' 'sha256-X/Lawiua1HPg46/6WFTYkASVngRdlEnru6vC9Sgh5H0=' https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.js; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src * data: blob:; media-src * data: blob:; connect-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#161922">
 <title>Nightdial</title>
@@ -454,6 +454,19 @@ html.tv .poster:focus .pm{color:var(--hl-ink);opacity:.7}
 .ep-list .item .lbl > span:first-child{white-space:normal}
 .ep-bar{display:block;height:3px;margin-top:5px;border-radius:99px;background:var(--cell);overflow:hidden}
 .ep-bar u{display:block;height:100%;background:var(--accent)}
+/* Emby playlists: the library is the whole app, so the TV-guide parts of the menus step aside */
+html.emby-mode .rail-btn[data-nav="guide"],html.emby-mode .rail-btn[data-nav="groups"],html.emby-mode .rail-btn[data-nav="favorites"],html.emby-mode .rail-btn[data-nav="search"],html.emby-mode .rail-btn[data-nav="channels"],
+html.emby-mode .tvnav-item[data-tv="guide"],html.emby-mode .tvnav-item[data-tv="search"],html.emby-mode .tvnav-item[data-tv="fav"],html.emby-mode .tvnav-item[data-tv="channels"],html.emby-mode #tvGroupsPane{display:none}
+.poster .art .seen{position:absolute;top:7px;right:7px;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--accent);color:#0b1020;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.poster .art .seen .i{width:14px;height:14px}
+.vod-card{position:relative;overflow:hidden}
+.vod-card .vbd{position:absolute;top:0;right:0;bottom:0;left:0;background:var(--bd) center/cover no-repeat;opacity:.2;pointer-events:none;-webkit-mask-image:linear-gradient(100deg,transparent 15%,#000 75%);mask-image:linear-gradient(100deg,transparent 15%,#000 75%)}
+.vod-card > .vp,.vod-card > .vi{position:relative}
+.vod-tag{margin:-4px 0 0;color:var(--fg-2);font-style:italic}
+.ep-desc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:3px;color:var(--fg-3);font-size:12.5px;white-space:normal}
+.ep-seen{display:inline-flex;vertical-align:-2px;margin-left:6px;color:var(--accent)}
+.ep-seen .i{width:14px;height:14px}
+html.tv .ep-desc{font-size:var(--t-xs)}
 .vosd{display:none;position:absolute;left:max(24px,env(safe-area-inset-left,0px));right:max(24px,env(safe-area-inset-right,0px));bottom:max(24px,env(safe-area-inset-bottom,0px));z-index:2;flex-direction:column;gap:10px;padding:22px 26px;border-radius:var(--r-xl);background:var(--glass);box-shadow:0 24px 70px rgba(0,0,0,.5);transition:opacity .25s,transform .25s}
 .app.vod-play .vosd{display:flex}
 .app.vod-play .osd,.app.vod-play .cu-flag{display:none!important}
@@ -878,7 +891,7 @@ html.native-video .screen video{display:none!important}
     <button class="rail-btn active" data-nav="guide"><svg class="i"><use href="#i-guide"/></svg><span class="rl">Guide</span></button>
     <button class="rail-btn" data-nav="groups"><svg class="i"><use href="#i-groups"/></svg><span class="rl">Groups</span></button>
     <button class="rail-btn" data-nav="favorites"><svg class="i"><use href="#i-star"/></svg><span class="rl">Favorites</span></button>
-    <button class="rail-btn" data-nav="vod" hidden><svg class="i"><use href="#i-film"/></svg><span class="rl">Movies &amp; Series</span></button>
+    <button class="rail-btn" data-nav="vod" hidden><svg class="i"><use href="#i-film"/></svg><span class="rl" id="railVodLbl">Movies &amp; Series</span></button>
     <button class="rail-btn" data-nav="search"><svg class="i"><use href="#i-search"/></svg><span class="rl">Search</span></button>
     <button class="rail-btn" data-nav="channels"><svg class="i"><use href="#i-edit"/></svg><span class="rl">Edit channels</span></button>
     <button class="rail-btn" data-nav="themes"><svg class="i"><use href="#i-palette"/></svg><span class="rl">Themes</span></button>
@@ -964,7 +977,7 @@ html.native-video .screen video{display:none!important}
 
     <section class="vod" id="vod" hidden aria-label="Movies and series">
       <div class="vod-head">
-        <div class="seg" role="radiogroup" aria-label="Show"><input type="radio" name="vodtab" id="vodtab-movies" value="movies" checked><label for="vodtab-movies">Movies</label><input type="radio" name="vodtab" id="vodtab-series" value="series"><label for="vodtab-series">Series</label></div>
+        <div class="seg" role="radiogroup" aria-label="Show"><input type="radio" name="vodtab" id="vodtab-movies" value="movies" checked><label for="vodtab-movies">Movies</label><input type="radio" name="vodtab" id="vodtab-series" value="series"><label for="vodtab-series" id="vodtabSeriesLbl">Series</label></div>
         <h2 id="vodTitle">Movies</h2><span class="vod-count" id="vodCount"></span>
         <input class="text-in vod-search" id="vodSearch" type="search" placeholder="Search" autocomplete="off" spellcheck="false">
       </div>
@@ -984,7 +997,7 @@ html.native-video .screen video{display:none!important}
   <div class="tvnav-menu" id="tvNavMenu">
     <div class="tvnav-brand"><span class="brand-mark" aria-hidden="true"><svg class="logo-svg" viewBox="0 0 1024 1024"><use href="#logo"/></svg><svg class="brand-deco"></svg></span>Nightdial</div>
     <button class="tvnav-item" data-tv="guide"><svg class="i"><use href="#i-guide"/></svg>TV guide</button>
-    <button class="tvnav-item" data-tv="vod" hidden><svg class="i"><use href="#i-film"/></svg>Movies &amp; Series</button>
+    <button class="tvnav-item" data-tv="vod" hidden><svg class="i"><use href="#i-film"/></svg><span id="tvVodLbl">Movies &amp; Series</span></button>
     <button class="tvnav-item" data-tv="search"><svg class="i"><use href="#i-search"/></svg>Search</button>
     <button class="tvnav-item" data-tv="fav"><svg class="i"><use href="#i-star"/></svg>Favorites</button>
     <button class="tvnav-item" data-tv="channels"><svg class="i"><use href="#i-edit"/></svg>Edit channels</button>
@@ -993,7 +1006,7 @@ html.native-video .screen video{display:none!important}
     <button class="tvnav-item" data-tv="settings"><svg class="i"><use href="#i-settings"/></svg>Settings</button>
     <button class="tvnav-item tvnav-exit" data-tv="exit"><svg class="i"><use href="#i-close"/></svg>Exit Nightdial</button>
   </div>
-  <div class="tvnav-groups"><h2>Groups</h2><div class="list" id="tvGroups"></div></div>
+  <div class="tvnav-groups" id="tvGroupsPane"><h2>Groups</h2><div class="list" id="tvGroups"></div></div>
 </aside>
 
 <aside class="drawer left" id="groupsDrawer" hidden aria-label="Channel groups">
@@ -1051,14 +1064,14 @@ html.native-video .screen video{display:none!important}
       </div>
     </div>
     <div class="login-fields">
-      <div class="seg login-kind" role="radiogroup" aria-label="Playlist type"><input type="radio" name="lkind" id="lkind-xtream" value="xtream" checked><label for="lkind-xtream">Xtream Codes</label><input type="radio" name="lkind" id="lkind-m3u" value="m3u"><label for="lkind-m3u">M3U URL</label></div>
+      <div class="seg login-kind" role="radiogroup" aria-label="Playlist type"><input type="radio" name="lkind" id="lkind-xtream" value="xtream" checked><label for="lkind-xtream">Xtream Codes</label><input type="radio" name="lkind" id="lkind-m3u" value="m3u"><label for="lkind-m3u">M3U URL</label><input type="radio" name="lkind" id="lkind-emby" value="emby"><label for="lkind-emby">Emby</label></div>
       <div class="field"><label for="fName">Playlist name</label><input id="fName" placeholder="My provider" autocomplete="off"></div>
       <div class="login-group" id="m3uFields" hidden>
         <div class="field"><label for="fM3u">M3U playlist URL</label><input id="fM3u" inputmode="url" placeholder="http://example.com/playlist.m3u" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
         <div class="field"><label for="fEpg">TV guide (XMLTV) URL <span class="opt">optional</span></label><input id="fEpg" inputmode="url" placeholder="Used automatically if the playlist has one" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
       </div>
       <div class="login-group" id="xtFields">
-      <div class="field"><label for="fServer">Server URL</label><input id="fServer" inputmode="url" placeholder="http://line.example.com:8080" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+      <div class="field"><label for="fServer" id="fServerLbl">Server URL</label><input id="fServer" inputmode="url" placeholder="http://line.example.com:8080" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
       <div class="field-row">
         <div class="field"><label for="fUser">Username</label><input id="fUser" autocomplete="username" autocapitalize="off" spellcheck="false"></div>
         <div class="field"><label for="fPass">Password</label><div class="pw"><input id="fPass" type="password" autocomplete="current-password"><button type="button" id="pwToggle" aria-label="Show password"><svg class="i"><use href="#i-eye"/></svg></button></div></div>
@@ -1552,6 +1565,12 @@ function applyAdult() { adultGr = new Set(PO.hideAdult ? S.groups.filter(g => AD
 function applyUserAgent() { try { if (window.NightdialNative && window.NightdialNative.setUserAgent) window.NightdialNative.setUserAgent(PO.ua || ''); } catch (e) {} }
 function setProvider(p, channels, groups) {
   teardownStream();
+  const emby = p.type === 'emby';
+  document.documentElement.classList.toggle('emby-mode', emby);
+  el('railVodLbl').textContent = el('tvVodLbl').textContent = emby ? 'Library' : 'Movies & Series';
+  el('vodtabSeriesLbl').textContent = emby ? 'TV shows' : 'Series';
+  // leaving an Emby library (or switching libraries): back to the guide underneath
+  if (S.view === 'vod') { S.view = 'guide'; app.classList.remove('vod-on'); el('vod').hidden = true; vodPausedLive = null; railActive(); }
   S.provider = p; S.channels = channels; S.groups = groups;
   applyGroupOrder();
   PO = p.type === 'xtream' || p.type === 'm3u' ? plOptsFor(p.id) : Object.assign({}, PL_DEFAULTS);
@@ -1583,7 +1602,7 @@ function startUp() {
   layoutGuide();
   jumpToNow(true);
   if ((S.provider.type === 'xtream' && PO.epgSource === 'xmltv') || (S.provider.type === 'm3u' && S.provider.epgUrl)) loadXmltv();
-  probeVod();
+  S.vodProbe = probeVod();
 }
 
 /* Favorites keep your own order; hidden channels and groups stay out of the guide; other lists follow the sort setting. */
@@ -2991,6 +3010,181 @@ async function loadXmltv() {
   invalidateRows(); renderGuide(); updateHero();
 }
 
+/* ================= requests with a body or a header (Emby) =================
+   The Fire TV app makes these itself (its WebView can't send a POST body through /proxy); the computer version's
+   server relays them; the website asks the server directly. */
+const NATIVE_HTTP = (() => { try { return !!(window.NightdialNative && window.NightdialNative.request); } catch (e) { return false; } })();
+const httpWait = new Map(); let httpSeq = 0;
+window.nightdialHttp = function (id, status, text) {
+  const w = httpWait.get(String(id)); if (!w) return;
+  httpWait.delete(String(id)); clearTimeout(w.to);
+  w.res({ status: Number(status) || 0, text: text == null ? '' : String(text) });
+};
+function httpRequest(method, url, headers = {}, body = null, timeout = 30000) {
+  if (NATIVE_HTTP) {
+    return new Promise((res, rej) => {
+      const id = 'r' + (++httpSeq);
+      const to = setTimeout(() => { httpWait.delete(id); rej(Object.assign(new Error('timeout'), { code: 'timeout' })); }, timeout);
+      httpWait.set(id, { res, to });
+      try { window.NightdialNative.request(id, method, url, JSON.stringify(headers), body == null ? '' : body); }
+      catch (e) { clearTimeout(to); httpWait.delete(id); rej(e); }
+    }).then(r => { if (!r.status) throw new Error(r.text || 'network'); return r; });
+  }
+  const ctl = window.AbortController ? new AbortController() : null;
+  const to = setTimeout(() => ctl && ctl.abort(), timeout);
+  const target = PROXY_ON ? '/proxy?u=' + encodeURIComponent(url) : url;
+  const h = Object.assign({}, headers, PROXY_ON ? { 'x-nightdial': '1' } : {});
+  return fetch(target, { method, headers: h, body: body == null ? undefined : body, signal: ctl ? ctl.signal : undefined, credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer' })
+    .then(async r => ({ status: r.status, text: await r.text() }))
+    .catch(e => { if (e && e.name === 'AbortError') throw Object.assign(new Error('timeout'), { code: 'timeout' }); throw e; })
+    .finally(() => clearTimeout(to));
+}
+
+/* ================= Emby (and Jellyfin): your own movies and shows ================= */
+const embyOn = () => !!(S.provider && S.provider.type === 'emby');
+function deviceId() {
+  let d = store.get('device', '');
+  if (!d) {
+    const b = new Uint8Array(12);
+    try { crypto.getRandomValues(b); } catch (e) { for (let i = 0; i < b.length; i++) b[i] = Math.floor(Math.random() * 256); }
+    d = 'nd' + Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
+    store.set('device', d);
+  }
+  return d;
+}
+const embyDevice = () => TV_MODE ? 'Fire TV' : SITE ? 'Web browser' : 'Computer';
+function embyAuth(pr) {
+  return `MediaBrowser Client="Nightdial", Device="${embyDevice()}", DeviceId="${deviceId()}", Version="1.0"` + (pr && pr.token ? `, Token="${String(pr.token).replace(/[^A-Za-z0-9_-]/g, '')}"` : '');
+}
+async function embyApi(pr, method, path, body = null, timeout = 30000) {
+  if (blockedHere(pr.server)) throw uerr('This Emby server uses plain http, which browsers block on a secure page. Use the Fire TV or iPhone app, or the computer version.');
+  const headers = { 'X-Emby-Authorization': embyAuth(pr), Accept: 'application/json' };
+  if (body != null) headers['Content-Type'] = 'application/json';
+  const r = await httpRequest(method, pr.server + path, headers, body != null ? JSON.stringify(body) : null, timeout);
+  if (r.status === 401) throw Object.assign(uerr('Emby asked you to sign in again.'), { code: 'auth', status: 401 });
+  if (r.status >= 400) throw Object.assign(new Error('HTTP ' + r.status), { status: r.status });
+  if (!r.text) return null;
+  try { return JSON.parse(r.text); } catch (e) { return null; }
+}
+/* What people type: "192.168.1.20:8096", "emby.example.com", or the address of Emby's web page. */
+function embyServers(raw) {
+  let s = String(raw || '').trim().replace(/[#?].*$/, '').replace(/\/web(\/.*)?$/i, '').replace(/\/+$/, '');
+  if (!s) return [];
+  if (!/^https?:\/\//i.test(s)) s = 'http://' + s;
+  let u; try { u = new URL(s); } catch (e) { return [s]; }
+  const base = (u.origin + u.pathname).replace(/\/+$/, ''), out = [base];
+  if (!u.port) { const alt = new URL(base); alt.port = u.protocol === 'https:' ? '8920' : '8096'; out.push(alt.href.replace(/\/+$/, '')); }
+  return out;
+}
+async function embyConnect(v, step) {
+  const servers = embyServers(v.server);
+  if (!servers.length) throw uerr('Enter your Emby server address, like http://192.168.1.20:8096');
+  if (!String(v.user || '').trim()) throw uerr('Enter your Emby username.');
+  step('Finding your server…');
+  let server = '', info = null, lastErr = null;
+  for (const c of servers) {
+    try { info = await embyApi({ server: c }, 'GET', '/System/Info/Public', null, 12000); if (info && (info.Id || info.ServerName)) { server = c; break; } }
+    catch (e) { lastErr = e; }
+  }
+  if (!server) throw lastErr && lastErr.user ? lastErr : uerr(`No Emby server answered at ${hostOf(servers[0])}. Check the address and port (Emby uses 8096, or 8920 for https).`);
+  step('Signing in…');
+  let auth = null;
+  try { auth = await embyApi({ server }, 'POST', '/Users/AuthenticateByName', { Username: String(v.user).trim(), Pw: v.pass || '' }); }
+  catch (e) { if (e.status === 401 || e.code === 'auth') throw uerr("Emby didn't accept that username and password."); throw uerr(`Emby couldn't sign you in (${e.message}).`); }
+  if (!auth || !auth.AccessToken || !auth.User) throw uerr("Emby didn't accept that username and password.");
+  return { playlist: embyPlaylist(server, String(v.user).trim(), auth.User.Id, auth.AccessToken, info, v.name), channels: [], groups: [] };
+}
+function embyPlaylist(server, user, userId, token, info, name) {
+  const jelly = /jellyfin/i.test((info && info.ProductName) || '');
+  return { id: 'e' + hash(server + '|' + userId).toString(36), type: 'emby', name: name || (info && info.ServerName) || (jelly ? 'Jellyfin' : 'Emby'), server, user, userId, token,
+    info: { status: (jelly ? 'Jellyfin ' : 'Emby ') + ((info && info.Version) || ''), product: jelly ? 'Jellyfin' : 'Emby', serverName: (info && info.ServerName) || '' } };
+}
+/* A saved Emby playlist signs in with its saved access token (the password isn't kept). */
+async function embyResume(saved, step) {
+  if (!saved.token) throw uerr('Sign in to Emby again.');
+  step('Connecting…');
+  const pr = { server: saved.server, token: saved.token };
+  let info = null;
+  try { info = await embyApi(pr, 'GET', '/System/Info/Public', null, 15000); } catch (e) { throw e.user ? e : uerr(`Couldn't reach your Emby server at ${hostOf(saved.server)}. Is it on?`); }
+  try { await embyApi(pr, 'GET', '/Users/' + enc(saved.userId), null, 15000); }
+  catch (e) { if (e.code === 'auth' || e.status === 401) throw uerr('Emby signed you out. Enter your password to sign in again.'); throw e.user ? e : uerr(`Couldn't reach your Emby server at ${hostOf(saved.server)}.`); }
+  return { playlist: embyPlaylist(saved.server, saved.user, saved.userId, saved.token, info, saved.name), channels: [], groups: [] };
+}
+const EMBY_FIELDS = 'Genres,ProductionYear,CommunityRating,OfficialRating,DateCreated,RunTimeTicks';
+const embyImg = (id, tag, kind = 'Primary', size = 'maxHeight=450') => id ? `${S.provider.server}/Items/${enc(id)}/Images/${kind}?${size}&quality=90${tag ? '&tag=' + enc(tag) : ''}` : '';
+const embyEpLabel = it => `S${it.ParentIndexNumber != null ? it.ParentIndexNumber : 0} E${it.IndexNumber != null ? it.IndexNumber : ''}${it.Name ? ' · ' + it.Name : ''}`;
+function embyItem(it, lib) {
+  const ud = it.UserData || {}, ep = it.Type === 'Episode', dur = (it.RunTimeTicks || 0) / 1e7, pos = (ud.PlaybackPositionTicks || 0) / 1e7;
+  return {
+    kind: it.Type === 'Series' ? 'series' : ep ? 'episode' : 'movie', id: String(it.Id), emby: true,
+    name: ep ? (it.SeriesName || it.Name || '') : (it.Name || ''),
+    poster: ep ? embyImg(it.SeriesId || it.Id, it.SeriesId ? it.SeriesPrimaryImageTag : it.ImageTags && it.ImageTags.Primary) : (it.ImageTags && it.ImageTags.Primary ? embyImg(it.Id, it.ImageTags.Primary) : ''),
+    cat: lib || '', cats: [lib].concat((it.Genres || []).map(g => 'g:' + g)).filter(Boolean),
+    rating: Number(it.CommunityRating) || 0, year: it.ProductionYear ? String(it.ProductionYear) : '', added: Date.parse(it.DateCreated) || 0,
+    played: !!ud.Played, pos, dur, pct: ud.PlayedPercentage ? ud.PlayedPercentage / 100 : dur && pos ? pos / dur : 0,
+    sub: ep ? embyEpLabel(it) : '', series: ep ? String(it.SeriesId || '') : '', season: ep ? String(it.ParentIndexNumber != null ? it.ParentIndexNumber : 0) : ''
+  };
+}
+const embyItems = r => (r && Array.isArray(r.Items) ? r.Items : Array.isArray(r) ? r : []);
+/* Continue watching and Next up, straight from Emby, so they match your other Emby apps. */
+async function embyLoadHome(pr) {
+  const u = enc(pr.userId), q = `Fields=${EMBY_FIELDS}&EnableImageTypes=Primary&ImageTypeLimit=1`;
+  const [rm, re, nu] = await Promise.all([
+    embyApi(pr, 'GET', `/Users/${u}/Items/Resume?Limit=40&Recursive=true&IncludeItemTypes=Movie&${q}`).catch(() => null),
+    embyApi(pr, 'GET', `/Users/${u}/Items/Resume?Limit=40&Recursive=true&IncludeItemTypes=Episode&${q}`).catch(() => null),
+    embyApi(pr, 'GET', `/Shows/NextUp?UserId=${u}&Limit=40&${q}`).catch(() => null)]);
+  if (S.provider !== pr || !V.emby) return;
+  V.emby.resume = { movies: embyItems(rm).map(it => embyItem(it)), series: embyItems(re).map(it => embyItem(it)) };
+  V.emby.nextup = embyItems(nu).map(it => embyItem(it));
+}
+function findEmby(kind, id) {
+  const pools = [V.data.movies, V.data.series, V.emby && V.emby.resume.movies, V.emby && V.emby.resume.series, V.emby && V.emby.nextup];
+  for (const pool of pools) { const x = (pool || []).find(v => v.kind === kind && v.id === id); if (x) return x; }
+  return null;
+}
+async function embyStream(pr, item) {
+  const ps = 'nd' + Date.now().toString(36) + Math.floor(Math.random() * 1e9).toString(36);
+  const q = `api_key=${enc(pr.token)}&DeviceId=${enc(deviceId())}&PlaySessionId=${ps}`;
+  // Fire TV's player opens almost anything (MKV, HEVC, Dolby…): the original file, untouched
+  if (NATIVE) return { url: `${pr.server}/Videos/${enc(item.id)}/stream?static=true&${q}`, ps, msid: item.id, method: 'DirectStream' };
+  // a browser plays MP4/WebM with H.264 or VP9 and AAC as they are; anything else Emby converts to HLS on the fly
+  let ms = null;
+  try { const d = await embyApi(pr, 'GET', `/Users/${enc(pr.userId)}/Items/${enc(item.id)}?Fields=MediaSources`); ms = d && d.MediaSources && d.MediaSources[0]; } catch (e) {}
+  const streams = (ms && ms.MediaStreams) || [], vs = streams.find(x => x.Type === 'Video'), as = streams.find(x => x.Type === 'Audio' && x.IsDefault) || streams.find(x => x.Type === 'Audio');
+  const container = String((ms && ms.Container) || '').toLowerCase().split(',')[0], msid = (ms && ms.Id) || item.id;
+  const okV = !vs || /^(h264|avc|vp8|vp9|av1)$/i.test(vs.Codec || ''), okA = !as || /^(aac|mp3|opus|vorbis|flac)$/i.test(as.Codec || '');
+  if (ms && /^(mp4|m4v|mov|webm)$/.test(container) && okV && okA) return { url: `${pr.server}/Videos/${enc(item.id)}/stream.${container}?static=true&MediaSourceId=${enc(msid)}&${q}`, ps, msid, method: 'DirectStream' };
+  return { url: `${pr.server}/Videos/${enc(item.id)}/master.m3u8?MediaSourceId=${enc(msid)}&VideoCodec=h264&AudioCodec=aac,mp3&MaxAudioChannels=2&TranscodingMaxAudioChannels=2&VideoBitRate=40000000&AudioBitRate=320000&SegmentContainer=ts&BreakOnNonKeyFrames=True&EnableAutoStreamCopy=true&${q}`, ps, msid, method: 'Transcode' };
+}
+/* Tells Emby what's playing and where you are, so Continue watching and watched marks follow you to your other Emby apps. */
+function embyReport(what, st) {
+  const v = S.vodPlaying, pr = S.provider;
+  if (!v || !v.ps || !embyOn()) return Promise.resolve();
+  const body = { ItemId: v.id, MediaSourceId: v.msid || v.id, PlaySessionId: v.ps, PositionTicks: Math.max(0, Math.round(((st && st.pos) || 0) * 1e7)), IsPaused: !!(st && st.paused), CanSeek: true, PlayMethod: v.method || 'DirectStream' };
+  return embyApi(pr, 'POST', what === 'start' ? '/Sessions/Playing' : what === 'stop' ? '/Sessions/Playing/Stopped' : '/Sessions/Playing/Progress', body).catch(() => {});
+}
+function embyNoteProgress(v, pos, dur, finished) {
+  const done = finished || (dur && pos / dur > 0.9);
+  const apply = x => { if (!x || x.id !== v.id) return; if (done) { x.played = true; x.pos = 0; x.pct = 0; } else { x.pos = pos; x.pct = dur ? pos / dur : 0; } };
+  [V.data.movies, V.data.series, V.emby && V.emby.resume.movies, V.emby && V.emby.resume.series, V.emby && V.emby.nextup].forEach(pool => (pool || []).forEach(apply));
+}
+/* After playback: fetch Continue watching / Next up again, then redraw without moving you. */
+function embyAfterPlay(pr) {
+  embyLoadHome(pr).then(() => {
+    if (S.provider !== pr || S.view !== 'vod' || layers.length || S.vodPlaying) return;
+    const a = document.activeElement, key = a && a.dataset && a.dataset.vk ? a.dataset.vk + ':' + a.dataset.vid : '', cat = a && a.dataset ? a.dataset.vc : undefined;
+    renderVod();
+    const f = key ? [...el('vodGrid').querySelectorAll('.poster')].find(b => b.dataset.vk + ':' + b.dataset.vid === key) : cat != null ? [...el('vodCats').querySelectorAll('[data-vc]')].find(b => b.dataset.vc === cat) : null;
+    if (f) f.focus({ preventScroll: true }); else if (a && a !== document.body && !document.contains(a)) focusVodCat();
+  });
+}
+async function embySetPlayed(id, played) {
+  const pr = S.provider;
+  await embyApi(pr, played ? 'POST' : 'DELETE', `/Users/${enc(pr.userId)}/PlayedItems/${enc(id)}`);
+  [V.data.movies, V.data.series, V.emby && V.emby.resume.movies, V.emby && V.emby.resume.series, V.emby && V.emby.nextup].forEach(pool => (pool || []).forEach(x => { if (x.id === id) { x.played = played; x.pos = 0; x.pct = 0; } }));
+  embyLoadHome(pr);
+}
+
 /* ================= playlists + sign-in ================= */
 /* Passwords and playlist links are kept apart from the playlist list: in the Fire TV app they're encrypted
    with a key held by Android's keystore; in a browser they stay in this browser's storage. */
@@ -3007,6 +3201,10 @@ function savePlaylist(p) {
   if (p.type === 'm3u') {
     list.unshift({ id: p.id, type: 'm3u', name: p.name, host: hostOf(p.url) });
     secrets.set(p.id, { url: p.url, epgUrl: p.epgUrl || '' });
+  } else if (p.type === 'emby') {
+    // Emby gives an access token at sign-in; only the token is kept (encrypted), never the password
+    list.unshift({ id: p.id, type: 'emby', name: p.name, server: p.server, user: p.user, userId: p.userId, host: hostOf(p.server) });
+    secrets.set(p.id, { token: p.token });
   } else {
     list.unshift({ id: p.id, type: 'xtream', name: p.name, server: p.server, user: p.user, host: hostOf(p.server) });
     secrets.set(p.id, { pass: p.pass });
@@ -3026,6 +3224,9 @@ function migrateSecrets() {
   if (changed) store.set('playlists', list);
 }
 function removePlaylist(id) {
+  const old = savedPlaylists().find(q => q.id === id);
+  // Emby: sign this device out on the server too
+  if (old && old.type === 'emby') { const full = withSecrets(old); if (full.token) embyApi(full, 'POST', '/Sessions/Logout').catch(() => {}); }
   store.set('playlists', savedPlaylists().filter(q => q.id !== id));
   ['fav:', 'recent:', 'group:', 'lastch:', 'hide:', 'hideg:', 'resume:', 'plopts:', 'chedits:', 'gorder:'].forEach(k => store.del(k + id));
   secrets.del(id);
@@ -3033,12 +3234,18 @@ function removePlaylist(id) {
 }
 async function connectPlaylist(saved, { fromLogin = false, remember = true, step = () => {} } = {}) {
   const full = saved.pass != null || saved.url != null ? saved : withSecrets(saved);
-  const res = full.type === 'm3u' ? await m3uConnect(full, step) : await xtreamConnect(full, step);
+  const res = full.type === 'emby' ? await (full.pass != null ? embyConnect(full, step) : embyResume(full, step)) : full.type === 'm3u' ? await m3uConnect(full, step) : await xtreamConnect(full, step);
   setProvider(res.playlist, res.channels, res.groups);
   S.backdrop = false;
   if (remember) { savePlaylist(res.playlist); store.set('last', res.playlist.id); }
   startUp();
   if (fromLogin || !loginEl.hidden) closeLogin();
+  if (res.playlist.type === 'emby') {
+    toast(`Signed in to ${res.playlist.name}`);
+    const pr = S.provider;
+    S.vodProbe.then(() => { if (S.provider === pr) openVod(); });
+    return res;
+  }
   toast(`Signed in to ${res.playlist.name} · ${res.channels.length.toLocaleString()} channels`);
   return res;
 }
@@ -3049,7 +3256,7 @@ function openLogin({ cancelable = false, values = null, error = '' } = {}) {
   el('loginErr').hidden = !error; el('loginErr').textContent = error;
   el('loginInfo').hidden = true;
   if (values) {
-    setLoginKind(values.type === 'm3u' ? 'm3u' : 'xtream');
+    setLoginKind(values.type === 'm3u' || values.type === 'emby' ? values.type : 'xtream');
     el('fName').value = values.name || ''; el('fServer').value = values.server || ''; el('fUser').value = values.user || ''; el('fPass').value = values.pass || '';
     el('fM3u').value = values.url || ''; el('fEpg').value = values.epgUrl || '';
   }
@@ -3057,19 +3264,23 @@ function openLogin({ cancelable = false, values = null, error = '' } = {}) {
   closeAllLayers();
   exitFull();
   loginEl.hidden = false;
-  setTimeout(() => (values && (values.pass || values.url) ? el('signInBtn') : el(loginKind === 'm3u' ? 'fM3u' : 'fServer')).focus({ preventScroll: true }), 30);
+  setTimeout(() => (values && (values.pass || values.url) ? el('signInBtn') : el(loginKind === 'm3u' ? 'fM3u' : loginKind === 'emby' && values && values.server && values.user ? 'fPass' : 'fServer')).focus({ preventScroll: true }), 30);
 }
 function closeLogin() { loginEl.hidden = true; guideScroll.focus({ preventScroll: true }); }
 let loginKind = 'xtream';
 function setLoginKind(kind) {
-  loginKind = kind === 'm3u' ? 'm3u' : 'xtream';
+  loginKind = kind === 'm3u' || kind === 'emby' ? kind : 'xtream';
   const r = el('lkind-' + loginKind); if (r) r.checked = true;
   el('m3uFields').hidden = loginKind !== 'm3u';
   el('xtFields').hidden = loginKind === 'm3u';
-  el('loginKind').textContent = loginKind === 'm3u' ? 'M3U playlist' : 'Xtream Codes';
+  el('loginKind').textContent = loginKind === 'm3u' ? 'M3U playlist' : loginKind === 'emby' ? 'Emby' : 'Xtream Codes';
   el('loginSub').textContent = loginKind === 'm3u'
     ? 'Enter the M3U playlist link from your IPTV provider. Add a TV guide (XMLTV) link if you have one.'
+    : loginKind === 'emby' ? 'Your own movies and shows from your Emby server (Jellyfin works too). Enter its address and your Emby username and password.'
     : 'Enter the server address, username and password from your IPTV provider.';
+  el('fServerLbl').textContent = loginKind === 'emby' ? 'Emby server address' : 'Server URL';
+  el('fServer').placeholder = loginKind === 'emby' ? 'http://192.168.1.20:8096' : 'http://line.example.com:8080';
+  el('fName').placeholder = loginKind === 'emby' ? 'Uses your server\'s name' : 'My provider';
 }
 el('loginForm').addEventListener('change', e => { if (e.target.name === 'lkind') setLoginKind(e.target.value); });
 el('loginForm').addEventListener('submit', async e => {
@@ -3078,7 +3289,7 @@ el('loginForm').addEventListener('submit', async e => {
   err.hidden = true;
   const v = loginKind === 'm3u'
     ? { type: 'm3u', name: el('fName').value.trim(), url: el('fM3u').value.trim(), epgUrl: el('fEpg').value.trim() }
-    : { type: 'xtream', name: el('fName').value.trim(), server: el('fServer').value.trim(), user: el('fUser').value.trim(), pass: el('fPass').value };
+    : { type: loginKind === 'emby' ? 'emby' : 'xtream', name: el('fName').value.trim(), server: el('fServer').value.trim(), user: el('fUser').value.trim(), pass: el('fPass').value };
   btn.disabled = true;
   const step = s => { btn.textContent = s; };
   try { await connectPlaylist(v, { fromLogin: true, remember: el('fRemember').checked, step }); }
@@ -3195,7 +3406,7 @@ function tvNavKey(k, e) {
   else if (k === 'left' && !inMenu) { e.preventDefault(); (el('tvNavMenu').querySelector('.tvnav-item.on') || el('tvNavMenu').querySelector('.tvnav-item')).focus(); }
   else if (k === 'right') {
     e.preventDefault();
-    if (inMenu) (el('tvGroups').querySelector('.item.sel') || el('tvGroups').querySelector('.item')).focus();
+    if (inMenu && !embyOn()) (el('tvGroups').querySelector('.item.sel') || el('tvGroups').querySelector('.item')).focus();
     else closeLayer();
   }
 }
@@ -3714,8 +3925,23 @@ function saveResume(key, entry) {
   store.set('resume:' + S.provider.id, all);
 }
 async function probeVod() {
-  V.available = false; V.data = { movies: null, series: null }; V.cats = { movies: [], series: [] }; V.cat = { movies: '', series: '' }; V.q = '';
+  V.available = false; V.data = { movies: null, series: null }; V.cats = { movies: [], series: [] }; V.cat = { movies: '', series: '' }; V.q = ''; V.emby = null; V.loading = {};
   updateVodNav();
+  if (embyOn()) {
+    const pr = S.provider;
+    V.emby = { libs: [], genres: { movies: [], series: [] }, resume: { movies: [], series: [] }, nextup: [] };
+    let views = null;
+    try { views = await embyApi(pr, 'GET', `/Users/${enc(pr.userId)}/Views`); } catch (e) {}
+    if (S.provider !== pr) return;
+    const libs = embyItems(views).map(v => ({ id: String(v.Id), name: v.Name || 'Library', type: String(v.CollectionType || 'mixed').toLowerCase() }));
+    V.emby.libs = libs;
+    V.cats = { movies: libs.filter(l => l.type === 'movies' || l.type === 'mixed').map(l => ({ category_id: l.id, category_name: l.name })),
+               series: libs.filter(l => l.type === 'tvshows' || l.type === 'mixed').map(l => ({ category_id: l.id, category_name: l.name })) };
+    V.tab = !V.cats.movies.length && V.cats.series.length ? 'series' : 'movies';
+    V.available = true; updateVodNav();
+    await embyLoadHome(pr);
+    return;
+  }
   if (demoVod()) {
     V.cats = { movies: [{ category_id: '1', category_name: 'Drama' }, { category_id: '2', category_name: 'Thriller' }, { category_id: '3', category_name: 'Family' }], series: [{ category_id: '10', category_name: 'Drama series' }, { category_id: '11', category_name: 'Comedy & reality' }, { category_id: '12', category_name: 'Documentary & kids' }] };
     V.available = true; updateVodNav(); return;
@@ -3733,6 +3959,29 @@ function updateVodNav() { document.querySelectorAll('[data-nav="vod"],[data-tv="
 const yearOf = it => { const m = /(19|20)\d\d/.exec(String(it.year || it.releaseDate || it.releasedate || it.release_date || '') || '') || /\((19|20)\d\d\)/.exec(String(it.name || '')); return m ? m[0].replace(/[()]/g, '') : ''; };
 async function loadVodList(kind) {
   if (V.data[kind] || V.loading[kind]) return;
+  if (embyOn()) {
+    const pr = S.provider, type = kind === 'movies' ? 'Movie' : 'Series', libs = V.cats[kind] || [];
+    V.loading[kind] = true;
+    if (S.view === 'vod') renderVodGrid();
+    try {
+      const parts = await Promise.all((libs.length ? libs : [{ category_id: '' }]).map(l => embyApi(pr, 'GET',
+        `/Users/${enc(pr.userId)}/Items?${l.category_id ? 'ParentId=' + enc(l.category_id) + '&' : ''}IncludeItemTypes=${type}&Recursive=true&Fields=${EMBY_FIELDS}&SortBy=SortName&SortOrder=Ascending&EnableImageTypes=Primary&ImageTypeLimit=1`, null, 120000)
+        .then(r => ({ lib: l.category_id, items: embyItems(r) }))));
+      if (S.provider !== pr) return;
+      const seen = new Map();
+      for (const part of parts) for (const it of part.items) {
+        const had = seen.get(String(it.Id));
+        if (had) { if (part.lib && !had.cats.includes(part.lib)) had.cats.push(part.lib); }
+        else seen.set(String(it.Id), embyItem(it, part.lib));
+      }
+      V.data[kind] = [...seen.values()];
+      const genres = new Set(); V.data[kind].forEach(x => x.cats.forEach(c => { if (c.startsWith('g:')) genres.add(c); }));
+      V.emby.genres[kind] = [...genres].sort((a, b) => a.localeCompare(b)).map(g => ({ category_id: g, category_name: g.slice(2) }));
+    } catch (e) { if (S.provider === pr) V.data[kind] = []; }
+    finally { if (S.provider === pr) V.loading[kind] = false; }
+    if (S.provider === pr && S.view === 'vod' && V.tab === kind) renderVod();
+    return;
+  }
   if (demoVod()) { V.data[kind] = demoVodData(kind); if (S.view === 'vod' && V.tab === kind) renderVod(); return; }
   if (!S.provider || S.provider.type !== 'xtream') return;
   V.loading[kind] = true;
@@ -3765,7 +4014,7 @@ function openVod(tab) {
   setTimeout(focusVodCat, 30);
 }
 function closeVod() {
-  if (S.view !== 'vod') return;
+  if (S.view !== 'vod' || embyOn()) return;   // an Emby playlist has no guide to go back to
   S.view = 'guide';
   app.classList.remove('vod-on'); el('vod').hidden = true;
   railActive();
@@ -3783,7 +4032,10 @@ function continueItems(kind) {
 }
 function vodList() {
   const kind = V.tab, all = V.data[kind] || [], c = V.cat[kind], q = V.q.trim().toLowerCase();
-  let list = c === 'continue' ? continueItems(kind) : c ? all.filter(x => x.cat === c) : all;
+  let list;
+  if (embyOn() && V.emby) {
+    list = c === 'continue' ? V.emby.resume[kind] || [] : c === 'nextup' ? V.emby.nextup || [] : c === 'latest' ? all.slice().sort((a, b) => b.added - a.added).slice(0, 60) : c ? all.filter(x => x.cats.includes(c)) : all;
+  } else list = c === 'continue' ? continueItems(kind) : c ? all.filter(x => x.cat === c) : all;
   if (q) list = list.filter(x => x.name.toLowerCase().includes(q));
   return list;
 }
@@ -3793,8 +4045,23 @@ function vodCatItem(id, name, n) {
 function renderVod() {
   const kind = V.tab, data = V.data[kind], cats = V.cats[kind] || [];
   const r = el('vodtab-' + kind); if (r) r.checked = true;
-  el('vodTitle').textContent = kind === 'movies' ? 'Movies' : 'Series';
-  el('vodSearch').placeholder = kind === 'movies' ? 'Search movies' : 'Search series';
+  const shows = embyOn() ? 'TV shows' : 'Series';
+  el('vodTitle').textContent = kind === 'movies' ? 'Movies' : shows;
+  el('vodSearch').placeholder = kind === 'movies' ? 'Search movies' : 'Search ' + shows.toLowerCase();
+  if (embyOn() && V.emby) {
+    const libs = cats, genres = V.emby.genres[kind] || [], cont = V.emby.resume[kind] || [], next = kind === 'series' ? V.emby.nextup || [] : [];
+    const counts = new Map(); (data || []).forEach(x => x.cats.forEach(c => counts.set(c, (counts.get(c) || 0) + 1)));
+    const n = id => data ? (counts.get(id) || 0).toLocaleString() : '';
+    el('vodCats').innerHTML = (cont.length ? vodCatItem('continue', 'Continue watching', cont.length) : '') +
+      (next.length ? vodCatItem('nextup', 'Next up', next.length) : '') +
+      (data && data.length ? vodCatItem('latest', 'Recently added', Math.min(60, data.length)) : '') +
+      vodCatItem('', kind === 'movies' ? 'All movies' : 'All TV shows', data ? data.length.toLocaleString() : '') +
+      (libs.length > 1 ? '<div class="list-label">Libraries</div>' + libs.map(c => vodCatItem(String(c.category_id), String(c.category_name), n(String(c.category_id)))).join('') : '') +
+      (genres.length ? '<div class="list-label">Genres</div>' + genres.map(c => vodCatItem(c.category_id, c.category_name, n(c.category_id))).join('') : '');
+    V.shown = 60;
+    renderVodGrid();
+    return;
+  }
   if (el('vodSearch').value !== V.q) el('vodSearch').value = V.q;
   const counts = new Map(); (data || []).forEach(x => counts.set(x.cat, (counts.get(x.cat) || 0) + 1));
   const cont = continueItems(kind);
@@ -3808,7 +4075,7 @@ function posterHTML(x) {
   const r = resumeAll()[x.kind + ':' + x.id];
   const pct = x.pct != null ? x.pct : r && r.dur ? r.pos / r.dur : 0;
   const meta = [x.rating ? '★ ' + (x.rating > 5 && x.rating <= 10 ? x.rating.toFixed(1) : x.rating.toFixed(1)) : '', x.year, x.sub].filter(Boolean).join(' · ');
-  return `<button class="poster" data-vk="${esc(x.kind)}" data-vid="${esc(x.id)}"${x.series ? ` data-vs="${esc(x.series)}"` : ''}${x.ext ? ` data-ext="${esc(x.ext)}"` : ''}><span class="art" style="--h:${hash(x.name) % 360}"><b>${esc(x.name)}</b>${x.poster ? `<img src="${esc(x.poster)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}${pct > 0.01 ? `<i style="width:${Math.min(100, pct * 100).toFixed(0)}%"></i>` : ''}</span><span class="pn">${esc(x.name)}</span><span class="pm">${esc(meta)}</span></button>`;
+  return `<button class="poster" data-vk="${esc(x.kind)}" data-vid="${esc(x.id)}"${x.series ? ` data-vs="${esc(x.series)}"` : ''}${x.ext ? ` data-ext="${esc(x.ext)}"` : ''}><span class="art" style="--h:${hash(x.name) % 360}"><b>${esc(x.name)}</b>${x.poster ? `<img src="${esc(x.poster)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}${pct > 0.01 ? `<i style="width:${Math.min(100, pct * 100).toFixed(0)}%"></i>` : ''}${x.played ? `<s class="seen" aria-label="Watched">${icon('check')}</s>` : ''}</span><span class="pn">${esc(x.name)}</span><span class="pm">${esc(meta)}</span></button>`;
 }
 function renderVodGrid(append) {
   const kind = V.tab, grid = el('vodGrid');
@@ -3820,7 +4087,7 @@ function renderVodGrid(append) {
   const list = vodList();
   el('vodCount').textContent = list.length.toLocaleString() + (list.length === 1 ? ' title' : ' titles');
   if (!list.length) {
-    grid.innerHTML = `<div class="vod-empty"><b>Nothing here</b>${V.q ? 'No titles match your search.' : V.data[kind].length ? 'This category is empty.' : `Your subscription doesn't include ${kind === 'movies' ? 'movies' : 'series'}.`}</div>`;
+    grid.innerHTML = `<div class="vod-empty"><b>Nothing here</b>${V.q ? 'No titles match your search.' : V.data[kind].length ? (V.cat[kind] === 'continue' || V.cat[kind] === 'nextup' ? 'Nothing to continue right now.' : 'This category is empty.') : embyOn() ? `Your Emby server has no ${kind === 'movies' ? 'movie' : 'TV show'} libraries for this user.` : `Your subscription doesn't include ${kind === 'movies' ? 'movies' : 'series'}.`}</div>`;
     return;
   }
   const from = append ? grid.querySelectorAll('.poster').length : 0;
@@ -3901,6 +4168,11 @@ el('vodGrid').addEventListener('click', e => {
   const b = e.target.closest('.poster'); if (!b) return;
   V.lastFocus = b.dataset.vk + ':' + b.dataset.vid;
   const kind = b.dataset.vk, id = b.dataset.vid;
+  if (embyOn()) {
+    if (kind === 'episode') { const x = vodList().find(v => v.kind === 'episode' && v.id === id); if (x) playVod(Object.assign({}, x)); }
+    else if (kind === 'movie') openEmbyMovie(id); else openEmbySeries(id);
+    return;
+  }
   if (kind === 'movie') openMovie(id);
   else if (kind === 'series') openSeries(id);
   else if (kind === 'episode') {
@@ -3932,6 +4204,59 @@ async function openMovie(id) {
     const f = el('vodCard').querySelector(focusedVp ? `[data-vp="${focusedVp}"]` : '.btn') || el('vodCard').querySelector('.btn'); if (f) f.focus();
   } catch (e) {}
 }
+function embyPeople(d, type) { return ((d && d.People) || []).filter(p => p.Type === type).slice(0, 6).map(p => p.Name).join(', '); }
+function embyBackdrop(d) { return d && d.BackdropImageTags && d.BackdropImageTags.length ? `<div class="vbd" style="--bd:url(&quot;${esc(embyImg(d.Id, d.BackdropImageTags[0], 'Backdrop/0', 'maxWidth=1280'))}&quot;)"></div>` : ''; }
+async function openEmbyMovie(id, keepFocus) {
+  const pr = S.provider, x = findEmby('movie', id) || { kind: 'movie', id, name: '', poster: '' }, card = el('vodCard');
+  const draw = d => {
+    const ud = d ? d.UserData || {} : { PlaybackPositionTicks: (x.pos || 0) * 1e7, Played: x.played }, pos = (ud.PlaybackPositionTicks || 0) / 1e7;
+    const rating = d ? Number(d.CommunityRating) || 0 : x.rating;
+    const meta = [d ? d.ProductionYear : x.year, d && d.RunTimeTicks ? durText(d.RunTimeTicks / 1e4) : '', d && d.OfficialRating, rating ? '★ ' + rating.toFixed(1) : '', d && d.Genres ? d.Genres.slice(0, 3).join(', ') : ''].filter(Boolean).map(t => `<span>${esc(t)}</span>`).join('<span class="sep">·</span>');
+    const cast = embyPeople(d, 'Actor'), dir = embyPeople(d, 'Director');
+    card.innerHTML = `${embyBackdrop(d)}${vodArt(Object.assign({}, x, { name: (d && d.Name) || x.name }))}<div class="vi"><h2>${esc((d && d.Name) || x.name)}</h2>${d && d.Taglines && d.Taglines[0] ? `<p class="vod-tag">${esc(d.Taglines[0])}</p>` : ''}<div class="vod-meta">${meta}</div>${d ? (d.Overview ? `<p class="vod-plot">${esc(d.Overview)}</p>` : '') : '<p class="vod-plot">Loading details…</p>'}${cast ? `<p class="vod-cast">With ${esc(cast)}</p>` : ''}${dir ? `<p class="vod-cast">Directed by ${esc(dir)}</p>` : ''}
+      <div class="btns">${pos > 15 ? `<button class="btn primary" data-vp="resume">${icon('play', 'fill')}Resume from ${fmtClock(pos)}</button><button class="btn ghost" data-vp="start">${icon('replay')}Play from start</button>` : `<button class="btn primary" data-vp="start">${icon('play', 'fill')}Play</button>`}<button class="btn ghost" data-vp="seen">${icon(ud.Played ? 'eyeoff' : 'check')}${ud.Played ? 'Mark unwatched' : 'Mark watched'}</button></div></div>`;
+    card.dataset.kind = 'movie'; card.dataset.id = id; card.dataset.pos = String(pos); card.dataset.played = ud.Played ? '1' : '';
+    card.dataset.name = (d && d.Name) || x.name || ''; card.dataset.dur = d && d.RunTimeTicks ? String(d.RunTimeTicks / 1e7) : String(x.dur || 0);
+  };
+  if (!keepFocus) { draw(null); openLayer(el('vodModal'), '.btn'); }
+  let d = null;
+  try { d = await embyApi(pr, 'GET', `/Users/${enc(pr.userId)}/Items/${enc(id)}`); } catch (e) { return; }
+  if (S.provider !== pr || el('vodModal').hidden || card.dataset.id !== id) return;
+  const focused = keepFocus || (document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.vp : '');
+  draw(d);
+  const f = card.querySelector(focused ? `[data-vp="${focused}"]` : '.btn') || card.querySelector('.btn'); if (f) f.focus();
+}
+async function openEmbySeries(id, season, keepFocus) {
+  const pr = S.provider, u = enc(pr.userId), card = el('vodCard');
+  const x = findEmby('series', id) || { kind: 'series', id, name: (seriesCache && seriesCache.id === id && seriesCache.name) || '', poster: (seriesCache && seriesCache.id === id && seriesCache.poster) || '' };
+  if (!keepFocus) {
+    card.dataset.kind = 'series'; card.dataset.id = id;
+    card.innerHTML = `${vodArt(x)}<div class="vi"><h2>${esc(x.name)}</h2><p class="vod-plot">Loading episodes…</p></div>`;
+    openLayer(el('vodModal'), '.btn, .item');
+  }
+  let d = null, eps = null, next = null;
+  try {
+    [d, eps, next] = await Promise.all([
+      embyApi(pr, 'GET', `/Users/${u}/Items/${enc(id)}`),
+      embyApi(pr, 'GET', `/Shows/${enc(id)}/Episodes?UserId=${u}&Fields=Overview,RunTimeTicks&EnableImageTypes=Primary&ImageTypeLimit=1`, null, 60000),
+      embyApi(pr, 'GET', `/Shows/NextUp?UserId=${u}&SeriesId=${enc(id)}&Limit=1&Fields=RunTimeTicks`).catch(() => null)]);
+  } catch (e) {}
+  if (S.provider !== pr || el('vodModal').hidden || card.dataset.id !== id) return;
+  const groups = {};
+  embyItems(eps).forEach(it => {
+    const sn = String(it.ParentIndexNumber != null ? it.ParentIndexNumber : 0), ud = it.UserData || {}, dur = (it.RunTimeTicks || 0) / 1e7, pos = (ud.PlaybackPositionTicks || 0) / 1e7;
+    (groups[sn] = groups[sn] || []).push({ id: String(it.Id), episode_num: it.IndexNumber != null ? it.IndexNumber : '', title: it.Name || '', overview: it.Overview || '', played: !!ud.Played, pos, dur, pct: dur && pos ? pos / dur : 0, info: { duration: dur ? durText(dur * 1000) : '' } });
+  });
+  const seasons = Object.keys(groups).sort((a, b) => (+a || 1e6) - (+b || 1e6));   // specials last
+  const n = embyItems(next)[0];
+  const series = { id, emby: true, name: (d && d.Name) || x.name, poster: x.poster || (d && d.ImageTags && d.ImageTags.Primary ? embyImg(id, d.ImageTags.Primary) : ''), plot: d && d.Overview, cast: embyPeople(d, 'Actor'),
+    genre: d && d.Genres ? d.Genres.slice(0, 3).join(', ') : '', year: d && d.ProductionYear ? String(d.ProductionYear) : x.year, rating: (d && Number(d.CommunityRating)) || x.rating || 0, backdrop: embyBackdrop(d), eps: groups, seasons,
+    next: n ? { id: String(n.Id), season: String(n.ParentIndexNumber != null ? n.ParentIndexNumber : 0), sub: embyEpLabel(n), pos: ((n.UserData && n.UserData.PlaybackPositionTicks) || 0) / 1e7 } : null };
+  seriesCache = series;
+  const focusEp = keepFocus && document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.ep : '';
+  drawSeries(series, season || (series.next && series.next.season) || seasons.find(sn => sn !== '0') || seasons[0], null);
+  const f = (focusEp && card.querySelector(`[data-ep="${focusEp}"]`)) || card.querySelector('.btn, .item'); if (f && (keepFocus || !card.contains(document.activeElement))) f.focus();
+}
 let seriesCache = null;
 async function openSeries(id, season) {
   const x = (V.data.series || []).find(m => m.id === id) || { kind: 'series', id, name: 'Series', poster: '' };
@@ -3960,23 +4285,24 @@ async function openSeries(id, season) {
 }
 function epObj(series, season, ep) {
   const n = ep.episode_num || ep.episode || '';
-  return { kind: 'episode', id: String(ep.id), ext: String(ep.container_extension || 'mp4').replace(/[^a-z0-9]/gi, ''), name: series.name, poster: series.poster, series: series.id, season: String(season), sub: `S${season} E${n}${ep.title && !new RegExp('^' + series.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(ep.title) ? ' · ' + ep.title : ''}` };
+  return { kind: 'episode', id: String(ep.id), pos: series.emby ? ep.pos || 0 : undefined, dur: series.emby ? ep.dur || 0 : undefined, ext: String(ep.container_extension || 'mp4').replace(/[^a-z0-9]/gi, ''), name: series.name, poster: series.poster, series: series.id, season: String(season), sub: `S${season} E${n}${ep.title && !new RegExp('^' + series.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(ep.title) ? ' · ' + ep.title : ''}` };
 }
 function drawSeries(series, season, latest) {
   season = String(season || '');
-  if (latest == null) { const all0 = resumeAll(); latest = Object.keys(all0).map(k => all0[k]).filter(r => r.kind === 'episode' && r.series === series.id).sort((a, b) => b.t - a.t)[0] || null; }
+  if (series.emby) latest = series.next;
+  else if (latest == null) { const all0 = resumeAll(); latest = Object.keys(all0).map(k => all0[k]).filter(r => r.kind === 'episode' && r.series === series.id).sort((a, b) => b.t - a.t)[0] || null; }
   const list = series.eps[season] || [];
   const all = resumeAll();
   const meta = [series.year, series.seasons.length ? series.seasons.length + (series.seasons.length === 1 ? ' season' : ' seasons') : '', series.rating ? '★ ' + series.rating.toFixed(1) : '', series.genre].filter(Boolean).map(t => `<span>${esc(t)}</span>`).join('<span class="sep">·</span>');
   const first = series.seasons.length ? (series.eps[series.seasons[0]] || [])[0] : null;
-  const main = latest ? `<button class="btn primary" data-sp="resume">${icon('play', 'fill')}Resume ${esc(latest.sub.split(' · ')[0])}</button>` : first ? `<button class="btn primary" data-sp="first">${icon('play', 'fill')}Play S${esc(series.seasons[0])} E${esc(first.episode_num || 1)}</button>` : '';
-  el('vodCard').innerHTML = `${vodArt(series)}<div class="vi"><h2>${esc(series.name)}</h2><div class="vod-meta">${meta}</div>${series.plot ? `<p class="vod-plot">${esc(series.plot)}</p>` : ''}${series.cast ? `<p class="vod-cast">With ${esc(series.cast)}</p>` : ''}
+  const main = latest ? `<button class="btn primary" data-sp="resume">${icon('play', 'fill')}${series.emby && !(latest.pos > 15) ? 'Play' : 'Resume'} ${esc(latest.sub.split(' · ')[0])}</button>` : first ? `<button class="btn primary" data-sp="first">${icon('play', 'fill')}Play S${esc(series.seasons[0])} E${esc(first.episode_num || 1)}</button>` : '';
+  el('vodCard').innerHTML = `${series.backdrop || ''}${vodArt(series)}<div class="vi"><h2>${esc(series.name)}</h2><div class="vod-meta">${meta}</div>${series.plot ? `<p class="vod-plot">${esc(series.plot)}</p>` : ''}${series.cast ? `<p class="vod-cast">With ${esc(series.cast)}</p>` : ''}
     ${main ? `<div class="btns">${main}</div>` : '<p class="hint">No episodes are available for this series yet.</p>'}
-    ${series.seasons.length > 1 ? `<div class="seg" role="radiogroup" aria-label="Season">${series.seasons.map(n => `<input type="radio" name="season" id="season-${esc(n)}" value="${esc(n)}"${n === season ? ' checked' : ''}><label for="season-${esc(n)}">Season ${esc(n)}</label>`).join('')}</div>` : ''}
+    ${series.seasons.length > 1 ? `<div class="seg" role="radiogroup" aria-label="Season">${series.seasons.map(n => `<input type="radio" name="season" id="season-${esc(n)}" value="${esc(n)}"${n === season ? ' checked' : ''}><label for="season-${esc(n)}">${series.emby && n === '0' ? 'Specials' : 'Season ' + esc(n)}</label>`).join('')}</div>` : ''}
     <div class="ep-list" id="epList">${list.map(ep => {
-      const o = epObj(series, season, ep), r = all['episode:' + o.id], dur = ep.info && (ep.info.duration || (ep.info.duration_secs ? durText(ep.info.duration_secs * 1000) : ''));
+      const o = epObj(series, season, ep), r = series.emby ? { pos: ep.pos, dur: ep.dur } : all['episode:' + o.id], dur = ep.info && (ep.info.duration || (ep.info.duration_secs ? durText(ep.info.duration_secs * 1000) : ''));
       const pct = r && r.dur ? Math.min(100, r.pos / r.dur * 100) : 0;
-      return `<button class="item" data-ep="${esc(o.id)}"><span class="lbl"><span>${esc(String(ep.episode_num || ''))}. ${esc(ep.title || 'Episode ' + (ep.episode_num || ''))}</span><span class="sub">${esc([dur, r && r.pos > 15 ? fmtClock(r.dur - r.pos) + ' left' : ''].filter(Boolean).join(' · '))}</span>${pct ? `<span class="ep-bar"><u style="width:${pct.toFixed(0)}%"></u></span>` : ''}</span></button>`;
+      return `<button class="item" data-ep="${esc(o.id)}"><span class="lbl"><span>${esc(String(ep.episode_num || ''))}. ${esc(ep.title || 'Episode ' + (ep.episode_num || ''))}${ep.played ? `<span class="ep-seen" aria-label="Watched">${icon('check')}</span>` : ''}</span><span class="sub">${esc([dur, r && r.pos > 15 ? fmtClock(r.dur - r.pos) + ' left' : ''].filter(Boolean).join(' · '))}</span>${ep.overview ? `<span class="ep-desc">${esc(ep.overview)}</span>` : ''}${pct ? `<span class="ep-bar"><u style="width:${pct.toFixed(0)}%"></u></span>` : ''}</span></button>`;
     }).join('')}</div></div>`;
   el('vodCard').dataset.season = season;
 }
@@ -3988,6 +4314,17 @@ el('vodCard').addEventListener('change', e => {
 el('vodCard').addEventListener('click', e => {
   const card = el('vodCard');
   const mp = e.target.closest('[data-vp]');
+  if (mp && card.dataset.kind === 'movie' && embyOn()) {
+    const id = card.dataset.id;
+    if (mp.dataset.vp === 'seen') {
+      const played = !card.dataset.played;
+      embySetPlayed(id, played).then(() => { toast(played ? 'Marked as watched' : 'Marked as unwatched', 1600); openEmbyMovie(id, 'seen'); }).catch(() => toast("Emby didn't save that. Try again.", 2500));
+      return;
+    }
+    const x = findEmby('movie', id) || {};
+    playVod({ kind: 'movie', id, name: card.dataset.name || x.name || '', poster: x.poster || '', pos: +card.dataset.pos || 0, dur: +card.dataset.dur || 0, fromStart: mp.dataset.vp === 'start' });
+    return;
+  }
   if (mp && card.dataset.kind === 'movie') {
     const x = (V.data.movies || []).find(m => m.id === card.dataset.id) || resumeAll()['movie:' + card.dataset.id] || {};
     playVod({ kind: 'movie', id: card.dataset.id, ext: card.dataset.ext, name: x.name || '', poster: x.poster || '', fromStart: mp.dataset.vp === 'start' });
@@ -3996,7 +4333,10 @@ el('vodCard').addEventListener('click', e => {
   const s = seriesCache; if (!s) return;
   const sp = e.target.closest('[data-sp]');
   if (sp) {
-    if (sp.dataset.sp === 'resume') {
+    if (sp.dataset.sp === 'resume' && s.emby) {
+      const n = s.next, ep = n && (s.eps[n.season] || []).find(x => x.id === n.id);
+      if (ep) playVod(epObj(s, n.season, ep));
+    } else if (sp.dataset.sp === 'resume') {
       const all = resumeAll(), latest = Object.keys(all).map(k => all[k]).filter(r => r.kind === 'episode' && r.series === s.id).sort((a, b) => b.t - a.t)[0];
       if (latest) playVod({ kind: 'episode', id: latest.id, ext: latest.ext, name: latest.name, sub: latest.sub, poster: latest.poster, series: s.id, season: latest.season });
     } else {
@@ -4011,7 +4351,12 @@ el('vodCard').addEventListener('click', e => {
   }
 });
 function playVod(item) {
-  const pr = S.provider; if (!pr || (pr.type !== 'xtream' && pr.type !== 'demo')) return;
+  const pr = S.provider; if (!pr || (pr.type !== 'xtream' && pr.type !== 'demo' && pr.type !== 'emby')) return;
+  if (pr.type === 'emby' && !item.url) {
+    // Emby: find out how this device can play the file first (as it is, or converted by Emby)
+    embyStream(pr, item).then(st => { if (S.provider === pr) playVod(Object.assign({}, item, st)); }).catch(() => toast("Couldn't start this on your Emby server. Try again.", 3000));
+    return;
+  }
   if (pr.type === 'demo') {
     const key0 = item.kind + ':' + item.id, r0 = resumeAll()[key0];
     closeAllLayers();
@@ -4025,10 +4370,11 @@ function playVod(item) {
     requestAnimationFrame(sizeCanvas);
     return;
   }
-  const url = `${pr.server}/${item.kind === 'movie' ? 'movie' : 'series'}/${enc(pr.user)}/${enc(pr.pass)}/${enc(item.id)}.${item.ext || 'mp4'}`;
-  const key = item.kind + ':' + item.id, r = resumeAll()[key];
+  const url = item.url || `${pr.server}/${item.kind === 'movie' ? 'movie' : 'series'}/${enc(pr.user)}/${enc(pr.pass)}/${enc(item.id)}.${item.ext || 'mp4'}`;
+  const key = item.kind + ':' + item.id, r = pr.type === 'emby' ? null : resumeAll()[key];
   if (!item.reconnect) RC.n = 0;
-  const from = item.at != null ? item.at : item.fromStart ? 0 : r && r.pos > 15 ? r.pos - 3 : 0;
+  const saved = pr.type === 'emby' ? item.pos || 0 : r ? r.pos : 0;
+  const from = item.at != null ? item.at : item.fromStart ? 0 : saved > 15 ? saved - 3 : 0;
   closeAllLayers();
   if (vpnGate(() => playVod(item))) return;
   if (useExternal()) { handOff(url, item.name + (item.sub ? ' · ' + item.sub : ''), prefs.player, from * 1000); return; }
@@ -4043,7 +4389,11 @@ function playVod(item) {
   showVodOsd();
   clearInterval(vodTimer); vodSaveAt = Date.now();
   vodTimer = setInterval(vodTick, 1000);
-  const done = () => { if (token === playToken) spinner.hidden = true; };
+  const done = () => {
+    if (token !== playToken) return;
+    spinner.hidden = true;
+    if (pr.type === 'emby' && !item.reconnect) embyReport('start', mediaState());
+  };
   const fail = err => {
     if (token !== playToken) return;
     if (item.reconnect && !NATIVE && err && err.message !== 'cancel' && err.message !== 'media') { streamDropped(err.message); return; }
@@ -4083,6 +4433,7 @@ function vodTick() {
 }
 function rememberVod(st) {
   const v = S.vodPlaying; if (!v) return;
+  if (embyOn()) { embyReport('progress', st); return; }   // Emby keeps your place itself
   if (!st.dur || st.dur - st.pos < 90) { if (st.dur) saveResume(v.key, null); return; }
   saveResume(v.key, { kind: v.kind, id: v.id, name: v.name, poster: v.poster || '', sub: v.sub || '', series: v.series || '', season: v.season || '', ext: v.ext, pos: st.pos, dur: st.dur, t: Date.now() });
 }
@@ -4103,7 +4454,11 @@ function vodPlayerKey(k, e) {
 function stopVod(finished) {
   const v = S.vodPlaying; if (!v) return;
   const st = mediaState();
-  if (finished) saveResume(v.key, null); else if (st.pos > 20) rememberVod(st);
+  if (embyOn()) {
+    const pr = S.provider, end = finished ? { pos: st.dur || v.dur || st.pos, paused: false } : st;
+    embyNoteProgress(v, end.pos, st.dur || v.dur || 0, finished);
+    embyReport('stop', end).then(() => embyAfterPlay(pr));
+  } else if (finished) saveResume(v.key, null); else if (st.pos > 20) rememberVod(st);
   clearInterval(vodTimer); clearTimeout(vosdTimer);
   S.vodPlaying = null;
   playToken++; teardownStream(); spinner.hidden = true; hideScreenMsg();
@@ -4129,9 +4484,9 @@ el('vosd').addEventListener('click', e => {
 function openPlaylists() {
   const cur = S.provider && !S.backdrop ? S.provider.id : '';
   const saved = savedPlaylists();
-  let h = saved.map(p => `<div class="pl-row"><button class="item${cur === p.id ? ' sel' : ''}" data-pl="${esc(p.id)}">${icon('check', 'mark')}<span class="lbl"><span>${esc(p.name)}</span><span class="sub">${p.type === 'm3u' ? 'M3U playlist' : 'Xtream Codes'} · ${esc(p.host || hostOf(p.server || ''))}</span></span></button><button class="icon-btn" data-plopt="${esc(p.id)}" aria-label="Options for ${esc(p.name)}">${icon('settings')}</button></div>`).join('');
+  let h = saved.map(p => `<div class="pl-row"><button class="item${cur === p.id ? ' sel' : ''}" data-pl="${esc(p.id)}">${icon('check', 'mark')}<span class="lbl"><span>${esc(p.name)}</span><span class="sub">${p.type === 'm3u' ? 'M3U playlist' : p.type === 'emby' ? 'Emby' : 'Xtream Codes'} · ${esc(p.host || hostOf(p.server || ''))}</span></span></button><button class="icon-btn" data-plopt="${esc(p.id)}" aria-label="Options for ${esc(p.name)}">${icon('settings')}</button></div>`).join('');
   if (DEMO_OK) h += `<button class="item${cur === 'demo' ? ' sel' : ''}" data-pl="demo">${icon('check', 'mark')}<span class="lbl"><span>Demo playlist</span><span class="sub">Built-in sample channels and guide</span></span></button>`;
-  if (!saved.length && !DEMO_OK) h += '<p class="hint" style="padding:10px 14px">No playlists yet. Add your Xtream Codes or M3U playlist below.</p>';
+  if (!saved.length && !DEMO_OK) h += '<p class="hint" style="padding:10px 14px">No playlists yet. Add your Xtream Codes, M3U or Emby playlist below.</p>';
   el('playlistsList').innerHTML = h;
   openLayer(el('playlistsDrawer'));
 }
@@ -4486,6 +4841,17 @@ function renderPlOpts() {
   const cur = !!S.provider && S.provider.id === id, full = withSecrets(saved), o = plOptsObj(id), m3u = saved.type === 'm3u';
   const shifts = [-3, -2, -1, 0, 1, 2, 3].map(h => [h, h ? (h > 0 ? '+' : '−') + Math.abs(h) + ' h' : 'None']);
   el('plTitle').textContent = cur ? 'Playlist options' : 'Options for ' + saved.name;
+  if (saved.type === 'emby') {
+    el('plBody').innerHTML = `
+  <section><h3>Playlist</h3>
+    <div class="setting"><span>Name</span><input class="text-in" id="plName" maxlength="60" value="${esc(saved.name)}" placeholder="${esc(saved.host || '')}"></div>
+    <dl class="kv"><dt>Type</dt><dd>${esc(cur && S.provider.info && S.provider.info.product || 'Emby')}</dd><dt>Server</dt><dd>${esc(saved.server || '')}</dd><dt>Username</dt><dd>${esc(saved.user || '')}</dd></dl>
+    <div class="btns"><button class="btn ghost" data-po="login">${icon('edit')}Change server or login</button>${cur ? `<button class="btn ghost" data-po="refresh">${icon('replay')}Reload library</button>` : `<button class="btn ghost" data-po="use">${icon('play')}Switch to this playlist</button>`}</div>
+    <p class="hint">Nightdial keeps an Emby access token on this device, not your password. Continue watching and watched marks are shared with your other Emby apps.</p>
+  </section>
+  <section><h3>Remove</h3><p class="hint">Signs this device out of Emby and removes the playlist.</p><div class="btns"><button class="btn danger" data-po="remove">Remove playlist</button></div></section>`;
+    return;
+  }
   el('plBody').innerHTML = `
   <section><h3>Playlist</h3>
     <div class="setting"><span>Name</span><input class="text-in" id="plName" maxlength="60" value="${esc(saved.name)}" placeholder="${esc(saved.host || '')}"></div>
@@ -4566,7 +4932,7 @@ function seg(name, opts, val, disabled) {
   return `<div class="seg" role="radiogroup">${opts.map(([v, l]) => `<input type="radio" name="${name}" id="${name}-${v}" value="${v}"${String(val) === String(v) ? ' checked' : ''}${disabled ? ' disabled' : ''}><label for="${name}-${v}">${l}</label>`).join('')}</div>`;
 }
 function openSettings() {
-  const p = S.provider, m3u = p.type === 'm3u', demo = p.type !== 'xtream' && !m3u, none = p.type === 'none', inf = p.info || {};
+  const p = S.provider, m3u = p.type === 'm3u', emby = p.type === 'emby', demo = p.type !== 'xtream' && !m3u && !emby, none = p.type === 'none', inf = p.info || {};
   const exp = inf.exp ? fmtDate(inf.exp) : demo ? 'Never' : 'Unlimited';
   const soon = inf.exp && inf.exp - Date.now() < 7 * DAY;
   const players = externalPlayers();
@@ -4576,7 +4942,14 @@ function openSettings() {
     <div class="btns"><button class="btn primary" data-s="add">${icon('plus')}Add playlist</button></div>
   </section>` : `
   <section><h3>Playlist</h3>
-    <dl class="kv">
+    ${emby ? `<dl class="kv">
+      <dt>Name</dt><dd>${esc(p.name)}</dd>
+      <dt>Type</dt><dd>${esc(inf.product || 'Emby')}</dd>
+      <dt>Server</dt><dd>${esc(p.server)}</dd><dt>Username</dt><dd>${esc(p.user)}</dd>
+      <dt>Version</dt><dd>${esc(inf.status || '')}</dd>
+    </dl>
+    <div class="btns"><button class="btn primary" data-s="plopts">${icon('settings')}Playlist options</button><button class="btn ghost" data-s="switch">${icon('playlist')}Switch playlist</button></div>
+  </section>` : `<dl class="kv">
       <dt>Name</dt><dd>${esc(p.name)}</dd>
       <dt>Type</dt><dd>${demo ? 'Built-in demo' : m3u ? 'M3U playlist' : 'Xtream Codes'}</dd>
       ${demo ? '' : m3u ? `<dt>Playlist</dt><dd>${esc(hostOf(p.url))}</dd>` : `<dt>Server</dt><dd>${esc(p.server)}</dd><dt>Username</dt><dd>${esc(p.user)}</dd>`}
@@ -4587,7 +4960,7 @@ function openSettings() {
     </dl>
     <div class="btns">${demo ? '' : `<button class="btn primary" data-s="plopts">${icon('settings')}Playlist options</button>`}<button class="btn ghost" data-s="switch">${icon('playlist')}Switch playlist</button></div>
     ${demo ? '' : '<p class="hint">Playlist options: name, login, guide source and time shift, channel numbers, stream format, User-Agent and more.</p>'}
-  </section>`) + `
+  </section>`}`) + (emby ? '' : `
   <section><h3>Channels</h3>
     <dl class="kv"><dt>Favorites</dt><dd>${favs.size}</dd><dt>Hidden</dt><dd>${hiddenCh.size} ${hiddenCh.size === 1 ? 'channel' : 'channels'} · ${hiddenGr.size} ${hiddenGr.size === 1 ? 'group' : 'groups'}</dd></dl>
     <div class="btns"><button class="btn ghost" data-s="channels">${icon('edit')}Edit channels</button></div>
@@ -4597,7 +4970,7 @@ function openSettings() {
     <div class="setting"><span>Clock</span>${seg('clock', [['12', '12-hour'], ['24', '24-hour']], prefs.clock24 ? 24 : 12)}</div>
     <div class="setting"><span>Row size</span>${seg('rows', [['compact', 'Compact'], ['comfortable', 'Comfortable']], prefs.rows)}</div>
     ${demo || none ? '' : '<div class="btns"><button class="btn ghost" data-s="reload">Reload guide</button></div>'}
-  </section>
+  </section>`) + `
   <section><h3>Playback</h3>
     <div class="setting"><span>Picture shape</span>${seg('aspect', ASPECTS, prefs.aspect)}<p class="hint">16:9 fills a TV screen. Fit keeps each channel's own shape; Zoom fills the screen by trimming the edges.</p></div>
     ${TV_MODE ? `<label class="check"><input type="checkbox" id="startFull"${prefs.startFull ? ' checked' : ''}>Open in full screen (Back shows the guide)</label>` : ''}
@@ -4914,6 +5287,12 @@ function handleBack() {
   const a = document.activeElement;
   if (S.view === 'vod') {
     if (a && a.closest && a.closest('#vodGrid')) { focusVodCat(); return true; }
+    if (embyOn()) {
+      // the library is home: Back opens the menu, and Back twice leaves Nightdial
+      if (TV_MODE) { openTvNav(true); backArmed = Date.now(); return true; }
+      const rb = document.querySelector('.rail-btn[data-nav="vod"]'); if (rb && rb.offsetParent) { rb.focus(); return true; }
+      return false;
+    }
     closeVod(); return true;
   }
   if (a && a.closest && a.closest('#rail')) return false;

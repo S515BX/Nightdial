@@ -27,6 +27,8 @@ import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import org.json.JSONObject;
+
 import androidx.media3.common.AudioAttributes;
 import androidx.media3.common.C;
 import androidx.media3.common.Format;
@@ -105,6 +107,8 @@ public class MainActivity extends Activity {
     private int rectX, rectY, rectW = 1, rectH = 1;
     private String aspect = "16:9";
     private final List<int[]> audioTrackIndex = new ArrayList<>();
+    /** The page's own API requests (Emby), off the main thread. */
+    private final java.util.concurrent.ExecutorService requests = java.util.concurrent.Executors.newFixedThreadPool(4);
 
     @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
     @Override
@@ -572,6 +576,7 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         ui.removeCallbacks(stateTicker);
         cancelReconnect();
+        requests.shutdownNow();
         if (share != null) share.stop();
         vpn.shutdown();
         if (player != null) {
@@ -874,6 +879,41 @@ public class MainActivity extends Activity {
         public void vpnShareStop() {
             if (share != null) share.stop();
             share = null;
+        }
+
+        /**
+         * An API request for the page (Emby needs POST bodies and its own header, which /proxy can't carry).
+         * The answer comes back later through window.nightdialHttp(id, status, body); status 0 means it failed.
+         */
+        @JavascriptInterface
+        public void request(String id, String method, String url, String headersJson, String body) {
+            if (id == null || !id.matches("[A-Za-z0-9_-]{1,40}") || !webUrl(url)) return;
+            String m = method == null ? "GET" : method.toUpperCase(Locale.ROOT);
+            if (!m.equals("GET") && !m.equals("POST") && !m.equals("DELETE")) return;
+            Map<String, String> headers = new HashMap<>();
+            try {
+                JSONObject h = new JSONObject(headersJson == null || headersJson.isEmpty() ? "{}" : headersJson);
+                java.util.Iterator<String> keys = h.keys();
+                while (keys.hasNext()) {
+                    String k = keys.next();
+                    headers.put(k, h.optString(k, ""));
+                }
+            } catch (Exception ignored) {
+            }
+            requests.execute(() -> {
+                int status;
+                String text;
+                try {
+                    Relay.Plain r = Relay.request(m, url, headers, body);
+                    status = r.status;
+                    text = r.body;
+                } catch (Exception e) {
+                    status = 0;
+                    text = String.valueOf(e.getMessage());
+                }
+                String js = "window.nightdialHttp&&window.nightdialHttp('" + id + "'," + status + "," + JSONObject.quote(text) + ")";
+                runOnUiThread(() -> web.evaluateJavascript(js, null));
+            });
         }
 
         /** The User-Agent sent to the provider by the player and the app's own requests (Playlist options); empty for the default. */
