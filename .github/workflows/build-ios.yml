@@ -17,7 +17,9 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-latest
+    # Intel Macs: GitHub's Apple-silicon Macs were too busy to start builds (Oct 2026). Either kind builds the same app.
+    runs-on: macos-15-intel
+    timeout-minutes: 60
     defaults:
       run:
         working-directory: ios
