@@ -34,8 +34,8 @@ final class PlayerController: ObservableObject {
         return false
         #endif
     }
-    /// Where VLC draws; it moves into whichever video surface is in front.
-    let vlcView = VLCDrawableView()
+    /// Holds the view VLC draws into; it moves into whichever video surface is in front.
+    let vlcView = VLCHolderView()
     #if canImport(MobileVLCKit)
     private var vlcBackend: VLCBackend?
     #endif
@@ -284,7 +284,7 @@ final class PlayerController: ObservableObject {
         if engine == .vlc {
             let first = state != .playing
             state = .playing
-            isPaused = false
+            if isPaused { isPaused = false }
             if rememberIfVLCPlays, let key = channelKey { Self.setUsesVLC(key, true); rememberIfVLCPlays = false }
             steadyTask?.cancel()
             steadyTask = Task { @MainActor [weak self] in
@@ -500,19 +500,16 @@ final class PlayerController: ObservableObject {
         audioGroup = nil
         isPaused = false
         streamBadges = []
-        let b: VLCBackend
-        if let existing = vlcBackend {
-            b = existing
-        } else {
-            b = VLCBackend()
-            b.player.drawable = vlcView
-            b.onState = { [weak self] s in self?.vlcStateChanged(s) }
-            b.onTime = { [weak self] in
-                guard let self, self.engine == .vlc, self.state != .playing, !self.isPaused else { return }
-                self.markPlaying()
-            }
-            vlcBackend = b
+        // a fresh VLC player for each stream; the old one is stopped away from the screen's thread
+        retireVLC()
+        let b = VLCBackend()
+        b.player.drawable = vlcView.drawable
+        b.onState = { [weak self] s in self?.vlcStateChanged(s) }
+        b.onTime = { [weak self] in
+            guard let self, self.engine == .vlc, self.state != .playing, !self.isPaused else { return }
+            self.markPlaying()
         }
+        vlcBackend = b
         let media = VLCMedia(url: vlcURL ?? url)
         media.addOption(":http-user-agent=\(Net.userAgent)")
         media.addOption(":network-caching=1500")
@@ -533,10 +530,20 @@ final class PlayerController: ObservableObject {
     }
 
     private func stopVLC() {
+        retireVLC()
+    }
+
+    /// VLC's stop waits for its own threads, which can need the main thread: never stop it on the main thread.
+    private func retireVLC() {
         #if canImport(MobileVLCKit)
-        if let b = vlcBackend, b.player.media != nil {
+        guard let b = vlcBackend else { return }
+        vlcBackend = nil
+        b.onState = nil
+        b.onTime = nil
+        b.player.delegate = nil
+        DispatchQueue.global(qos: .userInitiated).async {
             b.player.stop()
-            b.player.media = nil
+            _ = b
         }
         #endif
     }
@@ -544,11 +551,12 @@ final class PlayerController: ObservableObject {
     #if canImport(MobileVLCKit)
     private func vlcStateChanged(_ s: VLCMediaPlayerState) {
         guard engine == .vlc else { return }
+        // VLC reports buffering and playing many times a second on live streams: only real changes update the screen
         switch s {
         case .playing:
-            if state != .playing { markPlaying() } else { isPaused = false }
+            if state != .playing { markPlaying() } else if isPaused { isPaused = false }
         case .paused:
-            if state == .playing { isPaused = true }
+            if state == .playing && !isPaused { isPaused = true }
         case .error:
             if state == .loading || state == .playing { markFailed("network") }
         case .ended, .stopped:
@@ -632,22 +640,56 @@ final class PlayerController: ObservableObject {
     }
 
     func placeVLC() {
-        vlcView.isHidden = engine != .vlc
+        let hidden = engine != .vlc
+        if vlcView.isHidden != hidden { vlcView.isHidden = hidden }
         let live = vlcHosts.filter { $0.view != nil }
         guard let top = live.max(by: { ($0.priority, $0.order) < ($1.priority, $1.order) })?.view else {
-            vlcView.removeFromSuperview()
+            if vlcView.superview != nil { vlcView.removeFromSuperview() }
             return
         }
         if vlcView.superview !== top { top.addSubview(vlcView) }
-        vlcView.frame = top.bounds
+        if vlcView.frame != top.bounds { vlcView.frame = top.bounds }
     }
 }
 
-/// The view VLC draws into.
-final class VLCDrawableView: UIView {
+/// Moves between video surfaces and holds the view VLC draws into. Touches go straight through to the player's
+/// controls, and the tap handler VLC attaches around its picture (meant for DVD menus) is switched off.
+final class VLCHolderView: UIView {
+    let drawable = VLCDrawableView()
     var onResize: (() -> Void)?
     private var lastSize = CGSize.zero
 
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = .black
+        isUserInteractionEnabled = false
+        autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        drawable.frame = bounds
+        addSubview(drawable)
+    }
+
+    required init?(coder: NSCoder) { fatalError("not used") }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        if drawable.frame != bounds { drawable.frame = bounds }
+        if bounds.size != lastSize {
+            lastSize = bounds.size
+            onResize?()
+        }
+    }
+
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? { nil }
+
+    override func addGestureRecognizer(_ g: UIGestureRecognizer) {
+        g.cancelsTouchesInView = false
+        g.isEnabled = false
+        super.addGestureRecognizer(g)
+    }
+}
+
+/// The view VLC draws into. It never takes touches.
+final class VLCDrawableView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         backgroundColor = .black
@@ -657,12 +699,12 @@ final class VLCDrawableView: UIView {
 
     required init?(coder: NSCoder) { fatalError("not used") }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        if bounds.size != lastSize {
-            lastSize = bounds.size
-            onResize?()
-        }
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? { nil }
+
+    override func addGestureRecognizer(_ g: UIGestureRecognizer) {
+        g.cancelsTouchesInView = false
+        g.isEnabled = false
+        super.addGestureRecognizer(g)
     }
 }
 
