@@ -298,10 +298,13 @@ struct SettingsSheet: View {
                         ForEach(ExternalPlayer.allCases) { p in Text(p.name).tag(p) }
                     }
                     Toggle("Open in full screen", isOn: $model.startFullScreen)
+                    if PlayerController.hasVLC {
+                        Toggle("Play every channel with VLC", isOn: $model.vlcForAll)
+                    }
                 } header: {
                     Text("Playback")
                 } footer: {
-                    Text("16:9 fills a TV-shaped picture. Fit keeps each channel's own shape; Zoom fills the screen by trimming the edges. With another video player, full screen opens there; the guide preview always plays here. Open in full screen starts the app on your last channel; close it for the guide.")
+                    Text("16:9 fills a TV-shaped picture. Fit keeps each channel's own shape; Zoom fills the screen by trimming the edges. With another video player, full screen opens there; the guide preview always plays here. Open in full screen starts the app on your last channel; close it for the guide. 24/7 channels and others Apple's player can't show play in the built-in VLC engine; turn on Play every channel with VLC to use it for all of them (no picture-in-picture or AirPlay then).")
                 }
                 .listRowBackground(Theme.cell)
                 Section {

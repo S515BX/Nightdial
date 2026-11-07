@@ -46,6 +46,8 @@ final class PlayerController: ObservableObject {
     private var vlcURL: URL?
     private var triedVLC = false
     private var rememberIfVLCPlays = false
+    /// Apple's player has shown it has a picture for the current stream.
+    private var pictureConfirmed = false
     private var videoCheckTask: Task<Void, Never>?
     private struct Host { weak var view: UIView?; let priority: Int; let order: Int }
     private var vlcHosts: [Host] = []
@@ -92,13 +94,15 @@ final class PlayerController: ObservableObject {
 
     /// Plays a stream. `alternate` is what VLC opens if it's needed; `key` and `group` name the channel and its group,
     /// so a channel that needed VLC once (and the rest of its group, like a 24/7 group) starts in VLC.
-    func play(_ url: URL, alternate: URL? = nil, key: String? = nil, group: String? = nil) {
+    /// `preferVLC`: start in VLC straight away (a 24/7 channel, or Settings → play every channel with VLC), unless
+    /// you set this channel to Apple's player.
+    func play(_ url: URL, alternate: URL? = nil, key: String? = nil, group: String? = nil, preferVLC: Bool = false) {
         channelKey = key
         groupKey = group
         vlcURL = alternate
         triedVLC = false
         rememberIfVLCPlays = false
-        engine = Self.hasVLC && Self.prefersVLC(key: key, group: group) ? .vlc : .av
+        engine = Self.hasVLC && Self.prefersVLC(key: key, group: group, hint: preferVLC) ? .vlc : .av
         play(url, reconnecting: false)
     }
 
@@ -116,6 +120,7 @@ final class PlayerController: ObservableObject {
             return
         }
         stopVLC()
+        pictureConfirmed = false
         state = .loading
         audioOptions = []
         audioIndex = 0
@@ -313,12 +318,20 @@ final class PlayerController: ObservableObject {
             guard !Task.isCancelled else { return }
             self?.reconnects = 0
         }
+        // No picture size yet: keep the spinner up and the sound off for a moment, and move to VLC if none comes,
+        // so a channel Apple's player can't show doesn't play its sound first and then restart.
+        if !pictureConfirmed, Self.hasVLC, channelKey != nil, let item = player.currentItem {
+            if item.presentationSize == .zero {
+                if videoCheckTask == nil { holdForPicture(item) }
+                return
+            }
+            pictureConfirmed = true
+        }
         let first = state != .playing
         state = .playing
         if first, let item = player.currentItem {
             loadAudioOptions(item)
             refreshStreamInfo()
-            checkVideoShows(item)
             Task { @MainActor [weak self] in
                 for delay in [1.5, 5.0] {
                     try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
@@ -461,6 +474,8 @@ final class PlayerController: ObservableObject {
         timeoutTask = nil
         stallTask?.cancel()
         videoCheckTask?.cancel()
+        videoCheckTask = nil
+        player.isMuted = isMuted
     }
 
     // MARK: Built-in VLC
@@ -477,10 +492,10 @@ final class PlayerController: ObservableObject {
 
     /// Plays in VLC: a channel you set to Apple's player never does; one that needed VLC (or you picked VLC) does;
     /// otherwise the channel does when another channel in its group needed VLC.
-    static func prefersVLC(key: String?, group: String?) -> Bool {
-        guard let key else { return false }
+    static func prefersVLC(key: String?, group: String?, hint: Bool = false) -> Bool {
+        guard let key else { return hint }
         if list(avKeysKey).contains(key) { return false }
-        if list(vlcKeysKey).contains(key) { return true }
+        if hint || list(vlcKeysKey).contains(key) { return true }
         if let group, list(vlcGroupsKey).contains(group) { return true }
         return false
     }
@@ -498,16 +513,26 @@ final class PlayerController: ObservableObject {
         if alsoGroup, let groupKey { Self.put(groupKey, in: Self.vlcGroupsKey, true) }
     }
 
-    /// Apple's player is playing, but if it still has no picture size soon after it starts, the video is a kind it
-    /// can't show (HEVC or MPEG-2 in a live MPEG-TS stream; it knows the size of any video it can show before playing):
-    /// switch to VLC and remember the channel and its group.
-    private func checkVideoShows(_ item: AVPlayerItem) {
-        videoCheckTask?.cancel()
-        guard Self.hasVLC, engine == .av, channelKey != nil, item.presentationSize == .zero else { return }
+    /// Apple's player started without a picture size. It knows the size of any video it can show as soon as it
+    /// plays, so if none comes within 1.5 s the video is a kind it can't show (HEVC or MPEG-2 in a live MPEG-TS
+    /// stream): switch to VLC and remember the channel and its group. Meanwhile the spinner stays and the sound is off.
+    private func holdForPicture(_ item: AVPlayerItem) {
+        player.isMuted = true
         videoCheckTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: 1_500_000_000)
-            guard !Task.isCancelled, let self, self.engine == .av, self.player.currentItem === item,
-                  self.state == .playing, !self.isPaused, item.presentationSize == .zero, let url = self.currentURL else { return }
+            for _ in 0..<6 {
+                try? await Task.sleep(nanoseconds: 250_000_000)
+                guard !Task.isCancelled, let self, self.engine == .av, self.player.currentItem === item else { return }
+                if item.presentationSize != .zero {
+                    self.videoCheckTask = nil
+                    self.player.isMuted = self.isMuted
+                    self.pictureConfirmed = true
+                    if self.player.timeControlStatus == .playing { self.markPlaying() }
+                    return
+                }
+            }
+            guard !Task.isCancelled, let self, self.engine == .av, self.player.currentItem === item, let url = self.currentURL else { return }
+            self.videoCheckTask = nil
+            self.player.isMuted = self.isMuted
             self.learnNeedsVLC(group: true)
             self.triedVLC = true
             self.engine = .vlc

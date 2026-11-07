@@ -96,6 +96,8 @@ final class AppModel: ObservableObject {
     private var adultGroups: Set<String> = []
     /// Another player full screen opens in (VLC, Infuse, nPlayer), or the built-in one.
     @Published var externalPlayer: ExternalPlayer = .builtin { didSet { store.setString(externalPlayer.rawValue, "player") } }
+    /// Settings → play every channel with the built-in VLC engine (no picture-in-picture or AirPlay then).
+    @Published var vlcForAll = false { didSet { store.setBool(vlcForAll, "vlcAll") } }
     /// Settings → VPN: hold playback until a VPN app is on.
     @Published var vpnRequired = false { didSet { store.setBool(vpnRequired, "vpnRequired") } }
     /// Settings → Open in full screen: launching goes straight to the last channel in full screen.
@@ -144,6 +146,7 @@ final class AppModel: ObservableObject {
         externalPlayer = ExternalPlayer(rawValue: store.string("player") ?? "") ?? .builtin
         vpnRequired = store.bool("vpnRequired", default: false)
         startFullScreen = store.bool("startFull", default: true)
+        vlcForAll = store.bool("vlcAll", default: false)
         computeRange()
         timer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in self?.tick() }
@@ -922,14 +925,23 @@ final class AppModel: ObservableObject {
         var alternate: URL? = nil
         if cu == nil, p.kind == .xtream { alternate = client?.liveTSURL(ch) }
         if p.kind == .m3u { alternate = M3U.originalTS(url) }
-        player.play(url, alternate: alternate, key: vlcKey(ch), group: vlcGroupKey(ch))
+        player.play(url, alternate: alternate, key: vlcKey(ch), group: vlcGroupKey(ch), preferVLC: vlcHint(ch))
+    }
+
+    /// Start in VLC straight away: 24/7 channels (their video is usually a kind Apple's player can't show), or every
+    /// channel when Settings says so.
+    func vlcHint(_ ch: Channel) -> Bool {
+        if vlcForAll { return true }
+        let pattern = #"24\s*[/x\-]\s*7"#
+        return ch.name.range(of: pattern, options: [.regularExpression, .caseInsensitive]) != nil
+            || groupLabel(ch.groupId).range(of: pattern, options: [.regularExpression, .caseInsensitive]) != nil
     }
 
     func vlcKey(_ ch: Channel) -> String { "\(provider?.id ?? "")|\(ch.id)" }
     func vlcGroupKey(_ ch: Channel) -> String { "\(provider?.id ?? "")|g:\(ch.groupId)" }
 
     /// Channel options → play with VLC (or back with Apple's player). Some channels only show their picture in VLC.
-    func usesVLC(_ ch: Channel) -> Bool { PlayerController.prefersVLC(key: vlcKey(ch), group: vlcGroupKey(ch)) }
+    func usesVLC(_ ch: Channel) -> Bool { PlayerController.prefersVLC(key: vlcKey(ch), group: vlcGroupKey(ch), hint: vlcHint(ch)) }
     func setUsesVLC(_ ch: Channel, _ on: Bool) {
         PlayerController.setUsesVLC(vlcKey(ch), on)
         play(ch, fullScreen: isFullScreen)
