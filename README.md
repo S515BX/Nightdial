@@ -28,6 +28,7 @@
 - **Your channels, your way**: hold OK on a channel (touch and hold on iPhone, right-click on the web) for its options, like TiviMate: favorites, program details, other airings, another player, rename it, give it your own number, hide it or its group. Favorites in your own order and hidden groups are in Settings → Edit channels. Put your groups in your own order too: hold OK on a group in the groups list on Fire TV, or Groups → Arrange on iPhone.
 - **Stream details**: the channel banner and player panel show the resolution (4K, 1080p…), frame rate, video codec and audio (Dolby Digital 5.1, AAC stereo…).
 - **Themes**: everyday themes plus holiday themes with their own scenery and particles (bats, snow, leaves, fireworks…) that can switch on in season. Pick highlight and menu colors, fonts and interface size.
+- **Every channel shows its picture on iPhone**: channels whose video Apple's player can't show (HEVC or MPEG-2 in a live stream, often 24/7 channels, which played sound only) switch to a built-in VLC engine on their own, and start there from then on. Touch and hold a channel to pick the player yourself.
 - **Stays connected**: when your provider drops a stream (busy servers, links that expire, a connection limit), Nightdial opens it again on its own within a second or two, then keeps trying for about a minute before showing an error. A picture that freezes is reopened too.
 - **iPhone Duo**: uses the whole of both screens. Opened wide, the picture sits on one side of the fold and the program info on the other, movie covers never straddle it, and the sign-in card sits beside it; held tall, the picture is above the fold and the guide below. On the small outer screen turned sideways, the guide keeps its room.
 - **Smooth on every screen**: menus, lists and the guide glide instead of jumping a page at a time, and the item you're on always has room around it.
@@ -93,3 +94,5 @@ Open the [web player](https://s515bx.github.io/Nightdial/app/). Browsers block p
 - `docs/`: the banner on this page.
 
 Nightdial doesn't include any channels. Use it with a service you subscribe to.
+
+The iPhone and iPad app includes [VLCKit](https://code.videolan.org/videolan/VLCKit) (MobileVLCKit 3.7.5) by VideoLAN, under the GNU LGPL 2.1 or later; its license comes with it, and `ios/fetch-vlckit.sh` downloads the exact build used. Nightdial's own source is all in this repository, so you can rebuild the app with a different VLCKit.

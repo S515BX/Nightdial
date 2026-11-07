@@ -459,6 +459,11 @@ struct XtreamClient {
         URL(string: "\(server)/live/\(user.urlEncoded)/\(pass.urlEncoded)/\(ch.id).m3u8")
     }
 
+    /// The same channel as the provider's original MPEG-TS stream, for the built-in VLC engine.
+    func liveTSURL(_ ch: Channel) -> URL? {
+        URL(string: "\(server)/live/\(user.urlEncoded)/\(pass.urlEncoded)/\(ch.id).ts")
+    }
+
     func catchupURL(_ ch: Channel, _ p: Program, timezone: String?) -> URL? {
         let f = DateFormatter()
         f.locale = Locale(identifier: "en_US_POSIX")

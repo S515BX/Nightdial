@@ -32,3 +32,13 @@ GOOD TO KNOW
     until it is.
   - Nightdial doesn't include any channels. Use it with a service you
     subscribe to.
+
+BUILT-IN VLC ENGINE
+Channels Apple's player can't show (HEVC or MPEG-2 video in live MPEG-TS, often 24/7 channels: sound but no
+picture) switch to a built-in VLC engine. Run ./fetch-vlckit.sh once to download VLCKit (MobileVLCKit 3.7.5 from
+VideoLAN, LGPL 2.1, checked against its SHA-256) into Vendor/, then build with these settings (GitHub's build does this):
+  FRAMEWORK_SEARCH_PATHS = $(inherited) $(PROJECT_DIR)/Vendor/vlc-$(PLATFORM_NAME)
+  OTHER_LDFLAGS = $(inherited) -ObjC -framework MobileVLCKit -framework QuartzCore -framework CoreText
+    -framework AVFoundation -framework Security -framework CFNetwork -framework AudioToolbox -framework OpenGLES
+    -framework CoreGraphics -framework VideoToolbox -framework CoreMedia -lc++ -lxml2 -lz -lbz2 -liconv
+Without it the app still builds, without the VLC engine.

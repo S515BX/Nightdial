@@ -35,6 +35,15 @@ jobs:
           # iPhone Duo needs the iOS 27.1 SDK or later
           xcrun --sdk iphoneos --show-sdk-version | awk -F. '{ exit !($1 > 27 || ($1 == 27 && $2 >= 1)) }'
 
+      # VLCKit plays channels Apple's player can't show (HEVC or MPEG-2 video, often 24/7 channels)
+      - uses: actions/cache@v4
+        with:
+          path: ios/Vendor
+          key: vlckit-3.7.5-a76f7a6c
+
+      - name: Fetch VLCKit
+        run: ./fetch-vlckit.sh
+
       - name: Build the app
         run: |
           set -o pipefail
@@ -43,7 +52,11 @@ jobs:
             PRODUCT_BUNDLE_IDENTIFIER=app.tuner.player \
             DEVELOPMENT_TEAM="" CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            'FRAMEWORK_SEARCH_PATHS=$(inherited) $(PROJECT_DIR)/Vendor/vlc-$(PLATFORM_NAME)' \
+            'OTHER_LDFLAGS=$(inherited) -ObjC -framework MobileVLCKit -framework QuartzCore -framework CoreText -framework AVFoundation -framework Security -framework CFNetwork -framework AudioToolbox -framework OpenGLES -framework CoreGraphics -framework VideoToolbox -framework CoreMedia -lc++ -lxml2 -lz -lbz2 -liconv' \
             build 2>&1 | tee build.log
+          # the VLC engine must be in the app
+          nm -gU build/Release-iphoneos/Nightdial.app/Nightdial 2>/dev/null | grep -q -i "VLCMediaPlayer" || otool -ov build/Release-iphoneos/Nightdial.app/Nightdial | grep -q VLCMediaPlayer
 
       - name: Show build errors
         if: failure()

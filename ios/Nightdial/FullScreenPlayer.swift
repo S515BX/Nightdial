@@ -14,7 +14,7 @@ struct FullScreenPlayer: View {
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            VideoSurface(player: player.player, aspect: player.aspect, onLayer: { layer in pip.attach(layer) })
+            VideoSurface(player: player.player, aspect: player.aspect, onLayer: { layer in pip.attach(layer) }, controller: player, priority: 1)
                 .ignoresSafeArea()
             PlaybackOverlay(compact: false)
             if showControls && !showChannels {
@@ -117,7 +117,7 @@ struct FullScreenPlayer: View {
                     Badge(text: "CATCH-UP", style: .new, icon: "gobackward")
                 }
                 AirPlayButton().frame(width: 34, height: 34)
-                if pip.isSupported {
+                if pip.isSupported && player.engine == .av {
                     Button { pip.toggle() } label: {
                         Image(systemName: pip.isActive ? "pip.exit" : "pip.enter").osdIcon()
                     }

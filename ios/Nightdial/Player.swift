@@ -2,6 +2,9 @@ import AVFoundation
 import AVKit
 import SwiftUI
 import UIKit
+#if canImport(MobileVLCKit)
+import MobileVLCKit
+#endif
 
 /// Wraps one AVPlayer shared by the preview window and the full-screen view.
 @MainActor
@@ -10,7 +13,42 @@ final class PlayerController: ObservableObject {
 
     let player = AVPlayer()
     @Published private(set) var state: State = .idle
-    @Published var isMuted = false { didSet { player.isMuted = isMuted } }
+    @Published var isMuted = false {
+        didSet {
+            player.isMuted = isMuted
+            #if canImport(MobileVLCKit)
+            vlcBackend?.player.audio?.isMuted = isMuted
+            #endif
+        }
+    }
+
+    /// Which player shows the stream. Apple's player (AVPlayer) for most channels; the built-in VLC engine for the ones
+    /// Apple's can't show: HEVC or MPEG-2 video in a live MPEG-TS stream (often 24/7 channels), where Apple's player
+    /// plays only the sound.
+    enum Engine { case av, vlc }
+    @Published private(set) var engine: Engine = .av { didSet { if engine != oldValue { placeVLC(); applyVLCAspect() } } }
+    static var hasVLC: Bool {
+        #if canImport(MobileVLCKit)
+        return true
+        #else
+        return false
+        #endif
+    }
+    /// Where VLC draws; it moves into whichever video surface is in front.
+    let vlcView = VLCDrawableView()
+    #if canImport(MobileVLCKit)
+    private var vlcBackend: VLCBackend?
+    #endif
+    /// The channel being played (to remember that it needs VLC) and the link VLC opens (the provider's original
+    /// MPEG-TS link when there is one).
+    private var channelKey: String?
+    private var vlcURL: URL?
+    private var triedVLC = false
+    private var rememberIfVLCPlays = false
+    private var videoCheckTask: Task<Void, Never>?
+    private struct Host { weak var view: UIView?; let priority: Int; let order: Int }
+    private var vlcHosts: [Host] = []
+    private var hostOrder = 0
     /// Audio tracks of the current stream (languages, Dolby, etc.) when there's more than one.
     @Published private(set) var audioOptions: [String] = []
     @Published private(set) var audioIndex = 0
@@ -48,9 +86,17 @@ final class PlayerController: ObservableObject {
         try? session.setCategory(.playback, mode: .moviePlayback)
         try? session.setActive(true)
         player.allowsExternalPlayback = true
+        vlcView.onResize = { [weak self] in self?.applyVLCAspect() }
     }
 
-    func play(_ url: URL) {
+    /// Plays a stream. `alternate` is what VLC opens if it's needed; `key` names the channel, so a channel that needed
+    /// VLC once starts in VLC next time.
+    func play(_ url: URL, alternate: URL? = nil, key: String? = nil) {
+        channelKey = key
+        vlcURL = alternate
+        triedVLC = false
+        rememberIfVLCPlays = false
+        engine = Self.hasVLC && key.map(Self.usesVLC) == true ? .vlc : .av
         play(url, reconnecting: false)
     }
 
@@ -63,6 +109,11 @@ final class PlayerController: ObservableObject {
             resumeAt = nil
         }
         currentURL = url
+        if engine == .vlc {
+            startVLC(url)
+            return
+        }
+        stopVLC()
         state = .loading
         audioOptions = []
         audioIndex = 0
@@ -129,6 +180,7 @@ final class PlayerController: ObservableObject {
     func fail(_ code: String) {
         clearObservers()
         cancelReconnect()
+        stopVLC()
         player.replaceCurrentItem(with: nil)
         isPaused = false
         state = .failed(code)
@@ -138,6 +190,7 @@ final class PlayerController: ObservableObject {
         streamBadges = []
         clearObservers()
         cancelReconnect()
+        stopVLC()
         hasPlayed = false
         isReconnecting = false
         player.pause()
@@ -161,6 +214,14 @@ final class PlayerController: ObservableObject {
     }
 
     var timeInfo: TimeInfo {
+        #if canImport(MobileVLCKit)
+        if engine == .vlc, let b = vlcBackend {
+            // VLC: a recording (catch-up) can be scrubbed; live TV can't
+            let length = Double(b.player.media?.length.intValue ?? 0) / 1000, pos = Double(b.player.time.intValue) / 1000
+            guard length > 60 else { return TimeInfo(position: max(0, pos)) }
+            return TimeInfo(seekable: true, behind: max(0, length - pos), window: length, position: max(0, pos), duration: length)
+        }
+        #endif
         guard let item = player.currentItem else { return TimeInfo() }
         let t = player.currentTime().seconds
         let pos = t.isFinite ? t : 0
@@ -178,6 +239,13 @@ final class PlayerController: ObservableObject {
     }
 
     func setPaused(_ paused: Bool) {
+        #if canImport(MobileVLCKit)
+        if engine == .vlc, let b = vlcBackend {
+            if paused { b.player.pause() } else { b.player.play() }
+            isPaused = paused
+            return
+        }
+        #endif
         guard player.currentItem != nil else { return }
         if paused { player.pause() } else { player.play() }
         isPaused = paused
@@ -185,6 +253,13 @@ final class PlayerController: ObservableObject {
 
     /// Jumps within what the stream keeps; stays a few seconds short of the live edge.
     func skip(by seconds: Double) {
+        #if canImport(MobileVLCKit)
+        if engine == .vlc, let b = vlcBackend {
+            let s = Int32(abs(seconds).rounded())
+            if seconds > 0 { b.player.jumpForward(s) } else { b.player.jumpBackward(s) }
+            return
+        }
+        #endif
         guard let item = player.currentItem else { return }
         var target = player.currentTime().seconds + seconds
         if let r = item.seekableTimeRanges.last?.timeRangeValue {
@@ -206,6 +281,29 @@ final class PlayerController: ObservableObject {
         timeoutTask?.cancel()
         hasPlayed = true
         isReconnecting = false
+        if engine == .vlc {
+            let first = state != .playing
+            state = .playing
+            isPaused = false
+            if rememberIfVLCPlays, let key = channelKey { Self.setUsesVLC(key, true); rememberIfVLCPlays = false }
+            steadyTask?.cancel()
+            steadyTask = Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: 30_000_000_000)
+                guard !Task.isCancelled else { return }
+                self?.reconnects = 0
+            }
+            if first {
+                refreshVLCInfo()
+                Task { @MainActor [weak self] in
+                    for delay in [1.5, 5.0] {
+                        try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                        guard let self, self.engine == .vlc, self.state == .playing else { return }
+                        self.refreshVLCInfo()
+                    }
+                }
+            }
+            return
+        }
         // half a minute of steady playing counts as healthy again
         steadyTask?.cancel()
         steadyTask = Task { @MainActor [weak self] in
@@ -218,6 +316,7 @@ final class PlayerController: ObservableObject {
         if first, let item = player.currentItem {
             loadAudioOptions(item)
             refreshStreamInfo()
+            checkVideoShows(item)
             Task { @MainActor [weak self] in
                 for delay in [1.5, 5.0] {
                     try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
@@ -294,6 +393,15 @@ final class PlayerController: ObservableObject {
     }
 
     func selectAudio(_ index: Int) {
+        #if canImport(MobileVLCKit)
+        if engine == .vlc, let b = vlcBackend {
+            let ids = (b.player.audioTrackIndexes ?? []).compactMap { ($0 as? NSNumber)?.int32Value }.filter { $0 >= 0 }
+            guard ids.indices.contains(index) else { return }
+            b.player.currentAudioTrackIndex = ids[index]
+            audioIndex = index
+            return
+        }
+        #endif
         guard let group = audioGroup, group.options.indices.contains(index), let item = player.currentItem else { return }
         item.select(group.options[index], in: group)
         audioIndex = index
@@ -303,6 +411,14 @@ final class PlayerController: ObservableObject {
         timeoutTask?.cancel()
         stallTask?.cancel()
         steadyTask?.cancel()
+        // Apple's player couldn't open it at all: VLC opens more kinds of streams, so try it once before giving up
+        if engine == .av, !hasPlayed, code != "timeout", Self.hasVLC, channelKey != nil, !triedVLC, let url = currentURL {
+            triedVLC = true
+            rememberIfVLCPlays = true
+            engine = .vlc
+            play(url, reconnecting: true)
+            return
+        }
         if hasPlayed, let url = currentURL, reconnects < Self.reconnectDelays.count {
             let item = player.currentItem
             let live = item.map { $0.duration.isIndefinite } ?? true
@@ -342,8 +458,236 @@ final class PlayerController: ObservableObject {
         timeoutTask?.cancel()
         timeoutTask = nil
         stallTask?.cancel()
+        videoCheckTask?.cancel()
+    }
+
+    // MARK: Built-in VLC
+
+    private static let vlcKeysKey = "nightdial.vlcChannels"
+    /// Channels that play in VLC (they needed it once, or you picked it).
+    static func usesVLC(_ key: String) -> Bool {
+        (UserDefaults.standard.stringArray(forKey: vlcKeysKey) ?? []).contains(key)
+    }
+    static func setUsesVLC(_ key: String, _ on: Bool) {
+        var keys = (UserDefaults.standard.stringArray(forKey: vlcKeysKey) ?? []).filter { $0 != key }
+        if on { keys.insert(key, at: 0) }
+        UserDefaults.standard.set(Array(keys.prefix(1000)), forKey: vlcKeysKey)
+    }
+
+    /// Apple's player is playing, but if it has no picture after a few seconds the video is a kind it can't show
+    /// (HEVC or MPEG-2 in a live MPEG-TS stream): switch to VLC and remember the channel.
+    private func checkVideoShows(_ item: AVPlayerItem) {
+        videoCheckTask?.cancel()
+        guard Self.hasVLC, engine == .av, channelKey != nil else { return }
+        videoCheckTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            guard !Task.isCancelled, let self, self.engine == .av, self.player.currentItem === item,
+                  self.state == .playing, !self.isPaused, item.presentationSize == .zero, let url = self.currentURL else { return }
+            if let key = self.channelKey { Self.setUsesVLC(key, true) }
+            self.triedVLC = true
+            self.engine = .vlc
+            self.play(url, reconnecting: false)
+        }
+    }
+
+    private func startVLC(_ url: URL) {
+        #if canImport(MobileVLCKit)
+        player.pause()
+        player.replaceCurrentItem(with: nil)
+        state = .loading
+        audioOptions = []
+        audioIndex = 0
+        audioGroup = nil
+        isPaused = false
+        streamBadges = []
+        let b: VLCBackend
+        if let existing = vlcBackend {
+            b = existing
+        } else {
+            b = VLCBackend()
+            b.player.drawable = vlcView
+            b.onState = { [weak self] s in self?.vlcStateChanged(s) }
+            b.onTime = { [weak self] in
+                guard let self, self.engine == .vlc, self.state != .playing, !self.isPaused else { return }
+                self.markPlaying()
+            }
+            vlcBackend = b
+        }
+        let media = VLCMedia(url: vlcURL ?? url)
+        media.addOption(":http-user-agent=\(Net.userAgent)")
+        media.addOption(":network-caching=1500")
+        b.player.media = media
+        b.player.audio?.isMuted = isMuted
+        placeVLC()
+        applyVLCAspect()
+        b.player.play()
+        timeoutTask?.cancel()
+        timeoutTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 25_000_000_000)
+            guard !Task.isCancelled, let self else { return }
+            if self.state == .loading { self.markFailed("timeout") }
+        }
+        #else
+        markFailed("network")
+        #endif
+    }
+
+    private func stopVLC() {
+        #if canImport(MobileVLCKit)
+        if let b = vlcBackend, b.player.media != nil {
+            b.player.stop()
+            b.player.media = nil
+        }
+        #endif
+    }
+
+    #if canImport(MobileVLCKit)
+    private func vlcStateChanged(_ s: VLCMediaPlayerState) {
+        guard engine == .vlc else { return }
+        switch s {
+        case .playing:
+            if state != .playing { markPlaying() } else { isPaused = false }
+        case .paused:
+            if state == .playing { isPaused = true }
+        case .error:
+            if state == .loading || state == .playing { markFailed("network") }
+        case .ended, .stopped:
+            // a live stream that ends was cut off by the provider
+            if state == .playing { markFailed("stopped") }
+        default:
+            break
+        }
+    }
+    #endif
+
+    private func refreshVLCInfo() {
+        #if canImport(MobileVLCKit)
+        guard let b = vlcBackend else { return }
+        var out: [String] = []
+        let size = b.player.videoSize
+        if size.height > 0 {
+            let v = max(size.height, (size.width * 9 / 16).rounded())
+            out.append(v >= 2000 ? "4K" : v >= 1400 ? "1440p" : v >= 1000 ? "1080p" : v >= 700 ? "720p" : "SD \(Int(size.height))p")
+        }
+        var vcodec = "", audio = ""
+        for case let t as [String: Any] in (b.player.media?.tracksInformation ?? []) {
+            let type = t[VLCMediaTracksInformationType] as? String
+            let code = Self.fourCC((t[VLCMediaTracksInformationCodec] as? NSNumber)?.uint32Value ?? 0)
+            if type == VLCMediaTracksInformationTypeVideo, vcodec.isEmpty {
+                vcodec = ["hevc": "HEVC", "hev1": "HEVC", "h265": "HEVC", "h264": "H.264", "avc1": "H.264", "mpgv": "MPEG-2", "mp2v": "MPEG-2"][code] ?? code.uppercased()
+            } else if type == VLCMediaTracksInformationTypeAudio, audio.isEmpty {
+                let n = (t[VLCMediaTracksInformationAudioChannelsNumber] as? NSNumber)?.intValue ?? 0
+                let layout = n == 1 ? "Mono" : n == 2 ? "Stereo" : n == 6 ? "5.1" : n == 8 ? "7.1" : n > 0 ? "\(n) ch" : ""
+                let name = ["mp4a": "AAC", "a52 ": "Dolby Digital", "eac3": "Dolby Digital+", "mpga": "MPEG audio", "mp3 ": "MP3", "opus": "Opus"][code] ?? code.uppercased()
+                audio = [name, layout].filter { !$0.isEmpty }.joined(separator: " ")
+            }
+        }
+        if !vcodec.isEmpty { out.append(vcodec) }
+        if !audio.isEmpty { out.append(audio) }
+        out.append("VLC")
+        streamBadges = out
+        let names = (b.player.audioTrackNames ?? []).compactMap { $0 as? String }
+        let ids = (b.player.audioTrackIndexes ?? []).compactMap { ($0 as? NSNumber)?.int32Value }
+        let tracks = zip(ids, names).filter { $0.0 >= 0 }
+        audioOptions = tracks.count > 1 ? tracks.map { $0.1 } : []
+        audioIndex = tracks.firstIndex { $0.0 == b.player.currentAudioTrackIndex } ?? 0
+        #endif
+    }
+
+    private static func fourCC(_ v: UInt32) -> String {
+        let bytes = [UInt8(v & 0xff), UInt8((v >> 8) & 0xff), UInt8((v >> 16) & 0xff), UInt8((v >> 24) & 0xff)]
+        return String(bytes: bytes, encoding: .ascii)?.lowercased() ?? ""
+    }
+
+    /// Picture shape in VLC, the same choices as Apple's player.
+    private func applyVLCAspect() {
+        #if canImport(MobileVLCKit)
+        guard let b = vlcBackend else { return }
+        let size = vlcView.bounds.size
+        let viewRatio: String? = size.width > 0 && size.height > 0 ? "\(Int(size.width.rounded())):\(Int(size.height.rounded()))" : nil
+        let ratio: String?, crop: String?
+        switch aspect {
+        case "fit": ratio = nil; crop = nil
+        case "zoom": ratio = nil; crop = viewRatio
+        case "stretch": ratio = viewRatio; crop = nil
+        case "4:3": ratio = "4:3"; crop = nil
+        default: ratio = "16:9"; crop = nil
+        }
+        if let ratio { ratio.withCString { b.player.videoAspectRatio = UnsafeMutablePointer(mutating: $0) } } else { b.player.videoAspectRatio = nil }
+        if let crop { crop.withCString { b.player.videoCropGeometry = UnsafeMutablePointer(mutating: $0) } } else { b.player.videoCropGeometry = nil }
+        #endif
+    }
+
+    /// Video surfaces (the preview and full screen) offer themselves to VLC; it draws in the frontmost one.
+    func registerVLCHost(_ view: UIView, priority: Int) {
+        hostOrder += 1
+        vlcHosts.removeAll { $0.view == nil || $0.view === view }
+        vlcHosts.append(Host(view: view, priority: priority, order: hostOrder))
+        placeVLC()
+    }
+
+    func unregisterVLCHost(_ view: UIView) {
+        vlcHosts.removeAll { $0.view == nil || $0.view === view }
+        placeVLC()
+    }
+
+    func placeVLC() {
+        vlcView.isHidden = engine != .vlc
+        let live = vlcHosts.filter { $0.view != nil }
+        guard let top = live.max(by: { ($0.priority, $0.order) < ($1.priority, $1.order) })?.view else {
+            vlcView.removeFromSuperview()
+            return
+        }
+        if vlcView.superview !== top { top.addSubview(vlcView) }
+        vlcView.frame = top.bounds
     }
 }
+
+/// The view VLC draws into.
+final class VLCDrawableView: UIView {
+    var onResize: (() -> Void)?
+    private var lastSize = CGSize.zero
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = .black
+        isUserInteractionEnabled = false
+        autoresizingMask = [.flexibleWidth, .flexibleHeight]
+    }
+
+    required init?(coder: NSCoder) { fatalError("not used") }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        if bounds.size != lastSize {
+            lastSize = bounds.size
+            onResize?()
+        }
+    }
+}
+
+#if canImport(MobileVLCKit)
+/// VLC's player (VLCKit, LGPL 2.1). Its callbacks arrive on the main thread.
+final class VLCBackend: NSObject, VLCMediaPlayerDelegate {
+    let player = VLCMediaPlayer()
+    var onState: ((VLCMediaPlayerState) -> Void)?
+    var onTime: (() -> Void)?
+
+    override init() {
+        super.init()
+        player.delegate = self
+    }
+
+    func mediaPlayerStateChanged(_ aNotification: Notification) {
+        let s = player.state
+        DispatchQueue.main.async { [weak self] in self?.onState?(s) }
+    }
+
+    func mediaPlayerTimeChanged(_ aNotification: Notification) {
+        DispatchQueue.main.async { [weak self] in self?.onTime?() }
+    }
+}
+#endif
 
 enum PlaybackMessage {
     static func text(_ code: String) -> (title: String, detail: String) {
@@ -359,6 +703,7 @@ enum PlaybackMessage {
 /// picture to it), Fit keeps the channel's own shape, Zoom fills by trimming the edges, Stretch fills everything.
 final class PlayerLayerView: UIView {
     let playerLayer = AVPlayerLayer()
+    weak var vlcController: PlayerController?
     var aspect = "16:9" { didSet { if aspect != oldValue { setNeedsLayout() } } }
 
     override init(frame: CGRect) {
@@ -399,6 +744,9 @@ struct VideoSurface: UIViewRepresentable {
     let player: AVPlayer?
     var aspect: String = "16:9"
     var onLayer: ((AVPlayerLayer) -> Void)? = nil
+    /// Also hosts the built-in VLC engine's picture; the surface with the highest priority (full screen) shows it.
+    var controller: PlayerController? = nil
+    var priority = 0
 
     func makeUIView(context: Context) -> PlayerLayerView {
         let view = PlayerLayerView()
@@ -406,12 +754,19 @@ struct VideoSurface: UIViewRepresentable {
         view.aspect = aspect
         view.playerLayer.player = player
         onLayer?(view.playerLayer)
+        view.vlcController = controller
+        controller?.registerVLCHost(view, priority: priority)
         return view
     }
 
     func updateUIView(_ view: PlayerLayerView, context: Context) {
         if view.playerLayer.player !== player { view.playerLayer.player = player }
         view.aspect = aspect
+        controller?.placeVLC()
+    }
+
+    static func dismantleUIView(_ view: PlayerLayerView, coordinator: ()) {
+        view.vlcController?.unregisterVLCHost(view)
     }
 }
 

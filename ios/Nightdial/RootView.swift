@@ -263,6 +263,9 @@ struct GuideHost: View {
             if let p = now {
                 Button("Program details") { model.sheet = .details(DetailsTarget(channel: ch, program: p)) }
             }
+            if PlayerController.hasVLC {
+                Button(model.usesVLC(ch) ? "Play with Apple's player" : "Play with built-in VLC") { model.setUsesVLC(ch, !model.usesVLC(ch)) }
+            }
             ForEach(ExternalPlayer.allCases.filter { $0 != .builtin }) { p in
                 Button("Open in \(p.name)") { model.openExternally(ch, with: p) }
             }
@@ -386,7 +389,7 @@ struct PreviewPlayer: View {
     var body: some View {
         ZStack {
             Color.black
-            VideoSurface(player: model.isFullScreen ? nil : player.player, aspect: player.aspect)
+            VideoSurface(player: model.isFullScreen ? nil : player.player, aspect: player.aspect, controller: player)
             PlaybackOverlay(compact: true)
         }
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))

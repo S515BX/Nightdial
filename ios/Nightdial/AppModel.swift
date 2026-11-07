@@ -917,7 +917,22 @@ final class AppModel: ObservableObject {
             }
             return
         }
-        if let url { player.play(url) } else { player.fail("network") }
+        guard let url else { player.fail("network"); return }
+        // what the built-in VLC engine opens if Apple's player can't show this channel's video
+        var alternate: URL? = nil
+        if cu == nil, p.kind == .xtream { alternate = client?.liveTSURL(ch) }
+        if p.kind == .m3u { alternate = M3U.originalTS(url) }
+        player.play(url, alternate: alternate, key: vlcKey(ch))
+    }
+
+    func vlcKey(_ ch: Channel) -> String { "\(provider?.id ?? "")|\(ch.id)" }
+
+    /// Channel options → play with VLC (or back with Apple's player). Some channels only show their picture in VLC.
+    func usesVLC(_ ch: Channel) -> Bool { PlayerController.usesVLC(vlcKey(ch)) }
+    func setUsesVLC(_ ch: Channel, _ on: Bool) {
+        PlayerController.setUsesVLC(vlcKey(ch), on)
+        play(ch, fullScreen: isFullScreen)
+        showToast(on ? "\(ch.name) plays in the built-in VLC player" : "\(ch.name) plays in Apple's player", seconds: 2.5)
     }
 
     // MARK: Pause and rewind (live TV)

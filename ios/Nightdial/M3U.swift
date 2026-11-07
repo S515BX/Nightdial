@@ -81,6 +81,13 @@ enum M3U {
         return Parsed(channels: channels, groups: groups, epgURL: lowerEpg.hasPrefix("http://") || lowerEpg.hasPrefix("https://") ? epg : "")
     }
 
+    /// The provider's original ".ts" link behind a rewritten one, for the built-in VLC engine.
+    static func originalTS(_ url: URL) -> URL? {
+        let s = url.absoluteString
+        guard s.lowercased().hasSuffix(".m3u8"), s.contains("/live/") else { return nil }
+        return URL(string: String(s.dropLast(5)) + ".ts")
+    }
+
     /// Apple's player needs HLS. Xtream-style ".ts" live links usually also exist as ".m3u8", so ask for that.
     static func playableURL(_ s: String) -> URL? {
         if s.lowercased().hasSuffix(".ts"), s.contains("/live/") {

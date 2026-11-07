@@ -14,3 +14,4 @@ firetv/*.apk
 *.iml
 # misc
 .DS_Store
+ios/Vendor/
