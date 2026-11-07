@@ -42,6 +42,7 @@ final class PlayerController: ObservableObject {
     /// The channel being played (to remember that it needs VLC) and the link VLC opens (the provider's original
     /// MPEG-TS link when there is one).
     private var channelKey: String?
+    private var groupKey: String?
     private var vlcURL: URL?
     private var triedVLC = false
     private var rememberIfVLCPlays = false
@@ -89,14 +90,15 @@ final class PlayerController: ObservableObject {
         vlcView.onResize = { [weak self] in self?.applyVLCAspect() }
     }
 
-    /// Plays a stream. `alternate` is what VLC opens if it's needed; `key` names the channel, so a channel that needed
-    /// VLC once starts in VLC next time.
-    func play(_ url: URL, alternate: URL? = nil, key: String? = nil) {
+    /// Plays a stream. `alternate` is what VLC opens if it's needed; `key` and `group` name the channel and its group,
+    /// so a channel that needed VLC once (and the rest of its group, like a 24/7 group) starts in VLC.
+    func play(_ url: URL, alternate: URL? = nil, key: String? = nil, group: String? = nil) {
         channelKey = key
+        groupKey = group
         vlcURL = alternate
         triedVLC = false
         rememberIfVLCPlays = false
-        engine = Self.hasVLC && key.map(Self.usesVLC) == true ? .vlc : .av
+        engine = Self.hasVLC && Self.prefersVLC(key: key, group: group) ? .vlc : .av
         play(url, reconnecting: false)
     }
 
@@ -285,7 +287,7 @@ final class PlayerController: ObservableObject {
             let first = state != .playing
             state = .playing
             if isPaused { isPaused = false }
-            if rememberIfVLCPlays, let key = channelKey { Self.setUsesVLC(key, true); rememberIfVLCPlays = false }
+            if rememberIfVLCPlays { learnNeedsVLC(group: false); rememberIfVLCPlays = false }
             steadyTask?.cancel()
             steadyTask = Task { @MainActor [weak self] in
                 try? await Task.sleep(nanoseconds: 30_000_000_000)
@@ -464,26 +466,49 @@ final class PlayerController: ObservableObject {
     // MARK: Built-in VLC
 
     private static let vlcKeysKey = "nightdial.vlcChannels"
-    /// Channels that play in VLC (they needed it once, or you picked it).
-    static func usesVLC(_ key: String) -> Bool {
-        (UserDefaults.standard.stringArray(forKey: vlcKeysKey) ?? []).contains(key)
-    }
-    static func setUsesVLC(_ key: String, _ on: Bool) {
-        var keys = (UserDefaults.standard.stringArray(forKey: vlcKeysKey) ?? []).filter { $0 != key }
-        if on { keys.insert(key, at: 0) }
-        UserDefaults.standard.set(Array(keys.prefix(1000)), forKey: vlcKeysKey)
+    private static let vlcGroupsKey = "nightdial.vlcGroups"
+    private static let avKeysKey = "nightdial.avChannels"
+    private static func list(_ k: String) -> [String] { UserDefaults.standard.stringArray(forKey: k) ?? [] }
+    private static func put(_ value: String, in k: String, _ on: Bool) {
+        var keys = list(k).filter { $0 != value }
+        if on { keys.insert(value, at: 0) }
+        UserDefaults.standard.set(Array(keys.prefix(1000)), forKey: k)
     }
 
-    /// Apple's player is playing, but if it has no picture after a few seconds the video is a kind it can't show
-    /// (HEVC or MPEG-2 in a live MPEG-TS stream): switch to VLC and remember the channel.
+    /// Plays in VLC: a channel you set to Apple's player never does; one that needed VLC (or you picked VLC) does;
+    /// otherwise the channel does when another channel in its group needed VLC.
+    static func prefersVLC(key: String?, group: String?) -> Bool {
+        guard let key else { return false }
+        if list(avKeysKey).contains(key) { return false }
+        if list(vlcKeysKey).contains(key) { return true }
+        if let group, list(vlcGroupsKey).contains(group) { return true }
+        return false
+    }
+
+    /// Channel options: you pick the player for this channel.
+    static func setUsesVLC(_ key: String, _ on: Bool) {
+        put(key, in: vlcKeysKey, on)
+        put(key, in: avKeysKey, !on)
+    }
+
+    /// Apple's player couldn't show this channel's picture: it and the rest of its group play in VLC from now on.
+    private func learnNeedsVLC(group alsoGroup: Bool) {
+        guard let key = channelKey else { return }
+        Self.put(key, in: Self.vlcKeysKey, true)
+        if alsoGroup, let groupKey { Self.put(groupKey, in: Self.vlcGroupsKey, true) }
+    }
+
+    /// Apple's player is playing, but if it still has no picture size soon after it starts, the video is a kind it
+    /// can't show (HEVC or MPEG-2 in a live MPEG-TS stream; it knows the size of any video it can show before playing):
+    /// switch to VLC and remember the channel and its group.
     private func checkVideoShows(_ item: AVPlayerItem) {
         videoCheckTask?.cancel()
-        guard Self.hasVLC, engine == .av, channelKey != nil else { return }
+        guard Self.hasVLC, engine == .av, channelKey != nil, item.presentationSize == .zero else { return }
         videoCheckTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
             guard !Task.isCancelled, let self, self.engine == .av, self.player.currentItem === item,
                   self.state == .playing, !self.isPaused, item.presentationSize == .zero, let url = self.currentURL else { return }
-            if let key = self.channelKey { Self.setUsesVLC(key, true) }
+            self.learnNeedsVLC(group: true)
             self.triedVLC = true
             self.engine = .vlc
             self.play(url, reconnecting: false)

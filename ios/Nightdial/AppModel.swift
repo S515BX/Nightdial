@@ -922,13 +922,14 @@ final class AppModel: ObservableObject {
         var alternate: URL? = nil
         if cu == nil, p.kind == .xtream { alternate = client?.liveTSURL(ch) }
         if p.kind == .m3u { alternate = M3U.originalTS(url) }
-        player.play(url, alternate: alternate, key: vlcKey(ch))
+        player.play(url, alternate: alternate, key: vlcKey(ch), group: vlcGroupKey(ch))
     }
 
     func vlcKey(_ ch: Channel) -> String { "\(provider?.id ?? "")|\(ch.id)" }
+    func vlcGroupKey(_ ch: Channel) -> String { "\(provider?.id ?? "")|g:\(ch.groupId)" }
 
     /// Channel options → play with VLC (or back with Apple's player). Some channels only show their picture in VLC.
-    func usesVLC(_ ch: Channel) -> Bool { PlayerController.usesVLC(vlcKey(ch)) }
+    func usesVLC(_ ch: Channel) -> Bool { PlayerController.prefersVLC(key: vlcKey(ch), group: vlcGroupKey(ch)) }
     func setUsesVLC(_ ch: Channel, _ on: Bool) {
         PlayerController.setUsesVLC(vlcKey(ch), on)
         play(ch, fullScreen: isFullScreen)
