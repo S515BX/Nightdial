@@ -55,8 +55,24 @@ jobs:
             'FRAMEWORK_SEARCH_PATHS=$(inherited) $(PROJECT_DIR)/Vendor/vlc-$(PLATFORM_NAME)' \
             'OTHER_LDFLAGS=$(inherited) -ObjC -framework MobileVLCKit -framework QuartzCore -framework CoreText -framework AVFoundation -framework Security -framework CFNetwork -framework AudioToolbox -framework OpenGLES -framework CoreGraphics -framework VideoToolbox -framework CoreMedia -lc++ -lxml2 -lz -lbz2 -liconv' \
             build 2>&1 | tee build.log
-          # the VLC engine must be in the app
-          nm -gU build/Release-iphoneos/Nightdial.app/Nightdial 2>/dev/null | grep -q -i "VLCMediaPlayer" || otool -ov build/Release-iphoneos/Nightdial.app/Nightdial | grep -q VLCMediaPlayer
+
+      - name: Put VLCKit inside the app
+        run: |
+          app=build/Release-iphoneos/Nightdial.app
+          fw=Vendor/vlc-iphoneos/MobileVLCKit.framework
+          file "$fw/MobileVLCKit"
+          otool -L "$app/Nightdial" | grep -i -E "vlc|rpath" || true
+          if otool -L "$app/Nightdial" | grep -q "MobileVLCKit.framework/MobileVLCKit"; then
+            # VLCKit is a dynamic framework: it ships inside the app (Sideloadly signs it along with the app)
+            mkdir -p "$app/Frameworks"
+            rsync -a --exclude Headers --exclude PrivateHeaders --exclude Modules --exclude '*.bcsymbolmap' "$fw" "$app/Frameworks/"
+            test -x "$app/Frameworks/MobileVLCKit.framework/MobileVLCKit"
+            otool -l "$app/Nightdial" | grep -A2 LC_RPATH | grep -q "@executable_path/Frameworks"
+          else
+            # linked in statically: its code must be in the app's own binary
+            test "$(stat -f%z "$app/Nightdial")" -gt 20000000
+          fi
+          du -sh "$app" "$app/Frameworks" 2>/dev/null || true
 
       - name: Show build errors
         if: failure()
