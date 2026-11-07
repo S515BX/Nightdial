@@ -173,14 +173,18 @@ struct MainView: View {
     var body: some View {
         GeometryReader { geo in
             let sc = Look.shared.sizeScale
+            let fold = geo.fold
             if geo.size.width >= 700 {
                 let wideRail = geo.size.width >= 1100
-                let heroH = min(max(geo.size.height * 0.34, 170), 360) * sc
+                let railW: CGFloat = wideRail ? 200 : 78
+                let hero = heroSize(min(max(geo.size.height * 0.34, 170), 360) * sc, heroX: 16 + railW + 18, fold: fold)
+                let heroH = hero.height, afterPreview = hero.afterPreview
                 HStack(spacing: 18) {
-                    NavRail(style: wideRail ? .wide : .narrow).frame(width: wideRail ? 200 : 78)
+                    NavRail(style: wideRail ? .wide : .narrow).frame(width: railW)
                     VStack(spacing: 16) {
                         HStack(alignment: .top, spacing: 16) {
                             PreviewPlayer().frame(width: heroH * 16 / 9, height: heroH)
+                                .padding(.trailing, afterPreview)
                             InfoPanel(compact: false).frame(height: heroH)
                             if geo.size.width >= 1180 {
                                 UpNextCard().frame(width: 270, height: heroH)
@@ -192,8 +196,27 @@ struct MainView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
+            } else if let f = fold, !f.isVertical, f.rect.minY > 260, geo.size.height - f.rect.maxY > 220 {
+                // iPhone Duo held tall: picture and program info above the fold, the guide below it
+                let topH = f.rect.minY - 6 - 8
+                let playerH = min(max(0, geo.size.width - 24) * 9 / 16, max(150, topH - 118))
+                VStack(spacing: 0) {
+                    VStack(spacing: 10) {
+                        PreviewPlayer().frame(height: playerH)
+                        InfoPanel(compact: true)
+                    }
+                    .frame(height: topH, alignment: .top)
+                    Color.clear.frame(height: f.rect.height + 16)
+                    VStack(spacing: 10) {
+                        GuideHost()
+                        NavRail(style: .bar)
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.top, 6)
             } else {
-                let playerH = max(0, geo.size.width - 24) * 9 / 16
+                // a short, wide screen (iPhone Duo's outer display on its side) keeps room for the guide
+                let playerH = min(max(0, geo.size.width - 24) * 9 / 16, geo.size.height * 0.42)
                 VStack(spacing: 10) {
                     PreviewPlayer().frame(height: playerH)
                     InfoPanel(compact: true)
@@ -204,6 +227,15 @@ struct MainView: View {
                 .padding(.top, 6)
             }
         }
+    }
+}
+
+extension MainView {
+    /// iPhone Duo held wide: the picture ends just before the fold and the program info starts just after it.
+    func heroSize(_ height: CGFloat, heroX: CGFloat, fold: Fold?) -> (height: CGFloat, afterPreview: CGFloat) {
+        guard let f = fold, f.isVertical, f.rect.minX - 8 - heroX >= 240 else { return (height, 0) }
+        let h = min(height, (f.rect.minX - 8 - heroX) * 9 / 16)
+        return (h, max(0, f.rect.maxX + 8 - (heroX + h * 16 / 9) - 16))
     }
 }
 

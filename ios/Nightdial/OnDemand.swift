@@ -498,22 +498,42 @@ struct OnDemandView: View {
             } else {
                 let sc = Look.shared.sizeScale
                 let minW = (width < 500 ? 104 : 138) * sc
-                ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: minW, maximum: minW * 1.45), spacing: 14, alignment: .top)], spacing: 18) {
-                        ForEach(list) { item in
-                            Button { searchFocused = false; selected = item } label: {
-                                PosterCard(item: item, progress: progress(item))
+                GeometryReader { area in
+                    ScrollView {
+                        LazyVGrid(columns: posterColumns(minW: minW, area: area), alignment: .leading, spacing: 18) {
+                            ForEach(list) { item in
+                                Button { searchFocused = false; selected = item } label: {
+                                    PosterCard(item: item, progress: progress(item))
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
                         }
+                        .frame(width: area.size.width, alignment: .leading)
+                        .padding(.vertical, 6)
+                        .padding(.bottom, 20)
                     }
-                    .padding(.vertical, 6)
-                    .padding(.bottom, 20)
+                    .scrollDismissesKeyboard(.immediately)
                 }
-                .scrollDismissesKeyboard(.immediately)
                 .id(k.rawValue + "|" + vod.category(k))
             }
         }
+    }
+
+    /// Poster columns. On iPhone Duo's inner display held wide, the fold falls in the gap between two columns, so no
+    /// cover is folded in half.
+    private func posterColumns(minW: CGFloat, area: GeometryProxy) -> [GridItem] {
+        let gap: CGFloat = 14
+        let adaptive = [GridItem(.adaptive(minimum: minW, maximum: minW * 1.45), spacing: gap, alignment: .top)]
+        guard let f = area.fold, f.isVertical else { return adaptive }
+        let leftW = f.rect.minX - 4, rightStart = f.rect.maxX + 4, rightW = area.size.width - rightStart
+        guard leftW >= minW, rightW >= minW else { return adaptive }
+        let ideal = minW * 1.15
+        let kL = max(1, Int((leftW + gap) / (ideal + gap))), kR = max(1, Int((rightW + gap) / (ideal + gap)))
+        let wL = (leftW - CGFloat(kL - 1) * gap) / CGFloat(kL), wR = (rightW - CGFloat(kR - 1) * gap) / CGFloat(kR)
+        let w = floor(min(wL, wR))
+        let foldGap = rightStart - (CGFloat(kL) * w + CGFloat(kL - 1) * gap)
+        return (0..<kL).map { i in GridItem(.fixed(w), spacing: i == kL - 1 ? foldGap : gap, alignment: .top) }
+            + (0..<kR).map { _ in GridItem(.fixed(w), spacing: gap, alignment: .top) }
     }
 
     private func centered<C: View>(@ViewBuilder _ c: () -> C) -> some View {

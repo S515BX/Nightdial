@@ -13,7 +13,7 @@ GET THE APP (no Mac needed)
        Apple ID > Trust. Turn on Developer Mode if asked and restart.
     3. With a free Apple ID the app lasts 7 days. Sideloadly can refresh it.
 
-BUILD IT YOURSELF (Mac with Xcode 16 or newer)
+BUILD IT YOURSELF (Mac with Xcode 27.1 or newer, for the iOS 27.1 SDK and iPhone Duo)
   Open Nightdial.xcodeproj, pick your team under Signing & Capabilities and
   press Run. make_project.py regenerates the project, icons and theme art.
 

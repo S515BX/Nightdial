@@ -23,7 +23,34 @@ struct LoginView: View {
     enum Field: Hashable { case name, server, user, pass, m3u, epg }
 
     var body: some View {
-        ScrollView {
+        GeometryReader { geo in
+            // iPhone Duo held wide: the card sits beside the fold, not across it
+            let side = loginSide(geo)
+            ScrollView {
+                card
+                    .frame(maxWidth: max(0, min(480, side.width - 32)))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 24)
+                    .frame(width: side.width)
+                    .padding(.leading, side.minX)
+                    .frame(width: geo.size.width, alignment: .leading)
+            }
+            .scrollDismissesKeyboard(.interactively)
+        }
+        .background(Color.black.opacity(0.55).ignoresSafeArea())
+        .onAppear(perform: prefill)
+        .onChange(of: server) { value in handleServerChange(value) }
+    }
+
+    /// The part of the screen the sign-in card goes in: all of it, or the wider side of a fold that runs top to bottom.
+    private func loginSide(_ geo: GeometryProxy) -> (minX: CGFloat, width: CGFloat) {
+        guard let f = geo.fold, f.isVertical else { return (0, geo.size.width) }
+        let left = f.rect.minX, right = geo.size.width - f.rect.maxX
+        guard max(left, right) >= 360 else { return (0, geo.size.width) }
+        return right >= left ? (f.rect.maxX, right) : (0, left)
+    }
+
+    private var card: some View {
             VStack(alignment: .leading, spacing: 16) {
                 header
                 Picker("Playlist type", selection: $kind) {
@@ -68,15 +95,6 @@ struct LoginView: View {
             .padding(26)
             .background(RoundedRectangle(cornerRadius: 28, style: .continuous).fill(Theme.panel))
             .shadow(color: .black.opacity(0.5), radius: 40, y: 20)
-            .frame(maxWidth: 480)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 24)
-            .frame(maxWidth: .infinity)
-        }
-        .scrollDismissesKeyboard(.interactively)
-        .background(Color.black.opacity(0.55).ignoresSafeArea())
-        .onAppear(perform: prefill)
-        .onChange(of: server) { value in handleServerChange(value) }
     }
 
     private var header: some View {

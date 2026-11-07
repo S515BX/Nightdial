@@ -29,6 +29,7 @@
 - **Stream details**: the channel banner and player panel show the resolution (4K, 1080p…), frame rate, video codec and audio (Dolby Digital 5.1, AAC stereo…).
 - **Themes**: everyday themes plus holiday themes with their own scenery and particles (bats, snow, leaves, fireworks…) that can switch on in season. Pick highlight and menu colors, fonts and interface size.
 - **Stays connected**: when your provider drops a stream (busy servers, links that expire, a connection limit), Nightdial opens it again on its own within a second or two, then keeps trying for about a minute before showing an error. A picture that freezes is reopened too.
+- **iPhone Duo**: uses the whole of both screens. Opened wide, the picture sits on one side of the fold and the program info on the other, movie covers never straddle it, and the sign-in card sits beside it; held tall, the picture is above the fold and the guide below. On the small outer screen turned sideways, the guide keeps its room.
 - **Smooth on every screen**: menus, lists and the guide glide instead of jumping a page at a time, and the item you're on always has room around it.
 - **Private and secure**: passwords, playlist links, Emby access tokens and the VPN key are stored encrypted on your device (Android Keystore on Fire TV, Keychain on iPhone) and only ever sent to your provider. The app pages run only their own code under a strict content security policy, can't be framed, and Fire TV backups are off.
 
@@ -85,7 +86,7 @@ Open the [web player](https://s515bx.github.io/Nightdial/app/). Browsers block p
 ## What's inside
 
 - `firetv/`: Android TV app for Fire TV (Fire OS 5+). Opens in Android Studio.
-- `ios/`: SwiftUI app (iOS 16+). Open `Nightdial.xcodeproj` in Xcode 16+ if you have a Mac.
+- `ios/`: SwiftUI app (iOS 16+). Open `Nightdial.xcodeproj` in Xcode 27.1+ (the iOS 27.1 SDK, for iPhone Duo) if you have a Mac.
 - `web/`: the computer version, with a small Node.js relay for your provider.
 - `site/`: the website (home page and web player), published with GitHub Pages.
 - `brand/`: the Nightdial logo (`icon.svg`) and the scripts that render the app icons, the Fire TV banner and this page's banner.

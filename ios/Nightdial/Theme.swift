@@ -457,3 +457,27 @@ enum Fmt {
         return !f.contains("a")
     }
 }
+
+// MARK: - iPhone Duo's fold
+
+/// Where iPhone Duo's fold crosses a view, in that view's own coordinates (with the system's margins around it), so
+/// content can sit on either side of it instead of across it. nil on every other screen and before iOS 27.1.
+struct Fold {
+    let rect: CGRect
+    /// The fold runs top to bottom: the inner display held wide, like an open book.
+    var isVertical: Bool { rect.height >= rect.width }
+}
+
+extension GeometryProxy {
+    var fold: Fold? {
+        if #available(iOS 27.1, *) {
+            // Layout decisions include the fold while it's flat too, so screens don't jump as the hinge moves.
+            let bounds = CGRect(origin: .zero, size: size)
+            for region in reservedRegions(kind: .division, options: .includeInactive) {
+                let r = region.frame.intersection(bounds)
+                if !r.isNull && (r.width > 0 || r.height > 0) { return Fold(rect: r) }
+            }
+        }
+        return nil
+    }
+}
